@@ -1,0 +1,27 @@
+services: 
+  audiobookshelf:
+    container_name: audiobookshelf
+    image: ghcr.io/advplyr/audiobookshelf:latest
+    env_file: .env
+    environment:
+      # Default
+      TZ: "${TZ:-Europe/London}"
+      PUID: "${PUID:-1000}"
+      PGID: "${PGID:-1000}"
+      UMASK: "000"
+    volumes:
+      - ${TORRENTDIR}:/audiobooks
+      #- </path/to/podcasts>:/podcasts
+      - ${DIRECTORY}/abs/config:/config
+      - ${DIRECTORY}/abs/meta:/metadata
+    networks:
+      - external    
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.audiobookshelf.rule=Host(`audiobookshelf.$DOMAIN`)"
+      - "traefik.http.services.audiobookshelf.loadbalancer.server.port=80"
+      #- "traefik.http.middlewares.audiobookshelf.headers.accessControlAllowCredentials=true"
+      #- "traefik.http.middlewares.audiobookshelf.headers.accessControlAllowOriginList=https://$DOMAIN"
+networks:
+  external:
+    external: true

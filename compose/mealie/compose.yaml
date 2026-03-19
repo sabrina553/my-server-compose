@@ -1,0 +1,21 @@
+services:
+  mealie:
+    image: ghcr.io/mealie-recipes/mealie:v3.11.0
+    container_name: mealie
+    restart: always
+    volumes:
+      - ${VOLUME_DIRECTORY}/:/app/data/
+    env_file: .env
+    networks:
+      - external
+    labels:
+      - "traefik.enable=true"       
+      - "traefik.http.routers.mealie.rule=Host(`mealie.$DOMAIN`)"      
+      - "traefik.http.services.mealie.loadbalancer.server.port=9000"
+      
+volumes:
+  mealie-data: null
+
+networks:
+  external:
+    external: true

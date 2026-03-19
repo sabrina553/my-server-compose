@@ -1,0 +1,53 @@
+services:
+  booklore:
+    image: booklore/booklore:latest    
+    container_name: booklore
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Default
+      - TZ    ="${TZ:-Europe/London}"
+      - PUID  ="${PUID:-1000}"
+      - PGID  = "${PGID:-1000}"
+      - UMASK = "000"
+      #image
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_USERNAME=${DB_USER}
+      - DATABASE_PASSWORD=${DB_PASSWORD}
+      - BOOKLORE_PORT=${BOOKLORE_PORT}
+      
+    volumes:
+      - ${DIRECTORY}/booklore/data:/app/data
+      - ${TORRENTDIR}:/books
+      - ${DIRECTORY}/booklore/:/bookdrop
+    networks:
+      - external
+      - internal
+    labels:
+      - "traefik.enable=true"       
+      - "traefik.http.routers.booklore.rule=Host(`booklore.$DOMAIN`)"      
+      - "traefik.http.services.booklore.loadbalancer.server.port=$BOOKLORE_PORT"
+  
+  mariadb:
+    image: lscr.io/linuxserver/mariadb:11.4.5
+    container_name: booklore-mariadb
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - PUID=${DB_USER_ID}
+      - PGID=${DB_GROUP_ID}
+      - TZ=${TZ}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - ${DIRECTORY}/booklore/mariadb/:/config
+    networks:
+      - internal
+
+networks:
+  external:
+    external: true
+  internal: 
+    external: true

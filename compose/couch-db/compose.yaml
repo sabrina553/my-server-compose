@@ -1,0 +1,21 @@
+services:
+  couchserver:
+    image: couchdb:3.5.0
+    container_name: couchdb
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ${VOLUME_DIRECTORY}/dbdata:/opt/couchdb/data
+      - ${VOLUME_DIRECTORY}/config:/opt/couchdb/etc
+    networks:
+      - internal
+    labels:
+      - "traefik.enable=true"       
+      - "traefik.http.routers.couchserver.rule=Host(`couch.int.$DOMAIN`)"      
+      - "traefik.http.services.couchserver.loadbalancer.server.port=5984"  
+    
+networks:
+  internal:
+    external: true
+
