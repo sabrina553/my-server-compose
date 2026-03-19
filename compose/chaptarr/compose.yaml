@@ -4,7 +4,7 @@ services:
     image: robertlordhood/chaptarr:develop
     volumes:
       - ${VOLDIR}/chaptarr:/config
-      - ${DATADIR}/trorents/books:/ebooks
+      - ${DATADIR}/torrents/books:/ebooks
       - ${DATADIR}/torrents/downloads:/downloads
     restart: unless-stopped  
     networks:
