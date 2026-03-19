@@ -61,6 +61,3 @@ volumes:
   public_userfiles:
   plugins:
   logs:
-
-networks:
-  leantime-net:

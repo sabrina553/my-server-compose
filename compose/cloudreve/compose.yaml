@@ -42,11 +42,3 @@ services:
     networks:
       - internal
 
-#volumes:
-#  backend_data:
-#  database_postgres:
-#  redis_data:
-
-networks:
-  internal:
-    external: true

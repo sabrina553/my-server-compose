@@ -15,7 +15,3 @@ services:
       
 volumes:
   mealie-data: null
-
-networks:
-  external:
-    external: true

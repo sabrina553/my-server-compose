@@ -18,9 +18,5 @@ services:
       - "traefik.http.routers.homeassistant.rule=Host(`ha.$DOMAINNAME`)"      
       - "traefik.http.services.homeassistant.loadbalancer.server.port=8123"
 
-networks:
-   external:
-     name: external
-     external: true
 
 #netowrks: {}

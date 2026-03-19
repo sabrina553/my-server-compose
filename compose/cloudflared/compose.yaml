@@ -4,11 +4,9 @@ services:
     image: cloudflare/cloudflared
     restart: unless-stopped
     command: tunnel run
+    secrets:
+      - cf_tunnel_token
     networks:
       - external
     environment:
-      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
-networks:
-  external:
-    name: external
-    external: true
+      - TUNNEL_TOKEN_FILE=/run/secrets/cf_tunnel_token 

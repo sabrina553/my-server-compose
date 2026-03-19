@@ -13,7 +13,7 @@ services:
     volumes:
       - ${STORAGE_FOLDER}/data:/data/data
     networks: 
-      - local
+      - internal
       - external
     labels:
       - "traefik.enable=true"       
@@ -27,7 +27,7 @@ services:
     volumes:
       - ${STORAGE_FOLDER}/pgdata:/var/lib/postgresql/data
     networks: 
-      - local
+      - internal
   meilisearch:
     image: getmeili/meilisearch:v1.12.8
     container_name: linkwarden-meilisearch
@@ -37,10 +37,4 @@ services:
     volumes:
       - ${STORAGE_FOLDER}/meili_data:/meili_data
     networks: 
-      - local
-
-networks:
-  external:
-    external: true
-  local:
-
+      - internal
