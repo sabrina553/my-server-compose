@@ -13,7 +13,6 @@ services:
     volumes:
       - ${VOLUME_DIRECTORY}/flaresolver:/config
     networks:
-      - internal
       - arr
     restart: unless-stopped
 
@@ -26,15 +25,12 @@ services:
       - .env
     restart: unless-stopped
     networks:
-      - internal
       - arr
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.int.$DOMAIN`)"      
+      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.int.$DOMAINNAME`)"      
       - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"      
 
 networks:
   internal:
-    external: true
-  arr:
     external: true

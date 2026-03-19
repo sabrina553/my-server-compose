@@ -9,15 +9,14 @@ services:
     ports:
       - 8123:8123
     volumes:
-      - ${VOLUME_DIRECTORY}:/config
+      - ${VOLDIR}/home-assistant:/config
       - /etc/localtime:/etc/localtime:ro
       - /run/dbus:/run/dbus:ro
     restart: unless-stopped
     privileged: true
-
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.homeassistant.rule=Host(`ha.$DOMAIN`)"      
+      - "traefik.http.routers.homeassistant.rule=Host(`ha.$DOMAINNAME`)"      
       - "traefik.http.services.homeassistant.loadbalancer.server.port=8123"
 
 networks:

@@ -35,7 +35,7 @@ services:
       - local
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.immich.rule=Host(`photos.$DOMAIN`)"      
+      - "traefik.http.routers.immich.rule=Host(`photos.$DOMAINNAME`)"      
       - "traefik.http.services.immich.loadbalancer.server.port=2283"  
 
   immich-machine-learning:
@@ -47,7 +47,7 @@ services:
     #   file: hwaccel.ml.yml
     #   service: cpu # set to one of [armnn, cuda, rocm, openvino, openvino-wsl, rknn] for accelerated inference - use the `-wsl` version for WSL2 where applicable
     volumes:
-      - ${VOLUME_DIRECTORY}/model-cache:/cache
+      - ${VOLDIR}/immich/model-cache:/cache
     networks:
       - local
     env_file:
@@ -61,7 +61,7 @@ services:
     healthcheck:
       test: redis-cli ping || exit 1
     volumes:
-      - ${VOLUME_DIRECTORY}/redis:/data
+      - ${VOLDIR}/immich/redis:/data
     networks:
       - local
     restart: always
