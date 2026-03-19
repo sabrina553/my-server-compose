@@ -20,7 +20,7 @@ services:
     image: docker.io/library/postgres:16-alpine
     restart: unless-stopped
     volumes:
-      - ${VOLDIR}/database:/var/lib/postgresql/data
+      - ${VOLDIR}/auth/database:/var/lib/postgresql/data
   authentik:
     container_name: authentik-server
     command: server
@@ -44,8 +44,8 @@ services:
     #  - 11061:9443
     restart: unless-stopped
     volumes:
-      - ${VOLDIR}/data:/data
-      - ${VOLDIR}/templates:/templates
+      - ${VOLDIR}/auth/data:/data
+      - ${VOLDIR}/auth/templates:/templates
 
     labels:
       - "traefik.enable=true"       
@@ -73,9 +73,9 @@ services:
     user: root
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${VOLDIR}/data:/data
-      - ${VOLDIR}/certs:/certs
-      - ${VOLDIR}/templates:/templates
+      - ${VOLDIR}/auth/data:/data
+      - ${VOLDIR}/auth/certs:/certs
+      - ${VOLDIR}/auth/templates:/templates
 volumes:
   database:
     driver: local
