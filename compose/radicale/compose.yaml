@@ -22,7 +22,6 @@ services:
           memory: 256M
           pids: 50
     restart: unless-stopped
-    env_file: .env
     volumes:
       - ${VOLDIR}/radicale:/data
       - ${VOLDIR}/:/config

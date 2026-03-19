@@ -2,7 +2,6 @@ services:
   homeassistant:
     container_name: homeassistant
     image: ghcr.io/home-assistant/home-assistant:stable
-    env_file: .env
     networks:
       - external
     #network_mode: host
