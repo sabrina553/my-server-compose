@@ -4,13 +4,13 @@ services:
     container_name: mealie
     restart: always
     volumes:
-      - ${VOLUME_DIRECTORY}/:/app/data/
+      - ${VOLDIR}/mealie/:/app/data/
     env_file: .env
     networks:
       - external
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.mealie.rule=Host(`mealie.$DOMAIN`)"      
+      - "traefik.http.routers.mealie.rule=Host(`mealie.$DOMAINNAME`)"      
       - "traefik.http.services.mealie.loadbalancer.server.port=9000"
       
 volumes:
