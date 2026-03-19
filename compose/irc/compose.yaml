@@ -11,5 +11,3 @@ services:
       - "traefik.enable=true"       
       - "traefik.http.routers.irc.rule=Host(`irc.int.$DOMAINNAME`)"      
       - "traefik.http.services.irc.loadbalancer.server.port=9000"      
-volumes:
-  thelounge:
