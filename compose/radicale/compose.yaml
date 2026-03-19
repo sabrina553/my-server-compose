@@ -24,13 +24,13 @@ services:
     restart: unless-stopped
     env_file: .env
     volumes:
-      - ${VOLUME_DIRECTORY}/:/data
-      - ${VOLUME_DIRECTORY}/:/config
+      - ${VOLDIR}/radicale:/data
+      - ${VOLDIR}/:/config
     networks:
       - internal
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.radicale.rule=Host(`radi.int.$DOMAIN`)"      
+      - "traefik.http.routers.radicale.rule=Host(`radi.int.$DOMAINNAME`)"      
       - "traefik.http.services.radicale.loadbalancer.server.port=5232"
     healthcheck:
       test: curl -f http://127.0.0.1:5232 || exit 1

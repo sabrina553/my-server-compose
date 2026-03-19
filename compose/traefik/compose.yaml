@@ -51,8 +51,8 @@ services:
       - "--certificatesresolvers.letsencrypt.acme.email=${EMAIL}"
       - "--certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme.json"
 
-      - "--entryPoints.websecure.http.tls.domains[0].main=$DOMAIN"
-      - "--entryPoints.websecure.http.tls.domains[0].sans=*.$DOMAIN"
+      - "--entryPoints.websecure.http.tls.domains[0].main=${DOMAINNAME}"
+      - "--entryPoints.websecure.http.tls.domains[0].sans=*.${DOMAINNAME}"
 
             
       # Observability 
@@ -65,7 +65,7 @@ services:
     labels:
       # Enable self‑routing
       - traefik.enable=true
-      - traefik.http.routers.api.rule=Host(`traefik.int.${DOMAIN}`)
+      - traefik.http.routers.api.rule=Host(`traefik.int.${DOMAINNAME}`)
       - traefik.http.routers.api.service=api@internal
       - traefik.http.services.api.loadbalancer.server.port=8080
 
@@ -75,7 +75,7 @@ services:
 
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock  
-      - ./config:/etc/traefik
+      #- ./config:/etc/traefik
 
     healthcheck:
       test: wget --quiet --tries=1 --spider http://127.0.0.1:8080/ping || exit 1
