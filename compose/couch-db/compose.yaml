@@ -6,15 +6,14 @@ services:
     env_file:
       - .env
     volumes:
-      - ${VOLUME_DIRECTORY}/dbdata:/opt/couchdb/data
-      - ${VOLUME_DIRECTORY}/config:/opt/couchdb/etc
+      - ${VOLDIR}/couch/dbdata:/opt/couchdb/data
+      - ${VOLDIR}/couch/config:/opt/couchdb/etc
     networks:
       - internal
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.couchserver.rule=Host(`couch.int.$DOMAIN`)"      
+      - "traefik.http.routers.couchserver.rule=Host(`couch.int.$DOMAINNAME`)"      
       - "traefik.http.services.couchserver.loadbalancer.server.port=5984"  
-    
 networks:
   internal:
     external: true
