@@ -17,7 +17,7 @@ services:
       - external
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.linkwarden.rule=Host(`bookmark.$DOMAIN`)"      
+      - "traefik.http.routers.linkwarden.rule=Host(`bookmark.$DOMAINNAME`)"      
       - "traefik.http.services.linkwarden.loadbalancer.server.port=3000"      
   postgres:
     image: postgres:16-alpine

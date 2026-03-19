@@ -12,14 +12,14 @@ services:
     #ports:
     # - 11007:80
     volumes:
-      - ${VOLUME_DIRECTORY}/data:/var/www/FreshRSS/data
-      - ${VOLUME_DIRECTORY}/extensions:/var/www/FreshRSS/extensions
+      - ${VOLDIR}/fresh-rss/data:/var/www/FreshRSS/data
+      - ${VOLDIR}/fresh-rss/extensions:/var/www/FreshRSS/extensions
     env_file:
       - .env
 
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.freshrss.rule=Host(`rss.$DOMAIN`)"      
+      - "traefik.http.routers.freshrss.rule=Host(`rss.$DOMAINNAME`)"      
       - "traefik.http.services.freshrss.loadbalancer.server.port=80"  
     
       # # Optional healthcheck section:

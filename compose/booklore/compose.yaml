@@ -14,19 +14,19 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - DATABASE_USERNAME=${DB_USER}
       - DATABASE_PASSWORD=${DB_PASSWORD}
-      - BOOKLORE_PORT=${BOOKLORE_PORT}
+      - BOOKLORE_PORT=6060
       
     volumes:
-      - ${DIRECTORY}/booklore/data:/app/data
-      - ${TORRENTDIR}:/books
-      - ${DIRECTORY}/booklore/:/bookdrop
+      - ${VOLDIR}/booklore/data:/app/data
+      - ${DATADIR}/torrents/:/books
+      - ${VOLDIR}/booklore/:/bookdrop
     networks:
       - external
       - internal
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.booklore.rule=Host(`booklore.$DOMAIN`)"      
-      - "traefik.http.services.booklore.loadbalancer.server.port=$BOOKLORE_PORT"
+      - "traefik.http.routers.booklore.rule=Host(`booklore.$DOMAINNAME`)"      
+      - "traefik.http.services.booklore.loadbalancer.server.port=6060"
   
   mariadb:
     image: lscr.io/linuxserver/mariadb:11.4.5
@@ -42,7 +42,7 @@ services:
       - MYSQL_USER=${DB_USER}
       - MYSQL_PASSWORD=${DB_PASSWORD}
     volumes:
-      - ${DIRECTORY}/booklore/mariadb/:/config
+      - ${VOLDIR}/booklore/mariadb/:/config
     networks:
       - internal
 

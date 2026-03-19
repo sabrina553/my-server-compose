@@ -11,12 +11,12 @@ services:
       - 6888:6888
       - 6888:6888/udp
     volumes:
-      - ${STORAGE_DIRECTORY}:/cloudreve/data
+      - ${DATADIR}/cloud/:/cloudreve/data
     networks:
       - internal
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.cloudreve.rule=Host(`files.int.$DOMAIN`)"      
+      - "traefik.http.routers.cloudreve.rule=Host(`files.int.$DOMAINNAME`)"      
       - "traefik.http.services.cloudreve.loadbalancer.server.port=5212"   
 
   postgresql:
@@ -28,7 +28,7 @@ services:
     restart: unless-stopped
     env_file: .env
     volumes:
-      - ${VOLUME_DIRECTORY}/database_postgres:/var/lib/postgresql/data
+      - ${VOLDIR}/database_postgres:/var/lib/postgresql/data
     networks:
       - internal
 
@@ -38,7 +38,7 @@ services:
     restart: unless-stopped
     env_file: .env
     volumes:
-      - ${VOLUME_DIRECTORY}/redis_data:/data
+      - ${VOLDIR}/redis_data:/data
     networks:
       - internal
 
