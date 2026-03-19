@@ -14,16 +14,6 @@ services:
       - "traefik.http.routers.chaptarr.rule=Host(`chaptarr.int.$DOMAINNAME`)"      
       - "traefik.http.services.chaptarr.loadbalancer.server.port=8789"      
 
-networks:
-  internal:
-    external: true
-
-
-
-
-
-
-
 
 
   # unpackerr:

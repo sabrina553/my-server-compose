@@ -1,0 +1,31 @@
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:18.3
+    #profiles: ["${POSTGRES_PROFILE:-media}"]
+    restart: unless-stopped
+    networks:
+      - internal
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+    shm_size: 128mb
+    user: "${PUID:-1000}:${PGID:-1000}"
+    secrets:
+      - postgres_password
+    environment:
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
+    volumes:
+      - "/etc/localtime:/etc/localtime:ro"
+      - "./config:/var/lib/postgresql/data"
+    labels:
+      - "traefik.enable=false"
+
+    healthcheck:
+      interval: "30s"
+      timeout: "5s"
+      retries: 3
+      start_period: "10s"
+      test: "pg_isready -d postgres -U postgres"

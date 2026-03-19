@@ -14,7 +14,3 @@ services:
       - "traefik.enable=true"       
       - "traefik.http.routers.couchserver.rule=Host(`couch.int.$DOMAINNAME`)"      
       - "traefik.http.services.couchserver.loadbalancer.server.port=5984"  
-networks:
-  internal:
-    external: true
-

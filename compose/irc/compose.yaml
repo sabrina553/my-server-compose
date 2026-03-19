@@ -13,6 +13,3 @@ services:
       - "traefik.http.services.irc.loadbalancer.server.port=9000"      
 volumes:
   thelounge:
-networks:
-  internal:
-    external: true

@@ -45,9 +45,3 @@ services:
       - ${VOLDIR}/booklore/mariadb/:/config
     networks:
       - internal
-
-networks:
-  external:
-    external: true
-  internal: 
-    external: true

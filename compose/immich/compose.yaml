@@ -32,7 +32,7 @@ services:
       disable: false
     networks:
       - external
-      - local
+      - internal
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.immich.rule=Host(`photos.$DOMAINNAME`)"      
@@ -49,7 +49,7 @@ services:
     volumes:
       - ${VOLDIR}/immich/model-cache:/cache
     networks:
-      - local
+      - internal
     env_file:
       - .env
     restart: always
@@ -63,7 +63,7 @@ services:
     volumes:
       - ${VOLDIR}/immich/redis:/data
     networks:
-      - local
+      - internal
     restart: always
   database:
     container_name: immich_postgres
@@ -76,7 +76,7 @@ services:
       # Uncomment the DB_STORAGE_TYPE: 'HDD' var if your database isn't stored on SSDs
       # DB_STORAGE_TYPE: 'HDD'
     networks:
-      - local
+      - internal
     volumes:
       # Do not edit the next line. If you want to change the database storage location on your system, edit the value of DB_DATA_LOCATION in the .env file
       - ${DB_DATA_LOCATION}:/var/lib/postgresql/data
@@ -84,10 +84,3 @@ services:
     restart: always
 volumes:
   model-cache: null
-
-
-networks:
-  external:
-    external: true
-  local:
-    name: local
