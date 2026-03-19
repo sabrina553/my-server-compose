@@ -75,7 +75,7 @@ services:
 
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock  
-      #- ./config:/etc/traefik
+      - ./config:/etc/traefik
 
     healthcheck:
       test: wget --quiet --tries=1 --spider http://127.0.0.1:8080/ping || exit 1
