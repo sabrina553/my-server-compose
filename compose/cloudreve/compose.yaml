@@ -1,0 +1,52 @@
+services:
+  cloudreve:
+    image: cloudreve/cloudreve:latest
+    container_name: cloudreve-backend
+    env_file: .env
+    depends_on:
+      - postgresql
+      - redis
+    restart: unless-stopped
+    ports:
+      - 6888:6888
+      - 6888:6888/udp
+    volumes:
+      - ${STORAGE_DIRECTORY}:/cloudreve/data
+    networks:
+      - internal
+    labels:
+      - "traefik.enable=true"       
+      - "traefik.http.routers.cloudreve.rule=Host(`files.int.$DOMAIN`)"      
+      - "traefik.http.services.cloudreve.loadbalancer.server.port=5212"   
+
+  postgresql:
+    # Best practice: Pin to major version. 
+    # NOTE: For major version jumps:
+    # backup & consult https://www.postgresql.org/docs/current/pgupgrade.html 
+    image: postgres:17    
+    container_name: cloudrevepostgresql
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ${VOLUME_DIRECTORY}/database_postgres:/var/lib/postgresql/data
+    networks:
+      - internal
+
+  redis:
+    image: redis:latest
+    container_name: cloudreve-redis
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ${VOLUME_DIRECTORY}/redis_data:/data
+    networks:
+      - internal
+
+#volumes:
+#  backend_data:
+#  database_postgres:
+#  redis_data:
+
+networks:
+  internal:
+    external: true

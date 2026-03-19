@@ -1,0 +1,38 @@
+services:
+  chaptarr:
+    container_name: chaptarr
+    image: robertlordhood/chaptarr:develop
+    env_file:
+      - .env
+    volumes:
+      - ${VOLUME_DIRECTORY}/chaptarr:/config
+      - ${TORRENT_DIRECTORY}/books:/ebooks
+      - ${TORRENT_DIRECTORY}/downloads:/downloads
+    restart: unless-stopped  
+    networks:
+      - internal
+    labels:
+      - "traefik.enable=true"       
+      - "traefik.http.routers.chaptarr.rule=Host(`chaptarr.int.$DOMAINNAME`)"      
+      - "traefik.http.services.chaptarr.loadbalancer.server.port=8789"      
+
+networks:
+  internal:
+    external: true
+
+
+
+
+
+
+
+
+
+  # unpackerr:
+  #   image: golift/unpackerr
+  #   container_name: unpackerr
+  #   volumes:
+  #     - ${TORRENT_DIRECTORY}/downloads:/downloads
+  #   restart: always
+  #   env_file:
+  #     - .env

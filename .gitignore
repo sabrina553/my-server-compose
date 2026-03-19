@@ -1,0 +1,9 @@
+#hide secrets
+secrets/*
+
+#temporarily hide environment files
+.env
+compose/cloudflared/bup/*
+acme.json
+template.compose.yaml
+compose/caddy/compose.yaml

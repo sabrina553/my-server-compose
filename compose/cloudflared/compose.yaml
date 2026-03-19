@@ -1,0 +1,14 @@
+services:
+  tunnel:
+    container_name: cloudflared
+    image: cloudflare/cloudflared
+    restart: unless-stopped
+    command: tunnel run
+    networks:
+      - external
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+networks:
+  external:
+    name: external
+    external: true
