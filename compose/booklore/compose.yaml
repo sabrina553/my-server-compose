@@ -6,10 +6,10 @@ services:
     env_file: .env
     environment:
       # Default
-      - TZ    ="${TZ:-Europe/London}"
-      - PUID  ="${PUID:-1000}"
-      - PGID  = "${PGID:-1000}"
-      - UMASK = "000"
+      - TZ="${TZ:-Europe/London}"
+      - PUID="${PUID:-1000}"
+      - PGID="${PGID:-1000}"
+      - UMASK="000"
       #image
       - DATABASE_URL=${DATABASE_URL}
       - DATABASE_USERNAME=${DB_USER}
