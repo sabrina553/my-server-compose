@@ -24,7 +24,7 @@ services:
     # NOTE: For major version jumps:
     # backup & consult https://www.postgresql.org/docs/current/pgupgrade.html 
     image: postgres:17    
-    container_name: cloudrevepostgresql
+    container_name: cloudreve-postgresql
     restart: unless-stopped
     env_file: .env
     volumes:

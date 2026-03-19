@@ -6,3 +6,4 @@ secrets/*
 acme.json
 template.compose.yaml
 compose/caddy/*
+database
