@@ -2,8 +2,6 @@ services:
   chaptarr:
     container_name: chaptarr
     image: robertlordhood/chaptarr:develop
-    env_file:
-      - .env
     volumes:
       - ${VOLDIR}/chaptarr:/config
       - ${DATADIR}/trorents/books:/ebooks
