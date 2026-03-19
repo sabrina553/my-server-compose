@@ -24,7 +24,7 @@ services:
     restart: unless-stopped
     volumes:
       - ${VOLDIR}/radicale:/data
-      - ${VOLDIR}/:/config
+      - ${VOLDIR}/radicale:/config
     networks:
       - internal
     labels:

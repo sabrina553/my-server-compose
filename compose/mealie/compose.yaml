@@ -12,6 +12,4 @@ services:
       - "traefik.enable=true"       
       - "traefik.http.routers.mealie.rule=Host(`mealie.$DOMAINNAME`)"      
       - "traefik.http.services.mealie.loadbalancer.server.port=9000"
-      
-volumes:
-  mealie-data: null
+
