@@ -31,10 +31,6 @@ services:
       interval: 75s
       retries: 3
 
-networks:
-  external:
-    external: true
-    
 volumes:
   data: null
   extensions: null

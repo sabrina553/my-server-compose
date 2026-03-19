@@ -19,7 +19,3 @@ services:
       - "traefik.enable=true"       
       - "traefik.http.routers.qbittorrent.rule=Host(`q.int.$DOMAINNAME`)"      
       - "traefik.http.services.qbittorrent.loadbalancer.server.port=8080"      
-
-networks:
-  internal:
-    external: true

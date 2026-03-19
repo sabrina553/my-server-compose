@@ -5,11 +5,11 @@ services:
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
-    env_file:
-      - .env
+    secrets:
+      - cf_dns_api_token
     environment:
-      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
-      - CF_API_EMAIL=${EMAIL}
+      - TZ=$TZ
+      - CF_DNS_API_TOKEN_FILE=/run/secrets/cf_dns_api_token
     networks:
       - external
       - internal
@@ -48,7 +48,7 @@ services:
       - "--certificatesresolvers.letsencrypt.acme.dnschallenge.propagation.delayBeforeChecks=10"
       - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare"
       - "--certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=8.8.8.8:53"      
-      - "--certificatesresolvers.letsencrypt.acme.email=${EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.email=hosting@${DOMAINNAME}"
       - "--certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme.json"
 
       - "--entryPoints.websecure.http.tls.domains[0].main=${DOMAINNAME}"
@@ -117,12 +117,12 @@ volumes:
   traefik:
 
 networks:
-  internal:
-    name: internal
-    external: true
-  external:
-    name: external
-    external: true
+  # internal:
+  #   name: internal
+  #   external: true
+  # external:
+  #   name: external
+  #   external: true
   host:
     name: external
     external: true

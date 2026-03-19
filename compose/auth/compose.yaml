@@ -27,6 +27,8 @@ services:
     depends_on:
       postgresql:
         condition: service_healthy
+    secrets:
+      - authentik_secret_key
     env_file:
       - .env
     environment:
@@ -34,7 +36,8 @@ services:
       AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
       AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
       AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
-      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?secret key required}
+      AUTHENTIK_SECRET_KEY: /run/secrets/authentik_secret_key
+  
     image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2026.2.0}
     networks:
       - internal
@@ -67,7 +70,7 @@ services:
       AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
       AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
       AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
-      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?secret key required}
+      AUTHENTIK_SECRET_KEY: /run/secrets/authentik_secret_key
     image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2026.2.0}
     restart: unless-stopped
     user: root
@@ -79,11 +82,3 @@ services:
 volumes:
   database:
     driver: local
-
-networks:
-  internal:
-    name: internal
-    external: true
-  external:
-    name: external
-    external: true

@@ -21,6 +21,3 @@ services:
       - "traefik.http.services.audiobookshelf.loadbalancer.server.port=80"
       #- "traefik.http.middlewares.audiobookshelf.headers.accessControlAllowCredentials=true"
       #- "traefik.http.middlewares.audiobookshelf.headers.accessControlAllowOriginList=https://$DOMAIN"
-networks:
-  external:
-    external: true
