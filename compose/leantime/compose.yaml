@@ -54,10 +54,3 @@ services:
       - ${VOLUME_DIRECTORY}/db_data:/var/lib/mysql
     user: root
     profiles: [ "helper" ]
-
-volumes:
-  db_data:
-  userfiles:                                               # New volume for public files
-  public_userfiles:
-  plugins:
-  logs:

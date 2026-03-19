@@ -30,7 +30,3 @@ services:
       start_interval: 11s
       interval: 75s
       retries: 3
-
-volumes:
-  data: null
-  extensions: null

@@ -110,12 +110,6 @@ services:
   #   restart: unless-stopped
 
 
-
-
-volumes:
-  acme:
-  traefik:
-
 networks:
   # internal:
   #   name: internal

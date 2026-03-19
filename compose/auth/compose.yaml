@@ -79,6 +79,4 @@ services:
       - ${VOLDIR}/auth/data:/data
       - ${VOLDIR}/auth/certs:/certs
       - ${VOLDIR}/auth/templates:/templates
-volumes:
-  database:
-    driver: local
+
