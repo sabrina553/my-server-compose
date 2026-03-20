@@ -13,6 +13,7 @@ services:
     networks:
       - external
       - internal
+      - socket_proxy
     ports:
       - 80:80
       - 443:443
@@ -39,6 +40,7 @@ services:
       - "--entryPoints.websecure.http3=true"
       #providers
       - "--providers.docker=true"
+      - "--providers.docker.endpoint=tcp://socket-proxy:2375"
       - "--providers.docker.exposedbydefault=false"
       #???? - "--providers.docker.network=proxy"      
    
@@ -74,7 +76,6 @@ services:
       - traefik.http.routers.api.middlewares=api-auth@docker      
 
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock  
       - ./config:/etc/traefik
 
     healthcheck:
