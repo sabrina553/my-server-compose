@@ -10,16 +10,22 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 192.168.91.0/24
+        - subnet: 172.21.0.0/24
   external:
     name: "external"
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
     enable_ipv4: true
     enable_ipv6: true
   internal: # No internet access
     name: "internal"
     driver: bridge
     internal: true
+    ipam:
+      config:
+        - subnet: 172.19.0.0/16
     enable_ipv4: true
     enable_ipv6: false
 
@@ -40,31 +46,31 @@ secrets:
 # Docker Compose v2.20 or greater required to use "include"
 include:
   ########################### SERVICES
-  - compose/traefik/compose.yaml
-  - compose/cloudflared/compose.yaml
-  - compose/auth/compose.yaml
-  - compose/postgresql/compose.yaml
-  #socket proxy
+    #- compose/postgresql/compose.yaml
 
-  #arrstack
-  - compose/audiobookshelf/compose.yaml
-  - compose/booklore/compose.yaml
-  - compose/chaptarr/compose.yaml
-  - compose/prowlarr/compose.yaml
-  - compose/qbittorrent/compose.yaml
+    # - compose/traefik/compose.yaml
+    # - compose/cloudflared/compose.yaml
+    # - compose/auth/compose.yaml    
+    # #socket proxy
+    # #arrstack
+    # - compose/audiobookshelf/compose.yaml
+    # - compose/booklore/compose.yaml
+    # - compose/chaptarr/compose.yaml
+    # - compose/prowlarr/compose.yaml
+    # - compose/qbittorrent/compose.yaml
 
-  # #apps
-  - compose/cloudreve/compose.yaml
-  - compose/couch-db/compose.yaml
-  - compose/fresh-rss/compose.yaml
-  - compose/home-assistant/compose.yaml
-  - compose/immich/compose.yaml
-  - compose/irc/compose.yaml
-  #- compose/leantime/compose.yaml
-  - compose/linkwarden/compose.yaml
-  - compose/mealie/compose.yaml
-  - compose/radicale/compose.yaml
-  - compose/vaultwarden/compose.yaml
+    # # #apps
+    # - compose/cloudreve/compose.yaml
+    # - compose/couch-db/compose.yaml
+    # - compose/fresh-rss/compose.yaml
+    # - compose/home-assistant/compose.yaml
+    # - compose/immich/compose.yaml
+    # - compose/irc/compose.yaml
+    # #- compose/leantime/compose.yaml
+    # - compose/linkwarden/compose.yaml
+    # - compose/mealie/compose.yaml
+    # - compose/radicale/compose.yaml
+    - compose/vaultwarden/compose.yaml
 
 
 
