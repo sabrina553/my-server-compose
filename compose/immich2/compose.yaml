@@ -1,0 +1,65 @@
+#
+# WARNING: To install immich2, follow our guide: https://immich2.app/docs/install/docker-compose
+#
+# Make sure to use the docker-compose.yml of the current release:
+#
+# https://github.com/immich2-app/immich2/releases/latest/download/docker-compose.yml
+#
+# The compose file on main may not be compatible with the latest release.
+
+name: immich2
+services:
+  immich2-server:
+    container_name: immich2_server
+    image: ghcr.io/immich-app/immich-server:${immich2_VERSION:-release}
+    # extends:
+    #   file: hwaccel.transcoding.yml
+    #   service: cpu # set to one of [nvenc, quicksync, rkmpp, vaapi, vaapi-wsl] for accelerated transcoding
+    volumes:
+      # Do not edit the next line. If you want to change the media storage location on your system, edit the value of UPLOAD_LOCATION in the .env file
+      - ${UPLOAD_LOCATION}:/data
+      - /etc/localtime:/etc/localtime:ro
+
+    env_file:
+      - .env
+    #ports:
+    #  - 2283:2283
+
+    restart: always
+    healthcheck:
+      disable: false
+    networks:
+      - external
+      - internal
+    labels:
+      - "traefik.enable=true"       
+      - "traefik.http.routers.immich2.rule=Host(`photos2.$DOMAINNAME`)"      
+      - "traefik.http.services.immich2.loadbalancer.server.port=2283"  
+
+  immich2-machine-learning:
+    container_name: immich2_machine_learning
+    # For hardware acceleration, add one of -[armnn, cuda, rocm, openvino, rknn] to the image tag.
+    # Example tag: ${immich2_VERSION:-release}-openvino
+    image: ghcr.io/immich-app/immich-machine-learning:${immich2_VERSION:-release}-openvino
+    # extends: # uncomment this section for hardware acceleration - see https://immich2.app/docs/features/ml-hardware-acceleration
+    #   file: hwaccel.ml.yml
+    #   service: cpu # set to one of [armnn, cuda, rocm, openvino, openvino-wsl, rknn] for accelerated inference - use the `-wsl` version for WSL2 where applicable
+    volumes:
+      - ${VOLDIR}/immich2/model-cache:/cache
+    networks:
+      - internal
+    env_file:
+      - .env
+    restart: always
+    healthcheck:
+      disable: false
+  redis:
+    container_name: immich2_redis
+    image: docker.io/valkey/valkey:8-bookworm@sha256:a137a2b60aca1a75130022d6bb96af423fefae4eb55faf395732db3544803280
+    healthcheck:
+      test: redis-cli ping || exit 1
+    volumes:
+      - ${VOLDIR}/immich2/redis:/data
+    networks:
+      - internal
+    restart: always
