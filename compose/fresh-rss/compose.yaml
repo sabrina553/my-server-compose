@@ -6,17 +6,15 @@ services:
     restart: unless-stopped
     networks:
      - external
+     - internal
     logging:
       options:
         max-size: 10m
-    #ports:
-    # - 11007:80
     volumes:
       - ${VOLDIR}/fresh-rss/data:/var/www/FreshRSS/data
       - ${VOLDIR}/fresh-rss/extensions:/var/www/FreshRSS/extensions
     env_file:
       - .env
-
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.freshrss.rule=Host(`rss.$DOMAINNAME`)"      
