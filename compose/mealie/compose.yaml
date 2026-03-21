@@ -3,9 +3,15 @@ services:
     image: ghcr.io/mealie-recipes/mealie
     container_name: mealie
     restart: always
+    secrets:
+      - smtp_password
+      - mealie_oidc_clientid
+      - mealie_oidc_secret
+      - mealie_pg_password
     volumes:
       - ${VOLDIR}/mealie/:/app/data/
-    env_file: .env
+    env_file: 
+      - .env
     networks:
       - external
       - internal
