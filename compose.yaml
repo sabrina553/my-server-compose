@@ -93,6 +93,7 @@ include:
     - compose/cloudflared/compose.yaml
     - compose/auth/compose.yaml
     - compose/socket-proxy/compose.yaml
+    - compose/dozzle/compose.yaml
     # #arrstack
     - compose/audiobookshelf/compose.yaml
     - compose/booklore/compose.yaml
