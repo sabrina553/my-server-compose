@@ -1,32 +1,23 @@
 services:
   flaresolverr:
-    # DockerHub mirror flaresolverr/flaresolverr:latest
-    image: ghcr.io/flaresolverr/flaresolverr:latest
     container_name: flaresolverr
-    environment:
-      - LOG_LEVEL=${LOG_LEVEL:-info}
-      - LOG_HTML=${LOG_HTML:-false}
-      - CAPTCHA_SOLVER=${CAPTCHA_SOLVER:-none}
-      - TZ=Europe/London
-    #ports:
-    #  - 11036:8191
-    volumes:
-      - ${VOLUME_DIRECTORY}/flaresolver:/config
-    networks:
-      - internal
+    image: ghcr.io/flaresolverr/flaresolverr:latest
     restart: unless-stopped
-
-  prowlarr:
-    image: lscr.io/linuxserver/prowlarr:latest
-    container_name: prowlarr
+    environment:
+      - TZ=${TZ}
+    networks:
+      - internal   
     volumes:
-      - ${VOLUME_DIRECTORY}/prowlarr/:/config
-    env_file:
-      - .env
+      - ${VOLDIR}/prowlarr/flaresolver:/config
+  prowlarr:
+    container_name: prowlarr
+    image: lscr.io/linuxserver/prowlarr:latest
     restart: unless-stopped
     networks:
       - internal
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.int.$DOMAINNAME`)"      
-      - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"      
+      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.int.${DOMAINNAME}`)"      
+      - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"   
+    volumes:
+      - ${VOLDIR}/prowlarr/:/config
