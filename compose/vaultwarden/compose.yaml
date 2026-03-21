@@ -1,14 +1,23 @@
 services:
   vaultwarden:
-    image: vaultwarden/server:latest
     container_name: vaultwarden
+    image: vaultwarden/server:latest
     restart: unless-stopped
+    depends_on:
+      traefik:
+        condition: service_healthy
+        restart: false
+      postgres:
+        condition: service_healthy
+        restart: false
+    logging:
+      options:
+        max-size: 10m
+    env_file: 
+      - .env
     secrets:
       - vaultwarden_pg_url
       - smtp_password
-    env_file: .env
-    volumes:
-      - ${VOLDIR}/vaultwarden/:/data/    
     networks:
       - external
       - internal
@@ -26,3 +35,5 @@ services:
       - "traefik.http.routers.vaultwarden-http.middlewares=redirect-https"
       - "traefik.http.routers.vaultwarden-http.service=vaultwarden"
       - "traefik.http.services.vaultwarden.loadbalancer.server.port=80"
+    volumes:
+      - ${VOLDIR}/vaultwarden/:/data/    

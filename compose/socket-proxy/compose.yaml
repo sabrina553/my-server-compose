@@ -2,13 +2,10 @@ services:
   socket-proxy:
     container_name: socket-proxy
     image: ${SOCKET_PROXY_IMAGE:-lscr.io/linuxserver/socket-proxy}:${SOCKET_PROXY_IMAGE_TAG:-latest}
-    #profiles: ["${SOCKET_PROXY_PROFILE:-infrastructure}"]
     restart: unless-stopped
-    networks:
-      - socket_proxy
     read_only: true
     environment:
-      TZ: "${TZ:-Europe/London}"
+      TZ: "${TZ}"
       LOG_LEVEL: "notice" # debug, info, notice, warning, err, crit, alert, emerg
       DISABLE_IPV6: "0"
       ALLOW_START: "1"
@@ -37,12 +34,15 @@ services:
       TASKS: "0"
       VERSION: "1"
       VOLUMES: "1"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    tmpfs:
-      - "/run"
+    
+    networks:
+      - socket_proxy
     labels:
       - "traefik.enable=false"
+    tmpfs:
+      - "/run"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
     healthcheck:
       interval: "30s"
       timeout: "5s"

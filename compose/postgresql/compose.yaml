@@ -3,6 +3,9 @@ services:
     container_name: postgres
     image: postgres:18-alpine
     restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
     env_file:
       - .env
     secrets:
@@ -27,6 +30,9 @@ services:
       postgres:
         condition: service_started
         restart: false
+    logging:
+      options:
+        max-size: 10m
     user: '0:0' ###ermmmm
     env_file:
       - .env

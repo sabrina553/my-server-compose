@@ -11,6 +11,9 @@ services:
       authentik-worker:
         condition: service_started
         restart: false
+    logging:
+      options:
+        max-size: 10m                
     env_file:
       - .env
     secrets:

@@ -1,13 +1,20 @@
 services:
   irc:
-    image: ghcr.io/thelounge/thelounge:latest
     container_name: thelounge
+    image: ghcr.io/thelounge/thelounge:latest
     restart: always
+    depends_on:
+      traefik:
+        condition: service_healthy
+        restart: false
+    logging:
+      options:
+        max-size: 10m
     networks: 
       - internal
-    volumes:
-      - ${VOLDIR}/irc/:/var/opt/thelounge # uses a named volume
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.irc.rule=Host(`irc.int.$DOMAINNAME`)"      
       - "traefik.http.services.irc.loadbalancer.server.port=9000"      
+    volumes:
+      - ${VOLDIR}/irc/:/var/opt/thelounge # uses a named volume
