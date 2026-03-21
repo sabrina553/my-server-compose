@@ -3,11 +3,15 @@ services:
     image: vaultwarden/server:latest
     container_name: vaultwarden
     restart: unless-stopped
+    secrets:
+      - vaultwarden_pg_url
+      - smtp_password
     env_file: .env
     volumes:
       - ${VOLDIR}/vaultwarden/:/data/    
     networks:
       - external
+      - internal
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=external"
