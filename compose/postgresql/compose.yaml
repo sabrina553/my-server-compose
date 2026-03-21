@@ -30,6 +30,9 @@ services:
       postgres:
         condition: service_started
         restart: false
+      traefik:
+        condition: service_started
+        restart: false
     logging:
       options:
         max-size: 10m

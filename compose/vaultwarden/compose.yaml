@@ -5,10 +5,10 @@ services:
     restart: unless-stopped
     depends_on:
       traefik:
-        condition: service_healthy
+        condition: service_started
         restart: false
       postgres:
-        condition: service_healthy
+        condition: service_started
         restart: false
     logging:
       options:
