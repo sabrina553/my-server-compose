@@ -29,8 +29,10 @@ networks:
     enable_ipv4: true
     enable_ipv6: false
 
-########################### SECRETS
+###########################SECRETS###########################
 secrets:
+  smtp_password:
+    file: $DOCKERDIR/secrets/smtp_password
   cf_dns_api_token:
     file: $DOCKERDIR/secrets/cf_dns_api_token
   cf_tunnel_token:
@@ -39,37 +41,76 @@ secrets:
     file: $DOCKERDIR/secrets/authentik_secret_key
   postgres_password:
     file: $DOCKERDIR/secrets/postgres_password
-
+  ###########################################################  
+  freshrss_oidc_clientid:
+    file: $DOCKERDIR/secrets/freshrss_oidc_clientid
+  freshrss_oidc_secret:
+    file: $DOCKERDIR/secrets/freshrss_oidc_secret
+  freshrss_pg_password:
+    file: $DOCKERDIR/secrets/freshrss_pg_password
+  ###########################################################
+  homeassis_oidc_clientid:
+    file: $DOCKERDIR/secrets/homeassis_oidc_clientid 
+  homeassis_oidc_secret:
+    file: $DOCKERDIR/secrets/homeassis_oidc_secret
+  ###########################################################
+  immich_oidc_clientid:
+    file: $DOCKERDIR/secrets/immich_oidc_clientid
+  immich_oidc_secret:
+    file: $DOCKERDIR/secrets/immich_oidc_secret
+  immich_pg_password:
+    file: $DOCKERDIR/secrets/immich_pg_password
+  ###########################################################
+  linkwarden_oidc_clientid:
+    file: $DOCKERDIR/secrets/linkwarden_oidc_clientid
+  linkwarden_oidc_secret:
+    file: $DOCKERDIR/secrets/linkwarden_oidc_secret
+  linkwarden_pg_password:
+    file: $DOCKERDIR/secrets/linkwarden_pg_password
+  linkwarden_nextauth_secret:
+    file: $DOCKERDIR/secrets/linkwarden_nextauth_secret
+  ###########################################################
+  mealie_oidc_clientid:
+    file: $DOCKERDIR/secrets/mealie_oidc_clientid
+  mealie_oidc_secret:
+    file: $DOCKERDIR/secrets/mealie_oidc_secret
+  mealie_pg_password:
+    file: $DOCKERDIR/secrets/mealie_pg_password
+  ###########################################################
+  vaultwarden_pg_url:
+    file: $DOCKERDIR/secrets/vaultwarden_pg_url
 
 
 
 # Docker Compose v2.20 or greater required to use "include"
 include:
   ########################### SERVICES
-    #- compose/postgresql/compose.yaml
-
-    # - compose/traefik/compose.yaml
-    # - compose/cloudflared/compose.yaml
-    # - compose/auth/compose.yaml    
+    - compose/socket-proxy/compose.yaml    
+    - compose/postgresql/compose.yaml
+    - compose/traefik/compose.yaml
+    - compose/cloudflared/compose.yaml
+    - compose/auth/compose.yaml
     # #socket proxy
     # #arrstack
-    # - compose/audiobookshelf/compose.yaml
-    # - compose/booklore/compose.yaml
-    # - compose/chaptarr/compose.yaml
-    # - compose/prowlarr/compose.yaml
-    # - compose/qbittorrent/compose.yaml
+    - compose/audiobookshelf/compose.yaml
+    - compose/booklore/compose.yaml
+    - compose/chaptarr/compose.yaml
+    - compose/prowlarr/compose.yaml
+    - compose/qbittorrent/compose.yaml
 
     # # #apps
-    # - compose/cloudreve/compose.yaml
-    # - compose/couch-db/compose.yaml
-    # - compose/fresh-rss/compose.yaml
-    # - compose/home-assistant/compose.yaml
-    # - compose/immich/compose.yaml
-    # - compose/irc/compose.yaml
-    # #- compose/leantime/compose.yaml
-    # - compose/linkwarden/compose.yaml
-    # - compose/mealie/compose.yaml
-    # - compose/radicale/compose.yaml
+    - compose/cloudreve/compose.yaml
+    - compose/couch-db/compose.yaml
+    - compose/fresh-rss/compose.yaml
+    
+    - compose/home-assistant/compose.yaml
+    #- compose/immich2/compose.yaml
+    
+    - compose/irc/compose.yaml
+    #- compose/leantime/compose.yaml
+    #- compose/linkwarden/compose.yaml
+    - compose/mealie/compose.yaml
+    - compose/radicale/compose.yaml
     - compose/vaultwarden/compose.yaml
 
 
