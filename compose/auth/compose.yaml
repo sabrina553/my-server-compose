@@ -8,27 +8,18 @@ services:
       traefik:
         condition: service_started
         restart: false
-      postgres:
+      authentik-worker:
         condition: service_started
         restart: false
-
+    env_file:
+      - .env
     secrets:
       - authentik_secret_key
       - authentik_pg_password
       - smtp_password
-    env_file:
-      - .env
-    environment:
-      AUTHENTIK_SECRET_KEY: /run/secrets/authentik_secret_key
-      AUTHENTIK_POSTGRESQL__PASSWORD: /run/secrets/authentik_pg_password
-      AUTHENTIK_EMAIL__PASSWORD: /run/secrets/smtp_password
-
     networks:
       - internal
       - external
-    volumes:
-      - ${VOLDIR}/auth/data:/data
-      - ${VOLDIR}/auth/templates:/templates
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.authentik.rule=Host(`auth.$DOMAINNAME`)"      
@@ -36,20 +27,22 @@ services:
 
   authentik-worker:
     container_name: authentik-worker
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2026.2.0}
+    command: worker
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_started
+        restart: false
+      socket-proxy:
+        condition: service_healthy
+        restart: false
+    env_file:
+      - .env
+    secrets:
+      - authentik_secret_key
+      - authentik_pg_password
+      - smtp_password
     networks:
       - internal
       - socket_proxy
-    command: worker
-    env_file:
-      - .env
-    environment:
-      DOCKER_HOST: "tcp://socket-proxy:2375"
-      AUTHENTIK_SECRET_KEY: /run/secrets/authentik_secret_key
-      
-    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2026.2.0}
-    restart: unless-stopped
-    user: root
-    volumes:
-      - ${VOLDIR}/auth/data:/data
-      - ${VOLDIR}/auth/certs:/certs
-      - ${VOLDIR}/auth/templates:/templates
