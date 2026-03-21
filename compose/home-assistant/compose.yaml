@@ -4,15 +4,11 @@ services:
     image: ghcr.io/home-assistant/home-assistant:stable
     networks:
       - external
-    #network_mode: host
-    ports:
-      - 8123:8123
     volumes:
       - ${VOLDIR}/home-assistant:/config
       - /etc/localtime:/etc/localtime:ro
       - /run/dbus:/run/dbus:ro
     restart: unless-stopped
-    privileged: true
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.homeassistant.rule=Host(`ha.$DOMAINNAME`)"      
