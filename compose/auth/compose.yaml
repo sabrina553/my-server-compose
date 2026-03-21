@@ -1,20 +1,20 @@
 services:
   authentik:
     container_name: authentik-server
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2026.2.0}
     command: server
+    restart: unless-stopped
     secrets:
       - authentik_secret_key
     env_file:
       - .env
     environment:
       AUTHENTIK_SECRET_KEY: /run/secrets/authentik_secret_key
-  
-    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2026.2.0}
+    
     networks:
       - internal
       - external
 
-    restart: unless-stopped
     volumes:
       - ${VOLDIR}/auth/data:/data
       - ${VOLDIR}/auth/templates:/templates
@@ -22,23 +22,23 @@ services:
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.authentik.rule=Host(`auth.$DOMAINNAME`)"      
-      - "traefik.http.services.authentik.loadbalancer.server.port=9000"   
+      - "traefik.http.services.authentik.loadbalancer.server.port=9000" 
 
-  worker:
+  authentik-worker:
     container_name: authentik-worker
     networks:
       - internal
+      - socket_proxy
     command: worker
     env_file:
       - .env
     environment:
+      DOCKER_HOST: "tcp://socket-proxy:2375"
       AUTHENTIK_SECRET_KEY: /run/secrets/authentik_secret_key
     image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2026.2.0}
     restart: unless-stopped
     user: root
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
       - ${VOLDIR}/auth/data:/data
       - ${VOLDIR}/auth/certs:/certs
       - ${VOLDIR}/auth/templates:/templates
-
