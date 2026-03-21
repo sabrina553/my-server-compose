@@ -37,10 +37,13 @@ secrets:
     file: $DOCKERDIR/secrets/cf_dns_api_token
   cf_tunnel_token:
     file: $DOCKERDIR/secrets/cf_tunnel_token
-  authentik_secret_key:
-    file: $DOCKERDIR/secrets/authentik_secret_key
   postgres_password:
     file: $DOCKERDIR/secrets/postgres_password
+  ###########################################################
+  authentik_secret_key:
+    file: $DOCKERDIR/secrets/authentik_secret_key
+  authentik_pg_password:
+    file: $DOCKERDIR/secrets/authentik_pg_password
   ###########################################################  
   freshrss_oidc_clientid:
     file: $DOCKERDIR/secrets/freshrss_oidc_clientid
@@ -84,28 +87,24 @@ secrets:
 
 # Docker Compose v2.20 or greater required to use "include"
 include:
-  ########################### SERVICES
-    - compose/socket-proxy/compose.yaml    
+  ########################### SERVICES    
     - compose/postgresql/compose.yaml
     - compose/traefik/compose.yaml
     - compose/cloudflared/compose.yaml
     - compose/auth/compose.yaml
-    # #socket proxy
+    - compose/socket-proxy/compose.yaml
     # #arrstack
     - compose/audiobookshelf/compose.yaml
     - compose/booklore/compose.yaml
     - compose/chaptarr/compose.yaml
     - compose/prowlarr/compose.yaml
     - compose/qbittorrent/compose.yaml
-
     # # #apps
     - compose/cloudreve/compose.yaml
     - compose/couch-db/compose.yaml
-    - compose/fresh-rss/compose.yaml
-    
+    - compose/fresh-rss/compose.yaml    
     - compose/home-assistant/compose.yaml
-    #- compose/immich2/compose.yaml
-    
+    #- compose/immich2/compose.yaml    
     - compose/irc/compose.yaml
     #- compose/leantime/compose.yaml
     #- compose/linkwarden/compose.yaml
