@@ -1,16 +1,23 @@
 services:
   couchserver:
-    image: couchdb:3.5.0
     container_name: couchdb
+    image: couchdb:3.5.0
     restart: always
+    depends_on:
+      traefik:
+        condition: service_healthy
+        restart: false
+    logging:
+      options:
+        max-size: 10m
     env_file:
       - .env
-    volumes:
-      - ${VOLDIR}/couch/dbdata:/opt/couchdb/data
-      - ${VOLDIR}/couch/config:/opt/couchdb/etc
     networks:
       - internal
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.couchserver.rule=Host(`couch.int.$DOMAINNAME`)"      
       - "traefik.http.services.couchserver.loadbalancer.server.port=5984"  
+    volumes:
+      - ${VOLDIR}/couch/dbdata:/opt/couchdb/data
+      - ${VOLDIR}/couch/config:/opt/couchdb/etc

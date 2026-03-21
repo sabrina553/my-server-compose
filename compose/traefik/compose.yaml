@@ -12,15 +12,15 @@ services:
     secrets:
       - cf_dns_api_token
     environment:
-      - TZ=$TZ
+      - TZ=${TZ}
       - CF_DNS_API_TOKEN_FILE=/run/secrets/cf_dns_api_token
+    ports:
+      - 80:80
+      - 443:443    
     networks:
       - external
       - internal
       - socket_proxy
-    ports:
-      - 80:80
-      - 443:443
     command:
       #API + Dash
       - "--api.insecure=true"
