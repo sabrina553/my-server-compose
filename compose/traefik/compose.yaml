@@ -1,10 +1,14 @@
 services:  
   traefik:
-    image: traefik:3.6.10
     container_name: traefik
+    image: traefik:3.6.10
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
+    depends_on:
+      socket-proxy:
+        condition: service_healthy
+        restart: false
     secrets:
       - cf_dns_api_token
     environment:
@@ -17,7 +21,6 @@ services:
     ports:
       - 80:80
       - 443:443
-      #- 8080:8080
     command:
       #API + Dash
       - "--api.insecure=true"
@@ -46,7 +49,6 @@ services:
    
       #certs 
       - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
-
       - "--certificatesresolvers.letsencrypt.acme.dnschallenge.propagation.delayBeforeChecks=10"
       - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare"
       - "--certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=8.8.8.8:53"      
@@ -73,7 +75,7 @@ services:
 
       #  Basic‑auth middleware
       - traefik.http.middlewares.api-auth.basicauth.users=sabrina:$$apr1$$kHonGrZB$$pssgJmXUjdGEJznac883K0 
-      - traefik.http.routers.api.middlewares=api-auth@docker      
+      - traefik.http.routers.api.middlewares=api-auth@docker
 
     volumes:
       - ./config:/etc/traefik
@@ -110,14 +112,7 @@ services:
   #     traefik.http.middlewares.authentik.forwardauth.authResponseHeaders: X-authentik-username,X-authentik-groups,X-authentik-entitlements,X-authentik-email,X-authentik-name,X-authentik-uid,X-authentik-jwt,X-authentik-meta-jwks,X-authentik-meta-outpost,X-authentik-meta-provider,X-authentik-meta-app,X-authentik-meta-version
   #   restart: unless-stopped
 
-
 networks:
-  # internal:
-  #   name: internal
-  #   external: true
-  # external:
-  #   name: external
-  #   external: true
   host:
     name: external
     external: true
