@@ -3,8 +3,6 @@
 ########################### NETWORKS
 # You may customize the network subnets (192.168.x.0/24) below as you please.
 networks:
-  default:
-    driver: bridge
   socket_proxy:
     name: socket_proxy
     driver: bridge
