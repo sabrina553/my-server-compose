@@ -4,23 +4,28 @@ services:
     container_name: freshrss
     hostname: freshrss
     restart: unless-stopped
-    networks:
-     - external
-     - internal
     logging:
       options:
         max-size: 10m
+    secrets:
+      - freshrss_oidc_clientid
+      - freshrss_oidc_secret
+      - freshrss_pg_password
+      - smtp_password
+    env_file:
+      - .env
     volumes:
       - ${VOLDIR}/fresh-rss/data:/var/www/FreshRSS/data
       - ${VOLDIR}/fresh-rss/extensions:/var/www/FreshRSS/extensions
-    env_file:
-      - .env
+    networks:
+     - external
+     - internal
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.freshrss.rule=Host(`rss.$DOMAINNAME`)"      
       - "traefik.http.services.freshrss.loadbalancer.server.port=80"  
     
-      # # Optional healthcheck section:
+    # # Optional healthcheck section:
     healthcheck:
       test: ["CMD", "cli/health.php"]
       timeout: 10s
