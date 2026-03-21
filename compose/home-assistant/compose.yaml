@@ -2,14 +2,21 @@ services:
   homeassistant:
     container_name: homeassistant
     image: ghcr.io/home-assistant/home-assistant:stable
+    restart: unless-stopped
+    depends_on:
+      traefik:
+        condition: service_healthy
+        restart: false
+    logging:
+      options:
+        max-size: 10m
     networks:
       - external
-    volumes:
-      - ${VOLDIR}/home-assistant:/config
-      - /etc/localtime:/etc/localtime:ro
-      - /run/dbus:/run/dbus:ro
-    restart: unless-stopped
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.homeassistant.rule=Host(`ha.$DOMAINNAME`)"      
       - "traefik.http.services.homeassistant.loadbalancer.server.port=8123"
+    volumes:
+      - ${VOLDIR}/home-assistant:/config
+      - /etc/localtime:/etc/localtime:ro
+      - /run/dbus:/run/dbus:ro
