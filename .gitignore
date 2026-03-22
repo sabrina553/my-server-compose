@@ -10,3 +10,9 @@ database
 
 #postgres
 compose/postgresql/.pgadmin
+compose/filebrowser/data/tmp/*
+compose/copyparty/*
+.gitignore
+compose/copyparty/*
+compose/filebrowser/*
+compose/filestash/*
