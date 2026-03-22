@@ -1,6 +1,6 @@
 services:
   booklore:
-    image: booklore/booklore:latest    
+    image: grimmory/grimmory
     container_name: booklore
     restart: unless-stopped
     env_file: .env
