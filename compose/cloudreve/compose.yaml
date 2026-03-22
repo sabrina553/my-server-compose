@@ -16,7 +16,7 @@ services:
       - internal
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.cloudreve.rule=Host(`files.int.$DOMAINNAME`)"      
+      - "traefik.http.routers.cloudreve.rule=Host(`files.int.${DOMAINNAME}`)"      
       - "traefik.http.services.cloudreve.loadbalancer.server.port=5212"   
 
   postgresql:
@@ -41,4 +41,3 @@ services:
       - ${VOLDIR}/cloudreve/redis_data:/data
     networks:
       - internal
-
