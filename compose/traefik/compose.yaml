@@ -9,6 +9,9 @@ services:
       socket-proxy:
         condition: service_healthy
         restart: false
+    logging:
+      options:
+        max-size: 10m
     secrets:
       - cf_dns_api_token
     environment:
@@ -63,6 +66,9 @@ services:
       #  Basic‑auth middleware
       - traefik.http.middlewares.api-auth.basicauth.users=sabrina:$$apr1$$kHonGrZB$$pssgJmXUjdGEJznac883K0 
       - traefik.http.routers.api.middlewares=api-auth@docker
+
+      - "deunhealth.restart.on.unhealthy=true"
+      - "com.centurylinklabs.watchtower.monitor-only=true"
 
     volumes:
       - ./config:/etc/traefik
