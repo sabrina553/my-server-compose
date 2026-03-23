@@ -23,17 +23,10 @@ services:
       - internal
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=external"
-      - "traefik.http.middlewares.redirect-https.redirectScheme.scheme=https"
-      - "traefik.http.middlewares.redirect-https.redirectScheme.permanent=true"
       - "traefik.http.routers.vaultwarden-https.rule=Host(`vw.$DOMAINNAME`)"
-      - "traefik.http.routers.vaultwarden-https.entrypoints=websecure"
-      - "traefik.http.routers.vaultwarden-https.tls=true"
-      - "traefik.http.routers.vaultwarden-https.service=vaultwarden"
-      - "traefik.http.routers.vaultwarden-http.rule=Host(`vw.$DOMAINNAME`)"
-      - "traefik.http.routers.vaultwarden-http.entrypoints=web"
-      - "traefik.http.routers.vaultwarden-http.middlewares=redirect-https"
-      - "traefik.http.routers.vaultwarden-http.service=vaultwarden"
       - "traefik.http.services.vaultwarden.loadbalancer.server.port=80"
+      
+      - "deunhealth.restart.on.unhealthy=true"
+      - "com.centurylinklabs.watchtower.monitor-only=true"
     volumes:
       - ${VOLDIR}/vaultwarden/:/data/    
