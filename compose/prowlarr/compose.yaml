@@ -3,21 +3,35 @@ services:
     container_name: flaresolverr
     image: ghcr.io/flaresolverr/flaresolverr:latest
     restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
     environment:
       - TZ=${TZ}
+    labels:
+      - "deunhealth.restart.on.unhealthy=true"
+      - "com.centurylinklabs.watchtower.monitor-only=true"  
     networks:
-      - internal   
-    volumes:
-      - ${VOLDIR}/prowlarr/flaresolver:/config
+      - external
+  
   prowlarr:
     container_name: prowlarr
     image: lscr.io/linuxserver/prowlarr:latest
     restart: unless-stopped
+    depends_on:
+      traefik:
+        condition: service_started
+        restart: false
+    logging:
+      options:
+        max-size: 10m
     networks:
-      - internal
+      - external
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.int.${DOMAINNAME}`)"      
-      - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"   
+      - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
+      - "deunhealth.restart.on.unhealthy=true"
+      - "com.centurylinklabs.watchtower.monitor-only=true"   
     volumes:
       - ${VOLDIR}/prowlarr/:/config

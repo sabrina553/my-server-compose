@@ -4,6 +4,9 @@ services:
     image: ${SOCKET_PROXY_IMAGE:-lscr.io/linuxserver/socket-proxy}:${SOCKET_PROXY_IMAGE_TAG:-latest}
     restart: unless-stopped
     read_only: true
+    logging:
+      options:
+        max-size: 10m
     environment:
       TZ: "${TZ}"
       LOG_LEVEL: "notice" # debug, info, notice, warning, err, crit, alert, emerg
@@ -39,6 +42,8 @@ services:
       - socket_proxy
     labels:
       - "traefik.enable=false"
+      - "deunhealth.restart.on.unhealthy=true"
+      - "com.centurylinklabs.watchtower.monitor-only=true"
     tmpfs:
       - "/run"
     volumes:

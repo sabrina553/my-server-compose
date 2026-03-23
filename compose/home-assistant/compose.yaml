@@ -10,12 +10,20 @@ services:
     logging:
       options:
         max-size: 10m
+    # secrets:
+    #   - homeassis_oidc_clientid
+    #   - homeassis_oidc_secret
+    # environment:
+    #   - oidc-clientid=file:///run/secrets/homeassis_oidc_clientid
+    #   - homeassis_oidc_secret=file:///run/secrets/homeassis_oidc_secret
     networks:
       - external
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.homeassistant.rule=Host(`ha.$DOMAINNAME`)"      
       - "traefik.http.services.homeassistant.loadbalancer.server.port=8123"
+      - "deunhealth.restart.on.unhealthy=true"
+      - "com.centurylinklabs.watchtower.monitor-only=true"
     volumes:
       - ${VOLDIR}/home-assistant:/config
       - /etc/localtime:/etc/localtime:ro
