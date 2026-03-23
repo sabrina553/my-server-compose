@@ -28,9 +28,12 @@ services:
       - "traefik.enable=true"       
       - "traefik.http.routers.freshrss.rule=Host(`rss.$DOMAINNAME`)"      
       - "traefik.http.services.freshrss.loadbalancer.server.port=80"
+      - "deunhealth.restart.on.unhealthy=true"
+      - "com.centurylinklabs.watchtower.monitor-only=true"
     volumes:
       - ${VOLDIR}/fresh-rss/data:/var/www/FreshRSS/data
       - ${VOLDIR}/fresh-rss/extensions:/var/www/FreshRSS/extensions
+      
     
     healthcheck:
       test: ["CMD", "cli/health.php"]

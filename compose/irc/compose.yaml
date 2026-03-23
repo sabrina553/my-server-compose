@@ -15,6 +15,8 @@ services:
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.irc.rule=Host(`irc.int.$DOMAINNAME`)"      
-      - "traefik.http.services.irc.loadbalancer.server.port=9000"      
+      - "traefik.http.services.irc.loadbalancer.server.port=9000" 
+      - "deunhealth.restart.on.unhealthy=true"
+      - "com.centurylinklabs.watchtower.monitor-only=true"     
     volumes:
       - ${VOLDIR}/irc/:/var/opt/thelounge # uses a named volume

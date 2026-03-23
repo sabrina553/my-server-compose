@@ -2,20 +2,31 @@ services:
   audiobookshelf:
     container_name: audiobookshelf
     image: ghcr.io/advplyr/audiobookshelf:latest
+    restart: unless-stopped
+    depends_on:
+      traefik:
+        condition: service_started
+        restart: false
+    logging:
+      options:
+        max-size: 10m
     environment:
       # Default
       TZ: "${TZ:-Europe/London}"
       PUID: "${PUID:-1000}"
       PGID: "${PGID:-1000}"
       UMASK: "000"
+    networks:
+      - external   
+      - internal 
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.audiobookshelf.rule=Host(`audiobookshelf.$DOMAINNAME`)"
+      - "traefik.http.services.audiobookshelf.loadbalancer.server.port=80"
+      - "deunhealth.restart.on.unhealthy=true"
+      - "com.centurylinklabs.watchtower.monitor-only=true"
     volumes:
       - ${DATADIR}/torrents:/audiobooks
       - ${VOLDIR}/abs/config:/config
       - ${VOLDIR}/abs/meta:/metadata
       #- </path/to/podcasts>:/podcasts
-    networks:
-      - external    
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.audiobookshelf.rule=Host(`audiobookshelf.$DOMAINNAME`)"
-      - "traefik.http.services.audiobookshelf.loadbalancer.server.port=80"

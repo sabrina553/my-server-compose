@@ -18,6 +18,8 @@ services:
       - "traefik.enable=true"       
       - "traefik.http.routers.couchserver.rule=Host(`couch.int.$DOMAINNAME`)"      
       - "traefik.http.services.couchserver.loadbalancer.server.port=5984"  
+      - "deunhealth.restart.on.unhealthy=true"
+      - "com.centurylinklabs.watchtower.monitor-only=true"
     volumes:
       - ${VOLDIR}/couch/dbdata:/opt/couchdb/data
       - ${VOLDIR}/couch/config:/opt/couchdb/etc
