@@ -4,8 +4,6 @@ services:
     container_name: immich_server
     image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
     restart: always
-    env_file:
-      - .env
     depends_on:
       redis:
         condition: service_started
@@ -18,8 +16,11 @@ services:
         restart: false
     logging:
       options:
-        max-size: 10m
-      
+        max-size: 10m     
+    env_file:
+      - .env
+    secrets:
+      - immich_pg_password
     networks:
       - external
       - internal
@@ -28,7 +29,6 @@ services:
       - "traefik.http.routers.immich.rule=Host(`photos.$DOMAINNAME`)"      
       - "traefik.http.services.immich.loadbalancer.server.port=2283"  
       - "deunhealth.restart.on.unhealthy=true"
-      - "com.centurylinklabs.watchtower.monitor-only=true"
     volumes:
       - ${UPLOAD_LOCATION}:/data
       - /etc/localtime:/etc/localtime:ro
@@ -48,7 +48,6 @@ services:
       - internal
     labels:
       - "deunhealth.restart.on.unhealthy=true"
-      - "com.centurylinklabs.watchtower.monitor-only=true"
     volumes:
       - ${VOLDIR}/immich/model-cache:/cache
     healthcheck:
@@ -64,7 +63,6 @@ services:
       - internal
     labels:
       - "deunhealth.restart.on.unhealthy=true"
-      - "com.centurylinklabs.watchtower.monitor-only=true"
     volumes:
       - ${VOLDIR}/immich/redis:/data
     healthcheck:
