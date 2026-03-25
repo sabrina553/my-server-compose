@@ -17,7 +17,8 @@ services:
         max-file: "3"    
     environment:
       DOCKER_HOST: "tcp://socket-proxy:2375"
-      DOZZLE_HOSTNAME: "${DOMAINNAME}"
+      #DOZZLE_HOSTNAME: "${DOMAINNAME}"
+      #DOZZLE_AUTH_PROVIDER: forward-proxy
     networks:
       - internal
       - socket_proxy
@@ -25,8 +26,9 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.dozzle.rule=Host(`dozzle.int.$DOMAINNAME`)"
       - "traefik.http.services.dozzle.loadbalancer.server.port=8080"
+      
       - "deunhealth.restart.on.unhealthy=true"
-      - "com.centurylinklabs.watchtower.monitor-only=true"
+
     healthcheck:
       interval: "30s"
       timeout: "5s"

@@ -37,7 +37,6 @@ services:
       - "traefik.http.routers.booklore.rule=Host(`booklore.$DOMAINNAME`)"      
       - "traefik.http.services.booklore.loadbalancer.server.port=6060"
       - "deunhealth.restart.on.unhealthy=true"
-      - "com.centurylinklabs.watchtower.monitor-only=true"
   
   mariadb:
     image: lscr.io/linuxserver/mariadb:11.4.5
@@ -61,4 +60,3 @@ services:
       - internal
     labels:      
       - "deunhealth.restart.on.unhealthy=true"
-      - "com.centurylinklabs.watchtower.monitor-only=true"
