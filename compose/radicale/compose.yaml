@@ -38,7 +38,6 @@ services:
       - "traefik.http.services.radicale.loadbalancer.server.port=5232"
       
       - "deunhealth.restart.on.unhealthy=true"
-      - "com.centurylinklabs.watchtower.monitor-only=true"
     volumes:
       - ${VOLDIR}/radicale:/data
       - ${VOLDIR}/radicale:/config

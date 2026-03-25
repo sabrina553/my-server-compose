@@ -11,10 +11,9 @@ services:
       options:
         max-size: 10m
     environment:
-      # Default
-      TZ: "${TZ:-Europe/London}"
-      PUID: "${PUID:-1000}"
-      PGID: "${PGID:-1000}"
+      TZ: "${TZ}"
+      PUID: "${PUID}"
+      PGID: "${PGID}"
       UMASK: "000"
     networks:
       - external   
@@ -24,7 +23,6 @@ services:
       - "traefik.http.routers.audiobookshelf.rule=Host(`audiobookshelf.$DOMAINNAME`)"
       - "traefik.http.services.audiobookshelf.loadbalancer.server.port=80"
       - "deunhealth.restart.on.unhealthy=true"
-      - "com.centurylinklabs.watchtower.monitor-only=true"
     volumes:
       - ${DATADIR}/torrents:/audiobooks
       - ${VOLDIR}/abs/config:/config

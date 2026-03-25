@@ -18,7 +18,6 @@ services:
       - "traefik.http.services.chaptarr.loadbalancer.server.port=8789"
       
       - "deunhealth.restart.on.unhealthy=true"
-      - "com.centurylinklabs.watchtower.monitor-only=true"
     volumes:
       - ${VOLDIR}/chaptarr:/config
       - ${DATADIR}/torrents/books:/ebooks

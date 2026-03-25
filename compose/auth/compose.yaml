@@ -1,7 +1,7 @@
 services:
   authentik:
     container_name: authentik-server
-    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2026.2.0}
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}
     command: server
     restart: unless-stopped
     depends_on:
@@ -27,12 +27,11 @@ services:
       - "traefik.enable=true"       
       - "traefik.http.routers.authentik.rule=Host(`auth.$DOMAINNAME`)"      
       - "traefik.http.services.authentik.loadbalancer.server.port=9000" 
-      - "deunhealth.restart.on.unhealthy=true"
-      - "com.centurylinklabs.watchtower.monitor-only=true"
+      - "deunhealth.restart.on.unhealthy=true"     
 
   authentik-worker:
     container_name: authentik-worker
-    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2026.2.0}
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}
     command: worker
     restart: unless-stopped
     depends_on:
@@ -40,7 +39,7 @@ services:
         condition: service_started
         restart: false
       socket-proxy:
-        condition: service_healthy
+        condition: service_healthy  
         restart: false
     logging:
       options:
@@ -56,4 +55,3 @@ services:
       - socket_proxy
     labels: 
       - "deunhealth.restart.on.unhealthy=true"
-      - "com.centurylinklabs.watchtower.monitor-only=true"
