@@ -43,7 +43,6 @@ services:
     labels:
       - "traefik.enable=false"
       - "deunhealth.restart.on.unhealthy=true"
-      - "com.centurylinklabs.watchtower.monitor-only=true"
     tmpfs:
       - "/run"
     volumes:

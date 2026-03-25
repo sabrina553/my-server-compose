@@ -10,9 +10,10 @@ services:
       - TZ=${TZ}
     labels:
       - "deunhealth.restart.on.unhealthy=true"
-      - "com.centurylinklabs.watchtower.monitor-only=true"  
     networks:
       - external
+    volumes:
+      - ${VOLDIR}/prowlarr/flaresolverr:/config
   
   prowlarr:
     container_name: prowlarr
@@ -32,6 +33,5 @@ services:
       - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.int.${DOMAINNAME}`)"      
       - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
       - "deunhealth.restart.on.unhealthy=true"
-      - "com.centurylinklabs.watchtower.monitor-only=true"   
     volumes:
       - ${VOLDIR}/prowlarr/:/config
