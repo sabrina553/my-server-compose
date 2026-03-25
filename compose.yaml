@@ -1,11 +1,10 @@
-# NOTE (OCTOBER 15, 2025): At this time, my Synology setup has not been updated to UDMS 2025/Deployrr standards. It still follows my old way of doing things. 
 
-########################### NETWORKS
-# You may customize the network subnets (192.168.x.0/24) below as you please.
+###########################NETWORKS###########################
 networks:
   socket_proxy:
     name: socket_proxy
     driver: bridge
+    internal: true
     ipam:
       config:
         - subnet: 172.21.0.0/24
@@ -42,6 +41,11 @@ secrets:
     file: $DOCKERDIR/secrets/authentik_secret_key
   authentik_pg_password:
     file: $DOCKERDIR/secrets/authentik_pg_password
+  ###########################################################  
+  booklore_db_password:
+    file: $DOCKERDIR/secrets/booklore_db_password
+  booklore_mdb_password:
+    file: $DOCKERDIR/secrets/booklore_mdb_password
   ###########################################################  
   freshrss_oidc_clientid:
     file: $DOCKERDIR/secrets/freshrss_oidc_clientid
@@ -85,25 +89,34 @@ secrets:
 
 # Docker Compose v2.20 or greater required to use "include"
 include:
-  ########################### SERVICES    
-    - compose/postgresql/compose.yaml
+  ###########################SERVICES###########################
     - compose/traefik/compose.yaml
     - compose/cloudflared/compose.yaml
     - compose/auth/compose.yaml
+
     - compose/socket-proxy/compose.yaml
+    - compose/postgresql/compose.yaml
+
     - compose/dozzle/compose.yaml
+    - compose/deunhealth/compose.yaml
+    - compose/watchtower/compose.yaml
     # #arrstack
     - compose/audiobookshelf/compose.yaml
-    - compose/booklore/compose.yaml
+    - compose/booklore/compose.yaml    
     - compose/chaptarr/compose.yaml
     - compose/prowlarr/compose.yaml
     - compose/qbittorrent/compose.yaml
+
     # # #apps
-    - compose/cloudreve/compose.yaml
+    #- compose/cloudreve/compose.yaml
+    #- compose/copyparty/compose.yaml
+    #- compose/filestash/compose.yaml
+    #- compose/filebrowser/compose.yaml
+    
     - compose/couch-db/compose.yaml
     - compose/fresh-rss/compose.yaml    
     - compose/home-assistant/compose.yaml
-    #- compose/immich2/compose.yaml    
+    - compose/immich/compose.yaml    
     - compose/irc/compose.yaml
     #- compose/leantime/compose.yaml
     #- compose/linkwarden/compose.yaml
