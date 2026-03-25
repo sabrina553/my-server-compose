@@ -10,8 +10,6 @@ services:
       - .env
     secrets:
       - postgres_password
-    environment:
-      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
     networks:
       - internal
     labels:
@@ -49,6 +47,5 @@ services:
       - "traefik.http.routers.pgadmin.rule=Host(`pg.int.$DOMAINNAME`)"      
       - "traefik.http.services.pgadmin.loadbalancer.server.port=80"
       - "deunhealth.restart.on.unhealthy=true"
-      - "com.centurylinklabs.watchtower.monitor-only=true"
     volumes:
       - .pgadmin:/var/lib/pgadmin
