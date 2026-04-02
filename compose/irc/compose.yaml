@@ -11,7 +11,7 @@ services:
       options:
         max-size: 10m
     networks: 
-      - internal
+      - external
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.irc.rule=Host(`irc.int.$DOMAINNAME`)"      
