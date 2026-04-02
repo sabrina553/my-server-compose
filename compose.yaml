@@ -84,6 +84,19 @@ secrets:
   ###########################################################
   vaultwarden_pg_url:
     file: $DOCKERDIR/secrets/vaultwarden_pg_url
+  vaultwarden_oidc_clientid:
+    file: $DOCKERDIR/secrets/vaultwarden_oidc_clientid
+  vaultwarden_oidc_clientsecret:
+    file: $DOCKERDIR/secrets/vaultwarden_oidc_clientsecret
+  vaultwarden_push_id:
+    file: $DOCKERDIR/secrets/vaultwarden_push_id
+  vaultwarden_push_key:
+    file: $DOCKERDIR/secrets/vaultwarden_push_key
+  vaultwarden_admin_token:
+    file: $DOCKERDIR/secrets/vaultwarden_admin_token
+  ############################################################
+  wireguard_private_key:
+    file: $DOCKERDIR/secrets/wireguard_private_key
 
 
 
@@ -93,8 +106,9 @@ include:
     - compose/traefik/compose.yaml
     - compose/cloudflared/compose.yaml
     - compose/auth/compose.yaml
-
+    - compose/vpn/compose.yaml
     - compose/socket-proxy/compose.yaml
+    
     - compose/postgresql/compose.yaml
 
     - compose/dozzle/compose.yaml
@@ -106,6 +120,8 @@ include:
     - compose/chaptarr/compose.yaml
     - compose/prowlarr/compose.yaml
     - compose/qbittorrent/compose.yaml
+    - compose/bookkeep/compose.yaml
+    #- compose/qui/compose.yaml
 
     # # #apps
     #- compose/cloudreve/compose.yaml
