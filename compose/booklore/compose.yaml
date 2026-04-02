@@ -1,21 +1,30 @@
 services:
   booklore:
-    image: booklore/booklore:latest    
+    image: grimmory/grimmory
     container_name: booklore
     restart: unless-stopped
+    depends_on:
+      traefik:
+        condition: service_started
+        restart: false
+      mariadb:
+        condition: service_started
+        restart: false
+    logging:
+      options:
+        max-size: 10m
     env_file: .env
     environment:
       # Default
-      - TZ    ="${TZ:-Europe/London}"
-      - PUID  ="${PUID:-1000}"
-      - PGID  = "${PGID:-1000}"
-      - UMASK = "000"
+      - TZ="${TZ}"
+      - PUID="${PUID}"
+      - PGID="${PGID}"
+      - UMASK="000"
       #image
       - DATABASE_URL=${DATABASE_URL}
       - DATABASE_USERNAME=${DB_USER}
       - DATABASE_PASSWORD=${DB_PASSWORD}
-      - BOOKLORE_PORT=6060
-      
+      - BOOKLORE_PORT=6060      
     volumes:
       - ${VOLDIR}/booklore/data:/app/data
       - ${DATADIR}/torrents/:/books
@@ -27,11 +36,15 @@ services:
       - "traefik.enable=true"       
       - "traefik.http.routers.booklore.rule=Host(`booklore.$DOMAINNAME`)"      
       - "traefik.http.services.booklore.loadbalancer.server.port=6060"
+      - "deunhealth.restart.on.unhealthy=true"
   
   mariadb:
     image: lscr.io/linuxserver/mariadb:11.4.5
     container_name: booklore-mariadb
     restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
     env_file: .env
     environment:
       - PUID=${DB_USER_ID}
@@ -45,9 +58,5 @@ services:
       - ${VOLDIR}/booklore/mariadb/:/config
     networks:
       - internal
-
-networks:
-  external:
-    external: true
-  internal: 
-    external: true
+    labels:      
+      - "deunhealth.restart.on.unhealthy=true"

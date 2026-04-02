@@ -2,37 +2,30 @@ services:
   chaptarr:
     container_name: chaptarr
     image: robertlordhood/chaptarr:develop
+    restart: unless-stopped
+    depends_on:
+      traefik:
+        condition: service_started
+        restart: false
+    logging:
+      options:
+        max-size: 10m
     env_file:
       - .env
-    volumes:
-      - ${VOLDIR}/chaptarr:/config
-      - ${DATADIR}/trorents/books:/ebooks
-      - ${DATADIR}/torrents/downloads:/downloads
-    restart: unless-stopped  
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}    
+
     networks:
+      - external
       - internal
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.chaptarr.rule=Host(`chaptarr.int.$DOMAINNAME`)"      
-      - "traefik.http.services.chaptarr.loadbalancer.server.port=8789"      
-
-networks:
-  internal:
-    external: true
-
-
-
-
-
-
-
-
-
-  # unpackerr:
-  #   image: golift/unpackerr
-  #   container_name: unpackerr
-  #   volumes:
-  #     - ${TORRENT_DIRECTORY}/downloads:/downloads
-  #   restart: always
-  #   env_file:
-  #     - .env
+      - "traefik.http.routers.chaptarr.rule=Host(`chaptarr.${DOMAINNAME}`)"      
+      - "traefik.http.services.chaptarr.loadbalancer.server.port=8789"
+      
+      - "deunhealth.restart.on.unhealthy=true"
+    volumes:
+      - ${VOLDIR}/chaptarr:/config
+      - ${DATADIR}/torrents/books:/ebooks
+      - ${DATADIR}/torrents/downloads:/downloads

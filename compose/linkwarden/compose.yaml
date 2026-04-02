@@ -3,44 +3,22 @@ services:
     container_name: linkwarden
     image: ghcr.io/linkwarden/linkwarden:latest # comment to build from source
     restart: always
-    depends_on:
-      - postgres
-      - meilisearch
+    secrets:
+      - smtp_password
+      - linkwarden_nextauth_secret
+      - linkwarden_oidc_clientid
+      - linkwarden_oidc_secret
+      - linkwarden_pg_password
     env_file: 
       - .env
     environment:
-      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/postgres
+      - DATABASE_URL=postgresql://${DATABASE_NAME}:${DATABASE_PASSWORD_FILE}@${DATABASE_SERVER}:${DATABASE_PORT}/${DATABASE_NAME}
     volumes:
-      - ${STORAGE_FOLDER}/data:/data/data
+      - ${VOLDIR}/linkwarden:/data/data
     networks: 
-      - local
+      - internal
       - external
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.linkwarden.rule=Host(`bookmark.$DOMAINNAME`)"      
       - "traefik.http.services.linkwarden.loadbalancer.server.port=3000"      
-  postgres:
-    image: postgres:16-alpine
-    container_name: linkwarden-postgres
-    env_file: .env
-    restart: always
-    volumes:
-      - ${STORAGE_FOLDER}/pgdata:/var/lib/postgresql/data
-    networks: 
-      - local
-  meilisearch:
-    image: getmeili/meilisearch:v1.12.8
-    container_name: linkwarden-meilisearch
-    restart: always
-    env_file:
-      - .env
-    volumes:
-      - ${STORAGE_FOLDER}/meili_data:/meili_data
-    networks: 
-      - local
-
-networks:
-  external:
-    external: true
-  local:
-

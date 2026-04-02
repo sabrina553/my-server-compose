@@ -16,7 +16,7 @@ services:
       - internal
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.cloudreve.rule=Host(`files.int.$DOMAINNAME`)"      
+      - "traefik.http.routers.cloudreve.rule=Host(`files.int.${DOMAINNAME}`)"      
       - "traefik.http.services.cloudreve.loadbalancer.server.port=5212"   
 
   postgresql:
@@ -24,11 +24,11 @@ services:
     # NOTE: For major version jumps:
     # backup & consult https://www.postgresql.org/docs/current/pgupgrade.html 
     image: postgres:17    
-    container_name: cloudrevepostgresql
+    container_name: cloudreve-postgresql
     restart: unless-stopped
     env_file: .env
     volumes:
-      - ${VOLDIR}/database_postgres:/var/lib/postgresql/data
+      - ${VOLDIR}/cloudreve/database_postgres:/var/lib/postgresql/data
     networks:
       - internal
 
@@ -38,15 +38,6 @@ services:
     restart: unless-stopped
     env_file: .env
     volumes:
-      - ${VOLDIR}/redis_data:/data
+      - ${VOLDIR}/cloudreve/redis_data:/data
     networks:
       - internal
-
-#volumes:
-#  backend_data:
-#  database_postgres:
-#  redis_data:
-
-networks:
-  internal:
-    external: true
