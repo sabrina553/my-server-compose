@@ -10,11 +10,18 @@ services:
     logging:
       options:
         max-size: 10m
+    env_file:
+      - .env
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}    
+
     networks:
       - external
+      - internal
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.chaptarr.rule=Host(`chaptarr.int.${DOMAINNAME}`)"      
+      - "traefik.http.routers.chaptarr.rule=Host(`chaptarr.${DOMAINNAME}`)"      
       - "traefik.http.services.chaptarr.loadbalancer.server.port=8789"
       
       - "deunhealth.restart.on.unhealthy=true"
