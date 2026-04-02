@@ -1,0 +1,26 @@
+services:
+  deunhealth:
+    container_name: deunhealth
+    image: ${DEUNHEALTH_IMAGE:-qmcgaw/deunhealth}:${DEUNHEALTH_IMAGE_TAG:-latest}
+    #profiles: ["${DEUNHEALTH_PROFILE:-infrastructure}"]
+    restart: unless-stopped
+    depends_on:
+      socket-proxy:
+        condition: service_healthy
+        restart: false
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+    environment:
+      TZ: ${TZ}
+      DOCKER_HOST: "tcp://socket-proxy:2375"
+      LOG_LEVEL: "info"
+    networks:
+      - internal
+      - socket_proxy
+    labels:
+      - "deunhealth.restart.on.unhealthy=false"
+      - "com.centurylinklabs.watchtower.monitor-only=true"
+      - "traefik.enable=false"

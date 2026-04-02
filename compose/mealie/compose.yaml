@@ -1,21 +1,32 @@
 services:
   mealie:
-    image: ghcr.io/mealie-recipes/mealie:v3.11.0
     container_name: mealie
+    image: ghcr.io/mealie-recipes/mealie
     restart: always
-    volumes:
-      - ${VOLDIR}/mealie/:/app/data/
-    env_file: .env
+    depends_on:
+      traefik:
+        condition: service_started
+        restart: false
+      postgres:
+        condition: service_started
+        restart: false
+    logging:
+      options:
+        max-size: 10m
+    env_file: 
+      - .env
+    secrets:
+      - smtp_password
+      - mealie_oidc_clientid
+      - mealie_oidc_secret
+      - mealie_pg_password
     networks:
       - external
+      - internal
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.mealie.rule=Host(`mealie.$DOMAINNAME`)"      
       - "traefik.http.services.mealie.loadbalancer.server.port=9000"
-      
-volumes:
-  mealie-data: null
-
-networks:
-  external:
-    external: true
+      - "deunhealth.restart.on.unhealthy=true"
+    volumes:
+      - ${VOLDIR}/mealie/:/app/data/

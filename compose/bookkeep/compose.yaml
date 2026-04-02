@@ -1,0 +1,24 @@
+services:
+  bookkeep:
+    container_name: bookkeep
+    image: akiraslingshot/bookkeep
+    restart: unless-stopped
+    networks:
+      - external
+      - internal
+    env_file:
+      - .env
+    environment:
+      HARDCOVER_API_TOKEN: ${HARDCOVER_API_TOKEN}
+      REDIS_URL: redis://redis:6379/0
+      
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bookkeep-https.rule=Host(`bookkeep.$DOMAINNAME`)"
+      - "traefik.http.services.bookkeep.loadbalancer.server.port=8000"
+      
+      - "deunhealth.restart.on.unhealthy=true"
+    volumes:      
+      - ${DATADIR}/torrents/books:/ebooks
+      - ${DATADIR}/torrents/downloads:/downloads   
+    

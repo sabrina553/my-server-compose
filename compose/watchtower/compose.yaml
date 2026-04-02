@@ -1,0 +1,40 @@
+services:
+  watchtower: # https://containrrr.dev/watchtower/usage-overview/
+    container_name: watchtower
+    image: ${WATCHTOWER_IMAGE:-nickfedor/watchtower}:${WATCHTOWER_IMAGE_TAG:-latest}
+    #profiles: ["${WATCHTOWER_PROFILE:-infrastructure}"]
+    restart: unless-stopped
+    networks:
+      - external
+      - internal
+      - socket_proxy
+    depends_on:
+      socket-proxy:
+        condition: service_started
+        restart: true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+    environment:
+      # Default
+      TZ: "${TZ}"
+      # Docker
+      DOCKER_HOST: "tcp://socket-proxy:2375"
+      # Image
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_HTTP_API_METRICS: "true"
+      WATCHTOWER_HTTP_API_TOKEN: "${WATCHTOWER_HTTP_API_TOKEN:-RaNdOm_StRiNg}"
+      WATCHTOWER_INCLUDE_STOPPED: "true"
+      WATCHTOWER_LABEL_TAKE_PRECEDENCE: "true"
+      WATCHTOWER_NO_RESTART: "true" # https://github.com/nicholas-fedor/watchtower/issues/1413
+      WATCHTOWER_POLL_INTERVAL: "3600"
+      WATCHTOWER_REMOVE_VOLUMES: "true"
+      WATCHTOWER_TIMEOUT: "${WATCHTOWER_TIMEOUT:-30s}"
+    # volumes:
+    #   - "<PATH_TO_HOME_DIR>/.docker/config.json:/config.json"
+    labels:
+      - "com.centurylinklabs.watchtower.monitor-only=true"
+      - "deunhealth.restart.on.unhealthy=true"
+      - "traefik.enable=false"

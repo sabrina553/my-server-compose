@@ -3,12 +3,14 @@ services:
     container_name: cloudflared
     image: cloudflare/cloudflared
     restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
     command: tunnel run
+    secrets:
+      - cf_tunnel_token
     networks:
       - external
     environment:
-      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
-networks:
-  external:
-    name: external
-    external: true
+      - TUNNEL_TOKEN_FILE=/run/secrets/cf_tunnel_token 
+      - "deunhealth.restart.on.unhealthy=true"

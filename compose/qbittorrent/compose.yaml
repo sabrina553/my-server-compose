@@ -1,25 +1,27 @@
 services:
   qbittorrent:
-    image: lscr.io/linuxserver/qbittorrent:latest
     container_name: qbittorrent
+    image: lscr.io/linuxserver/qbittorrent:latest
     restart: unless-stopped
+    depends_on:
+      traefik:
+        condition: service_started
+        restart: false
+    logging:
+      options:
+        max-size: 10m
     environment:
       - WEBUI_PORT=8080
       - TORRENTING_PORT=52525
-    volumes:
-      - $VOLDIR/qbittorrent:/config
-      - $DATADIR/torrents/downloads:/downloads #optional
-    # ports:
-    #   - 11030:8080
-    #   - 52525:52525
-    #   - 52525:52525/udp
+    ports:
+      - 52525:52525
+      - 52525:52525/udp
     networks:
-      - internal
+      - external
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.qbittorrent.rule=Host(`q.int.$DOMAINNAME`)"      
-      - "traefik.http.services.qbittorrent.loadbalancer.server.port=8080"      
-
-networks:
-  internal:
-    external: true
+      - "traefik.http.services.qbittorrent.loadbalancer.server.port=8080"  
+    volumes:
+      - $VOLDIR/qbittorrent:/config
+      - $DATADIR/torrents/downloads:/downloads

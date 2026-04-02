@@ -3,8 +3,9 @@
 
 services:
   radicale:
-    image: tomsquest/docker-radicale
     container_name: radicale
+    image: tomsquest/docker-radicale
+    restart: unless-stopped
     init: true
     read_only: true
     security_opt:
@@ -21,23 +22,26 @@ services:
         limits:
           memory: 256M
           pids: 50
-    restart: unless-stopped
-    env_file: .env
-    volumes:
-      - ${VOLDIR}/radicale:/data
-      - ${VOLDIR}/:/config
+    depends_on:
+      traefik:
+        condition: service_started
+        restart: false
+    logging:
+      options:
+        max-size: 10m
+
     networks:
       - internal
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.radicale.rule=Host(`radi.int.$DOMAINNAME`)"      
       - "traefik.http.services.radicale.loadbalancer.server.port=5232"
+      
+      - "deunhealth.restart.on.unhealthy=true"
+    volumes:
+      - ${VOLDIR}/radicale:/data
+      - ${VOLDIR}/radicale:/config
     healthcheck:
       test: curl -f http://127.0.0.1:5232 || exit 1
       interval: 30s
       retries: 3
-
-
-networks:
-  internal:
-    external: true
