@@ -17,6 +17,9 @@ services:
       TZ: ${TZ}
       DOCKER_HOST: "tcp://socket-proxy:2375"
       LOG_LEVEL: "info"
+    networks:
+      - internal
+      - socket_proxy
     labels:
       - "deunhealth.restart.on.unhealthy=false"
       - "com.centurylinklabs.watchtower.monitor-only=true"
