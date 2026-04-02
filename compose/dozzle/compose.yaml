@@ -1,0 +1,37 @@
+services:
+  dozzle:
+    container_name: dozzle
+    image: ${DOZZLE_IMAGE:-amir20/dozzle}:${DOZZLE_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      socket-proxy:
+        condition: service_healthy
+        restart: false
+      traefik:
+        condition: service_started
+        restart: false
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"    
+    environment:
+      DOCKER_HOST: "tcp://socket-proxy:2375"
+      #DOZZLE_HOSTNAME: "${DOMAINNAME}"
+      #DOZZLE_AUTH_PROVIDER: forward-proxy
+    networks:
+      - internal
+      - socket_proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dozzle.rule=Host(`dozzle.int.$DOMAINNAME`)"
+      - "traefik.http.services.dozzle.loadbalancer.server.port=8080"
+      
+      - "deunhealth.restart.on.unhealthy=true"
+
+    healthcheck:
+      interval: "30s"
+      timeout: "5s"
+      retries: 3
+      start_period: "10s"
+      test: ["CMD", "/dozzle", "healthcheck"]

@@ -1,89 +1,57 @@
 services:
-  postgresql:
-    container_name: authentik-postgresql
-    networks:
-      - internal
-    env_file:
-      - .env
-    environment:
-      POSTGRES_DB: ${PG_DB:-authentik}
-      POSTGRES_PASSWORD: ${PG_PASS:?database password required}
-      POSTGRES_USER: ${PG_USER:-authentik}
-    healthcheck:
-      interval: 30s
-      retries: 5
-      start_period: 20s
-      test:
-        - CMD-SHELL
-        - pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}
-      timeout: 5s
-    image: docker.io/library/postgres:16-alpine
-    restart: unless-stopped
-    volumes:
-      - ${VOLDIR}/database:/var/lib/postgresql/data
   authentik:
     container_name: authentik-server
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:2026.2
     command: server
+    restart: unless-stopped
     depends_on:
-      postgresql:
-        condition: service_healthy
+      traefik:
+        condition: service_started
+        restart: false
+      authentik-worker:
+        condition: service_started
+        restart: false
+    logging:
+      options:
+        max-size: 10m                
     env_file:
       - .env
-    environment:
-      AUTHENTIK_POSTGRESQL__HOST: postgresql
-      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
-      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
-      AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
-      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?secret key required}
-    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2026.2.0}
+    secrets:
+      - authentik_secret_key
+      - authentik_pg_password
+      - smtp_password
     networks:
       - internal
       - external
-    #ports:
-    #  - 11060:9000
-    #  - 11061:9443
-    restart: unless-stopped
-    volumes:
-      - ${VOLDIR}/data:/data
-      - ${VOLDIR}/templates:/templates
-
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.authentik.rule=Host(`auth.$DOMAINNAME`)"      
-      - "traefik.http.services.authentik.loadbalancer.server.port=9000"   
+      - "traefik.http.services.authentik.loadbalancer.server.port=9000" 
+      - "deunhealth.restart.on.unhealthy=true"     
 
-  worker:
+  authentik-worker:
     container_name: authentik-worker
-    networks:
-      - internal
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:2026.2
     command: worker
+    restart: unless-stopped
     depends_on:
-      postgresql:
-        condition: service_healthy
+      postgres:
+        condition: service_started
+        restart: false
+      socket-proxy:
+        condition: service_healthy  
+        restart: false
+    logging:
+      options:
+        max-size: 10m    
     env_file:
       - .env
-    environment:
-      AUTHENTIK_POSTGRESQL__HOST: postgresql
-      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
-      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
-      AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
-      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?secret key required}
-    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2026.2.0}
-    restart: unless-stopped
-    user: root
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ${VOLDIR}/data:/data
-      - ${VOLDIR}/certs:/certs
-      - ${VOLDIR}/templates:/templates
-volumes:
-  database:
-    driver: local
-
-networks:
-  internal:
-    name: internal
-    external: true
-  external:
-    name: external
-    external: true
+    secrets:
+      - authentik_secret_key
+      - authentik_pg_password
+      - smtp_password
+    networks:
+      - internal
+      - socket_proxy
+    labels: 
+      - "deunhealth.restart.on.unhealthy=true"

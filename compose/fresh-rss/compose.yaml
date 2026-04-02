@@ -1,28 +1,36 @@
 services:
   freshrss:
-    image: freshrss/freshrss:latest
     container_name: freshrss
-    hostname: freshrss
+    image: freshrss/freshrss:latest
     restart: unless-stopped
-    networks:
-     - external
+    depends_on:
+      traefik:
+        condition: service_started
+        restart: false
+      postgres:
+        condition: service_started
+        restart: false
     logging:
       options:
         max-size: 10m
-    #ports:
-    # - 11007:80
-    volumes:
-      - ${VOLDIR}/fresh-rss/data:/var/www/FreshRSS/data
-      - ${VOLDIR}/fresh-rss/extensions:/var/www/FreshRSS/extensions
     env_file:
       - .env
-
+    secrets:
+      - freshrss_oidc_clientid
+      - freshrss_oidc_secret
+      - freshrss_pg_password
+    networks:
+     - external
+     - internal
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.freshrss.rule=Host(`rss.$DOMAINNAME`)"      
-      - "traefik.http.services.freshrss.loadbalancer.server.port=80"  
-    
-      # # Optional healthcheck section:
+      - "traefik.http.services.freshrss.loadbalancer.server.port=80"
+      - "deunhealth.restart.on.unhealthy=true"
+    volumes:
+      - ${VOLDIR}/fresh-rss/data:/var/www/FreshRSS/data
+      - ${VOLDIR}/fresh-rss/extensions:/var/www/FreshRSS/extensions
+        
     healthcheck:
       test: ["CMD", "cli/health.php"]
       timeout: 10s
@@ -30,11 +38,3 @@ services:
       start_interval: 11s
       interval: 75s
       retries: 3
-
-networks:
-  external:
-    external: true
-    
-volumes:
-  data: null
-  extensions: null
