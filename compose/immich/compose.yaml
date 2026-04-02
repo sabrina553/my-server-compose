@@ -32,6 +32,8 @@ services:
     volumes:
       - ${UPLOAD_LOCATION}:/data
       - /etc/localtime:/etc/localtime:ro
+    devices:
+      - "/dev/dri:/dev/dri" 
     healthcheck:
       disable: false
 
@@ -53,7 +55,7 @@ services:
     healthcheck:
       disable: false
   redis:
-    container_name: immich_redis
+    container_name: redis
     image: docker.io/valkey/valkey:8-bookworm@sha256:a137a2b60aca1a75130022d6bb96af423fefae4eb55faf395732db3544803280
     restart: always
     logging:
