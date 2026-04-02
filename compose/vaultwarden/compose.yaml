@@ -17,6 +17,11 @@ services:
       - .env
     secrets:
       - vaultwarden_pg_url
+      - vaultwarden_oidc_clientid
+      - vaultwarden_oidc_clientsecret
+      - vaultwarden_admin_token
+      - vaultwarden_push_id
+      - vaultwarden_push_key
       - smtp_password
     networks:
       - external
@@ -28,4 +33,4 @@ services:
       
       - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - ${VOLDIR}/vaultwarden/:/data/    
+      - ${VOLDIR}/vaultwarden/:/data/
