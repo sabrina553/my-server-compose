@@ -1,7 +1,7 @@
 services:
   authentik:
     container_name: authentik-server
-    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:2026.2
     command: server
     restart: unless-stopped
     depends_on:
@@ -31,7 +31,7 @@ services:
 
   authentik-worker:
     container_name: authentik-worker
-    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:2026.2
     command: worker
     restart: unless-stopped
     depends_on:
