@@ -1,7 +1,7 @@
 services:
   watchtower: # https://containrrr.dev/watchtower/usage-overview/
     container_name: watchtower
-    image: ${WATCHTOWER_IMAGE:-nickfedor/watchtower}:${WATCHTOWER_IMAGE_TAG:-latest}
+    image: ${WATCHTOWER__IMAGE}:${WATCHTOWER__VERSION}
     #profiles: ["${WATCHTOWER_PROFILE:-infrastructure}"]
     restart: unless-stopped
     networks:
@@ -18,11 +18,8 @@ services:
         max-size: "1m"
         max-file: "3"
     environment:
-      # Default
       TZ: "${TZ}"
-      # Docker
-      DOCKER_HOST: "${DOCKER_HOST:-unix:///var/run/docker.sock}"
-      # Image
+      DOCKER_HOST: "${DOCKER_HOST}"
       WATCHTOWER_CLEANUP: "true"
       WATCHTOWER_INCLUDE_STOPPED: "true"
       WATCHTOWER_LABEL_TAKE_PRECEDENCE: "true"

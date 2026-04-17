@@ -1,7 +1,7 @@
 services:   
   mousehole:
     container_name: mousehole
-    image: tmmrtn/mousehole:latest
+    image: ${MOUSEHOLE__IMAGE}:${MOUSEHOLE__VERSION}
     restart: unless-stopped
     depends_on:
       traefik:

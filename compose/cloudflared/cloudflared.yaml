@@ -1,16 +1,20 @@
 services:
   tunnel:
     container_name: cloudflared
-    image: cloudflare/cloudflared
+    image: ${CLOUDFLARED__IMAGE}:${CLOUDFLARED__VERSION}
     restart: unless-stopped
     logging:
+      driver: "json-file"
       options:
-        max-size: 10m
+        max-size: "1m"
+        max-file: "3"
     command: tunnel run
     secrets:
       - cf_tunnel_token
     networks:
       - external
     environment:
-      - TUNNEL_TOKEN_FILE=/run/secrets/cf_tunnel_token 
+      - TUNNEL_TOKEN_FILE=${CLOUDFLARED__TUNNEL_TOKEN_FILE}
+    labels:
+      - "traefik.enable=false"
       - "deunhealth.restart.on.unhealthy=true"
