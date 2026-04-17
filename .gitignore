@@ -18,3 +18,5 @@ compose/filebrowser/*
 compose/filestash/*
 
 compose/immich/bup*
+template.compose2.yaml
+compose/vpn/config.toml
