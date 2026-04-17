@@ -14,7 +14,7 @@ services:
       - internal
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.couchserver.rule=Host(`couch.int.$DOMAINNAME`)"      
+      - "traefik.http.routers.couchserver.rule=Host(`couch.$DOMAINNAME`)"      
       - "traefik.http.services.couchserver.loadbalancer.server.port=5984"  
       - "deunhealth.restart.on.unhealthy=true"
     volumes:
