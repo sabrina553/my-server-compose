@@ -1,0 +1,30 @@
+services:
+  pgadmin:
+    container_name: postgres-web
+    image: dpage/pgadmin4
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_started
+        restart: false
+      traefik:
+        condition: service_started
+        restart: false
+    logging:
+      options:
+        max-size: 10m
+    user: '0:0' ###ermmmm
+    environment:
+      - TZ=${TZ}
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN__DEFAULT_PASSWORD}
+      - PGADMIN_CONFIG_SERVER_MODE="False"
+    networks:
+      - internal
+    labels:
+      - "traefik.enable=true"       
+      - "traefik.http.routers.pgadmin.rule=Host(`pg.int.$DOMAINNAME`)"      
+      - "traefik.http.services.pgadmin.loadbalancer.server.port=80"
+      - "deunhealth.restart.on.unhealthy=true"
+    volumes:
+      - ${VOLDIR}/pgadmin:/var/lib/pgadmin
