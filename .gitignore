@@ -1,9 +1,7 @@
-#hide secrets
 secrets/*
-
 #temporarily hide environment files
 .env
-acme.json
+.json
 template.compose.yaml
 compose/caddy/*
 database
