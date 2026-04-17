@@ -8,6 +8,7 @@ services:
         max-size: 10m
     environment:
       - TZ=${TZ}
+      - PROXY_URL="http://vpn:8888"
     labels:
       - "deunhealth.restart.on.unhealthy=true"
     networks:
