@@ -22,5 +22,5 @@ services:
       - socket_proxy
     labels:
       - "deunhealth.restart.on.unhealthy=false"
-      - "com.centurylinklabs.watchtower.monitor-only=true"
+      #- "com.centurylinklabs.watchtower.monitor-only=true"
       - "traefik.enable=false"
