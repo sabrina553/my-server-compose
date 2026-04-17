@@ -2,9 +2,6 @@
 *.json
 secrets/*
 
-compose/traefik/config/*
-compose/postgresql/.pgadmin
-
 compose/copyparty/*
 compose/filebrowser/*
 compose/filestash/*
