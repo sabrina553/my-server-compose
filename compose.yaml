@@ -97,10 +97,11 @@ secrets:
   ############################################################
   wireguard_private_key:
     file: $DOCKERDIR/secrets/wireguard_private_key
+  wireguard_preshared_key:
+    file: $DOCKERDIR/secrets/wireguard_preshared_key
+  wireguard_addresses: 
+    file: $DOCKERDIR/secrets/wireguard_addresses
 
-
-
-# Docker Compose v2.20 or greater required to use "include"
 include:
   ###########################SERVICES###########################
     - compose/traefik/compose.yaml
@@ -120,7 +121,7 @@ include:
     - compose/chaptarr/compose.yaml
     - compose/prowlarr/compose.yaml
     - compose/qbittorrent/compose.yaml
-    - compose/bookkeep/compose.yaml
+    #- compose/bookkeep/compose.yaml
     #- compose/qui/compose.yaml
 
     # # #apps
@@ -139,6 +140,7 @@ include:
     - compose/mealie/compose.yaml
     - compose/radicale/compose.yaml
     - compose/vaultwarden/compose.yaml
+    - compose/mousehole/compose.yaml
 
 
 
