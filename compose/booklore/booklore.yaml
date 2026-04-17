@@ -1,6 +1,6 @@
 services:
   booklore:
-    image: grimmory/grimmory
+    image: ${BOOKLORE__IMAGE}:${BOOKLORE__VERSION}
     container_name: booklore
     restart: unless-stopped
     depends_on:
@@ -11,20 +11,19 @@ services:
         condition: service_started
         restart: false
     logging:
+      driver: "json-file"
       options:
-        max-size: 10m
-    env_file: .env
+        max-size: "1m"
+        max-file: "3"
     environment:
-      # Default
+      - UMASK="000"
       - TZ="${TZ}"
       - PUID="${PUID}"
-      - PGID="${PGID}"
-      - UMASK="000"
-      #image
-      - DATABASE_URL=${DATABASE_URL}
-      - DATABASE_USERNAME=${DB_USER}
-      - DATABASE_PASSWORD=${DB_PASSWORD}
-      - BOOKLORE_PORT=6060      
+      - PGID="${PGID}"      
+      - DATABASE_URL=${BOOKLORE__DB_URL}
+      - DATABASE_USERNAME=${BOOKLORE__DB_USER}
+      - DATABASE_PASSWORD=${BOOKLORE__DB_PASSWORD}
+      - BOOKLORE_PORT=${BOOKLORE__PORT}   
     volumes:
       - ${VOLDIR}/booklore/data:/app/data
       - ${DATADIR}/torrents/:/books
@@ -35,25 +34,26 @@ services:
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.booklore.rule=Host(`booklore.$DOMAINNAME`)"      
-      - "traefik.http.services.booklore.loadbalancer.server.port=6060"
+      - "traefik.http.services.booklore.loadbalancer.server.port=${BOOKLORE__PORT}"
       - "deunhealth.restart.on.unhealthy=true"
   
   mariadb:
-    image: lscr.io/linuxserver/mariadb:11.4.5
     container_name: booklore-mariadb
+    image: ${MARIADB__IMAGE}:${MARIADB__VERSION}
     restart: unless-stopped
     logging:
+      driver: "json-file"
       options:
-        max-size: 10m
-    env_file: .env
+        max-size: "1m"
+        max-file: "3"
     environment:
-      - PUID=${DB_USER_ID}
-      - PGID=${DB_GROUP_ID}
+      - PUID=${PUID}
+      - PGID=${PGID}
       - TZ=${TZ}
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MYSQL_USER=${DB_USER}
-      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_USER=${BOOKLORE__DB_USER}
+      - MYSQL_DATABASE=${BOOKLORE__DB_NAME}
+      - MYSQL_PASSWORD=${BOOKLORE__DB_PASSWORD}      
+      - MYSQL_ROOT_PASSWORD=${BOOKLORE__ROOT_PASSWORD}   
     volumes:
       - ${VOLDIR}/booklore/mariadb/:/config
     networks:

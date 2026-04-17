@@ -1,7 +1,7 @@
 services:
   deunhealth:
     container_name: deunhealth
-    image: ${DEUNHEALTH_IMAGE:-qmcgaw/deunhealth}:${DEUNHEALTH_IMAGE_TAG:-latest}
+    image: ${DEUNHEALTH__IMAGE}:${DEUNHEALTH__VERSION}
     #profiles: ["${DEUNHEALTH_PROFILE:-infrastructure}"]
     restart: unless-stopped
     depends_on:
@@ -15,12 +15,11 @@ services:
         max-file: "3"
     environment:
       TZ: ${TZ}
-      DOCKER_HOST: "tcp://socket-proxy:2375"
-      LOG_LEVEL: "info"
+      DOCKER_HOST: ${DOCKER_HOST}
+      LOG_LEVEL: ${LOG_LEVEL}
     networks:
       - internal
       - socket_proxy
     labels:
       - "deunhealth.restart.on.unhealthy=false"
-      #- "com.centurylinklabs.watchtower.monitor-only=true"
       - "traefik.enable=false"
