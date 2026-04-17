@@ -1,0 +1,46 @@
+services:
+  vpn:
+    container_name: vpn
+    image: ${VPN_IMAGE:-qmcgaw/gluetun}:${VPN_IMAGE_TAG:-latest}
+    #profiles: ["${VPN_PROFILE:-network}"]
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+    cap_add:
+      - "NET_ADMIN"
+    cpu_shares: 2048  # Ensure this always gets what is needed
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0
+    secrets:
+      - wireguard_private_key
+      - wireguard_preshared_key
+      - wireguard_addresses
+    environment:
+      # Default
+      - TZ=${TZ}
+      - PUID=${PUID}
+      - PGID=${PGID}
+      # Image
+      - WIREGUARD_PRIVATE_KEY_FILE=/run/secrets/wireguard_private_key
+      - WIREGUARD_PRESHARED_KEY_FILE=/run/secrets/wireguard_preshared_key
+      - WIREGUARD_ADDRESSES_FILE=/run/secrets/wireguard_addresses   
+      - VPN_SERVICE_PROVIDER="${VPN_SERVICE_PROVIDER}"
+      - VPN_TYPE="${VPN_TYPE}" 
+      - SERVER_COUNTRIES="${SERVER_COUNTRIES}"
+      - FIREWALL_VPN_INPUT_PORTS="${FIREWALL_VPN_INPUT_PORTS}"
+      - FIREWALL_OUTBOUND_SUBNETS="${EXTERNAL_SUBNETS}" #? not sure if this is needed, but it doesn't hurt to be explicit about it  
+      - HTTPPROXY="on"
+    ports:
+      - 8080:8080 # qbittorrent webui      
+      - 38534:38534 # qbittorrent
+      - 8888:8888 # HTTP proxy
+    networks:
+      - external
+      - internal
+    volumes:
+      - "/etc/localtime:/etc/localtime:ro"
+    devices:
+      - "/dev/net/tun:/dev/net/tun"
