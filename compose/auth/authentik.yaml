@@ -12,8 +12,10 @@ services:
         condition: service_started
         restart: false
     logging:
+      driver: "json-file"
       options:
-        max-size: 10m                
+        max-size: "1m"
+        max-file: "3"            
     env_file:
       - .env
     secrets:
@@ -42,14 +44,18 @@ services:
         condition: service_healthy  
         restart: false
     logging:
+      driver: "json-file"
       options:
-        max-size: 10m    
+        max-size: "1m"
+        max-file: "3"    
     env_file:
       - .env
     secrets:
       - authentik_secret_key
       - authentik_pg_password
       - smtp_password
+    environment:
+      - name=value
     networks:
       - internal
       - socket_proxy

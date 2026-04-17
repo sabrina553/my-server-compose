@@ -1,15 +1,17 @@
 services:
   irc:
     container_name: thelounge
-    image: ghcr.io/thelounge/thelounge:latest
+    image: ${IRC__IMAGE}:${IRC__VERSION}
     restart: always
     depends_on:
       traefik:
         condition: service_started
         restart: false
     logging:
+      driver: "json-file"
       options:
-        max-size: 10m
+        max-size: "1m"
+        max-file: "3"
     networks: 
       - external
     labels:
@@ -18,4 +20,4 @@ services:
       - "traefik.http.services.irc.loadbalancer.server.port=9000" 
       - "deunhealth.restart.on.unhealthy=true" 
     volumes:
-      - ${VOLDIR}/irc/:/var/opt/thelounge # uses a named volume
+      - ${VOLDIR}/irc/:/var/opt/thelounge
