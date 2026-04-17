@@ -8,46 +8,26 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
-    env_file:
-      - .env
     secrets:
       - postgres_password
+    environment:
+      - TZ=${TZ}
+      - POSTGRES_USER=${POSTGRESQL__USER}
+      - POSTGRES_PASSWORD_FILE=${POSTGRESQL__PASSWORD_FILE}
+      - POSTGRES_DB=${POSTGRESQL__DB_NAME}
+      - POSTGRES_INITDB_ARGS=${POSTGRESQL__INITDB_ARGS}
+      - POSTGRES_PORT=${POSTGRESQL__PORT}
+
     networks:
       - internal
     labels:
       - "deunhealth.restart.on.unhealthy=true"
       - "com.centurylinklabs.watchtower.monitor-only=true"
     volumes:
-      - ${VOLDIR}/postgres:/var/lib/postgresql #data? 
+      - ${VOLDIR}/postgres:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  pgadmin:
-    container_name: postgres-web
-    image: dpage/pgadmin4
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_started
-        restart: false
-      traefik:
-        condition: service_started
-        restart: false
-    logging:
-      options:
-        max-size: 10m
-    user: '0:0' ###ermmmm
-    env_file:
-      - .env
-    networks:
-      - internal
-    labels:
-      - "traefik.enable=true"       
-      - "traefik.http.routers.pgadmin.rule=Host(`pg.int.$DOMAINNAME`)"      
-      - "traefik.http.services.pgadmin.loadbalancer.server.port=80"
-      - "deunhealth.restart.on.unhealthy=true"
-    volumes:
-      - .pgadmin:/var/lib/pgadmin
