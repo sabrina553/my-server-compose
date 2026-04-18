@@ -15,8 +15,7 @@ services:
       - .env
     environment:
       HARDCOVER_API_TOKEN: ${HARDCOVER_API_TOKEN}
-      REDIS_URL: redis://redis:6379/0
-      
+      REDIS_URL: ${REDIS__URL}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.bookkeep-https.rule=Host(`bookkeep.$DOMAINNAME`)"
