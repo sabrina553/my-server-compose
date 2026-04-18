@@ -1,7 +1,7 @@
 services:
   dozzle:
     container_name: dozzle
-    image: ${DOZZLE_IMAGE:-amir20/dozzle}:${DOZZLE_IMAGE_TAG:-latest}
+    image: ${DOZZLE__IMAGE}:${DOZZLE__VERSION}
     restart: unless-stopped
     depends_on:
       socket-proxy:
@@ -16,7 +16,7 @@ services:
         max-size: "1m"
         max-file: "3"    
     environment:
-      DOCKER_HOST: "tcp://socket-proxy:2375"
+      DOCKER_HOST: ${DOCKER_HOST}
       #DOZZLE_HOSTNAME: "${DOMAINNAME}"
       #DOZZLE_AUTH_PROVIDER: forward-proxy
     networks:
@@ -24,7 +24,7 @@ services:
       - socket_proxy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.dozzle.rule=Host(`dozzle.int.$DOMAINNAME`)"
+      - "traefik.http.routers.dozzle.rule=Host(`dozzle.int.${DOMAINNAME}`)"
       - "traefik.http.services.dozzle.loadbalancer.server.port=8080"
       
       - "deunhealth.restart.on.unhealthy=true"

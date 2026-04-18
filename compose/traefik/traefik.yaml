@@ -1,7 +1,7 @@
 services:  
   traefik:
     container_name: traefik
-    image: traefik
+    image: ${TRAEFIK__IMAGE}:${TRAEFIK__VERSION}
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -10,13 +10,15 @@ services:
         condition: service_healthy
         restart: false
     logging:
+      driver: "json-file"
       options:
-        max-size: 10m
+        max-size: "1m"
+        max-file: "3"
     secrets:
       - cf_dns_api_token
     environment:
       - TZ=${TZ}
-      - CF_DNS_API_TOKEN_FILE=/run/secrets/cf_dns_api_token
+      - CF_DNS_API_TOKEN_FILE=${TRAEFIK__CF_DNS_API_TOKEN_FILE}
     ports:
       - 80:80
       - 443:443    
@@ -30,8 +32,7 @@ services:
       - "--api.dashboard=true"       
       #Observability 
       - "--log.level=INFO"
-      - "--ping=true"
-    
+      - "--ping=true"    
       - "--serversTransport.insecureSkipVerify=true"
       #EntryPoints :80
       - "--entryPoints.web.address=:80"
@@ -65,12 +66,10 @@ services:
       - traefik.http.services.api.loadbalancer.server.port=8080
       #  Basic‑auth middleware
       - traefik.http.middlewares.api-auth.basicauth.users=sabrina:$$apr1$$kHonGrZB$$pssgJmXUjdGEJznac883K0 
-
-
       - "deunhealth.restart.on.unhealthy=true"
 
     volumes:
-      - ./config:/etc/traefik
+      - ${VOLDIR}/traefik:/etc/traefik
 
     healthcheck:
       test: wget --quiet --tries=1 --spider http://127.0.0.1:8080/ping || exit 1

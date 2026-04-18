@@ -4,7 +4,7 @@
 services:
   radicale:
     container_name: radicale
-    image: tomsquest/docker-radicale
+    image: ${RADICALE__IMAGE}:${RADICALE__VERSION}
     restart: unless-stopped
     init: true
     read_only: true
@@ -27,16 +27,16 @@ services:
         condition: service_started
         restart: false
     logging:
+      driver: "json-file"
       options:
-        max-size: 10m
-
+        max-size: "1m"
+        max-file: "3"
     networks:
       - internal
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.radicale.rule=Host(`radi.int.$DOMAINNAME`)"      
-      - "traefik.http.services.radicale.loadbalancer.server.port=5232"
-      
+      - "traefik.http.services.radicale.loadbalancer.server.port=5232"      
       - "deunhealth.restart.on.unhealthy=true"
     volumes:
       - ${VOLDIR}/radicale:/data

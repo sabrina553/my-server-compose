@@ -1,20 +1,22 @@
 services:
   couchserver:
     container_name: couchdb
-    image: couchdb
+    image: ${COUCHDB__IMAGE}:${COUCHDB__VERSION}
     restart: always
     depends_on:
       traefik:
         condition: service_started
         restart: false
     logging:
+      driver: "json-file"
       options:
-        max-size: 10m
+        max-size: "1m"
+        max-file: "3"
     networks:
       - internal
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.couchserver.rule=Host(`couch.int.$DOMAINNAME`)"      
+      - "traefik.http.routers.couchserver.rule=Host(`couch.$DOMAINNAME`)"      
       - "traefik.http.services.couchserver.loadbalancer.server.port=5984"  
       - "deunhealth.restart.on.unhealthy=true"
     volumes:

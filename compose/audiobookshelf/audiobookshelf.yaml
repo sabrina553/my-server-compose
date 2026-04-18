@@ -1,15 +1,17 @@
 services: 
   audiobookshelf:
     container_name: audiobookshelf
-    image: ghcr.io/advplyr/audiobookshelf:latest
+    image: ${AUDIOBOOKSHELF__IMAGE}:${AUDIOBOOKSHELF__VERSION}
     restart: unless-stopped
     depends_on:
       traefik:
         condition: service_started
         restart: false
     logging:
+      driver: "json-file"
       options:
-        max-size: 10m
+        max-size: "1m"
+        max-file: "3"
     environment:
       TZ: "${TZ}"
       PUID: "${PUID}"
@@ -27,4 +29,3 @@ services:
       - ${DATADIR}/torrents:/audiobooks
       - ${VOLDIR}/abs/config:/config
       - ${VOLDIR}/abs/meta:/metadata
-      #- </path/to/podcasts>:/podcasts
