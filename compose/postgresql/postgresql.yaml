@@ -1,0 +1,32 @@
+services:
+  postgres:
+    container_name: postgres
+    image: ${POSTGRES_IMAGE}:${POSTGRES_VERSION}
+    restart: unless-stopped      
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+    secrets:
+      - postgres_password
+    environment:
+      - TZ=${TZ}
+      - POSTGRES_USER=${POSTGRESQL__USER}
+      - POSTGRES_PASSWORD_FILE=${POSTGRESQL__PASSWORD_FILE}
+      - POSTGRES_DB=${POSTGRESQL__DB_NAME}
+      - POSTGRES_INITDB_ARGS=${POSTGRESQL__INITDB_ARGS}
+      - POSTGRES_PORT=${POSTGRESQL__PORT}
+    networks:
+      - internal
+    labels:
+      - "deunhealth.restart.on.unhealthy=true"
+      - "com.centurylinklabs.watchtower.monitor-only=true"
+    volumes:
+      - ${VOLDIR}/postgres:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRESQL__USER} -d ${POSTGRESQL__DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+

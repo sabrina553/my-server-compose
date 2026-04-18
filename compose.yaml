@@ -36,36 +36,36 @@ secrets:
     file: $DOCKERDIR/secrets/cf_tunnel_token
   postgres_password:
     file: $DOCKERDIR/secrets/postgres_password
-  ###########################################################
+  #AUTHENTIK####################################################
   authentik_secret_key:
     file: $DOCKERDIR/secrets/authentik_secret_key
   authentik_pg_password:
     file: $DOCKERDIR/secrets/authentik_pg_password
-  ###########################################################  
+  #BOOKLORE####################################################  
   booklore_db_password:
     file: $DOCKERDIR/secrets/booklore_db_password
   booklore_mdb_password:
     file: $DOCKERDIR/secrets/booklore_mdb_password
-  ###########################################################  
+  #FRESHRSS####################################################
   freshrss_oidc_clientid:
     file: $DOCKERDIR/secrets/freshrss_oidc_clientid
   freshrss_oidc_secret:
     file: $DOCKERDIR/secrets/freshrss_oidc_secret
   freshrss_pg_password:
     file: $DOCKERDIR/secrets/freshrss_pg_password
-  ###########################################################
+  #home-assistant####################################################
   homeassis_oidc_clientid:
     file: $DOCKERDIR/secrets/homeassis_oidc_clientid 
   homeassis_oidc_secret:
     file: $DOCKERDIR/secrets/homeassis_oidc_secret
-  ###########################################################
+  #immich###########################################################
   immich_oidc_clientid:
     file: $DOCKERDIR/secrets/immich_oidc_clientid
   immich_oidc_secret:
     file: $DOCKERDIR/secrets/immich_oidc_secret
   immich_pg_password:
     file: $DOCKERDIR/secrets/immich_pg_password
-  ###########################################################
+  #LINKWARDEN#################################################### 
   linkwarden_oidc_clientid:
     file: $DOCKERDIR/secrets/linkwarden_oidc_clientid
   linkwarden_oidc_secret:
@@ -74,14 +74,14 @@ secrets:
     file: $DOCKERDIR/secrets/linkwarden_pg_password
   linkwarden_nextauth_secret:
     file: $DOCKERDIR/secrets/linkwarden_nextauth_secret
-  ###########################################################
+#MEALIE####################################################
   mealie_oidc_clientid:
     file: $DOCKERDIR/secrets/mealie_oidc_clientid
   mealie_oidc_secret:
     file: $DOCKERDIR/secrets/mealie_oidc_secret
   mealie_pg_password:
     file: $DOCKERDIR/secrets/mealie_pg_password
-  ###########################################################
+#VAULTWARDEN####################################################
   vaultwarden_pg_url:
     file: $DOCKERDIR/secrets/vaultwarden_pg_url
   vaultwarden_oidc_clientid:
@@ -94,79 +94,52 @@ secrets:
     file: $DOCKERDIR/secrets/vaultwarden_push_key
   vaultwarden_admin_token:
     file: $DOCKERDIR/secrets/vaultwarden_admin_token
-  ############################################################
+ #WIREGUARD####################################################
   wireguard_private_key:
     file: $DOCKERDIR/secrets/wireguard_private_key
-
-
-
-# Docker Compose v2.20 or greater required to use "include"
+  wireguard_preshared_key: 
+    file: $DOCKERDIR/secrets/wireguard_preshared_key
+  wireguard_addresses: 
+    file: $DOCKERDIR/secrets/wireguard_addresses
+###########################SERVICES###########################
 include:
-  ###########################SERVICES###########################
-    - compose/traefik/compose.yaml
-    - compose/cloudflared/compose.yaml
-    - compose/auth/compose.yaml
-    - compose/vpn/compose.yaml
-    - compose/socket-proxy/compose.yaml
-    
-    - compose/postgresql/compose.yaml
+    #core
+    - compose/cloudflared/cloudflared.yaml
+    - compose/traefik/traefik.yaml    
+    - compose/auth/authentik.yaml
+    - compose/vpn/gluetun.yaml   
+    - compose/dozzle/dozzle.yaml 
+    - compose/deunhealth/deunhealth.yaml
+    - compose/watchtower/watchtower.yaml
+    - compose/postgresql/postgresql.yaml 
+    - compose/socket-proxy/socket-proxy.yaml
+    #arrstack
+    - compose/audiobookshelf/audiobookshelf.yaml
+    - compose/booklore/booklore.yaml    
+    - compose/chaptarr/chaptarr.yaml
+    - compose/prowlarr/prowlarr.yaml
+    - compose/qbittorrent/qbittorrent.yaml
+    - compose/mousehole/mousehole.yaml
+    #- compose/bookkeep/bookkeep.yaml
 
-    - compose/dozzle/compose.yaml
-    - compose/deunhealth/compose.yaml
-    - compose/watchtower/compose.yaml
-    # #arrstack
-    - compose/audiobookshelf/compose.yaml
-    - compose/booklore/compose.yaml    
-    - compose/chaptarr/compose.yaml
-    - compose/prowlarr/compose.yaml
-    - compose/qbittorrent/compose.yaml
-    - compose/bookkeep/compose.yaml
-    #- compose/qui/compose.yaml
+    #data
+    #- compose/cloudreve/cloudreve.yaml
+    #- compose/copyparty/copyparty.yaml
+    #- compose/filestash/filestash.yaml
+    #- compose/filebrowser/filebrowser.yaml 
 
-    # # #apps
-    #- compose/cloudreve/compose.yaml
-    #- compose/copyparty/compose.yaml
-    #- compose/filestash/compose.yaml
-    #- compose/filebrowser/compose.yaml
-    
-    - compose/couch-db/compose.yaml
-    - compose/fresh-rss/compose.yaml    
-    - compose/home-assistant/compose.yaml
-    - compose/immich/compose.yaml    
-    - compose/irc/compose.yaml
-    #- compose/leantime/compose.yaml
-    #- compose/linkwarden/compose.yaml
-    - compose/mealie/compose.yaml
-    - compose/radicale/compose.yaml
-    - compose/vaultwarden/compose.yaml
+    #organization
+    - compose/mealie/mealie.yaml
+    - compose/couch-db/couch-db.yaml
+    - compose/radicale/radicale.yaml
+    #- compose/linkwarden/linkwarden.yaml
+    #- compose/leantime/leantime.yaml
 
+    #storage 
+    - compose/immich/immich.yaml   
+    - compose/vaultwarden/vaultwarden.yaml
+    - compose/home-assistant/home-assistant.yaml
 
-
-
-
-
-
-
-  # # CORE
-  # - compose/$HOSTNAME/traefik.yml
-  # - compose/$HOSTNAME/socket-proxy.yml
-  # - compose/$HOSTNAME/oauth.yml
-  # - compose/$HOSTNAME/portainer.yml
-  # # NETWORK
-  # - compose/$HOSTNAME/zerotier.yml
-  # # - compose/$HOSTNAME/adguardhome.yml
-  # # MEDIA
-
-  # # FILE MANAGEMENT
-  # # - compose/$HOSTNAME/rclone-gdrive.yml
-  # # - compose/$HOSTNAME/rclone-gcrypt.yml
-  # # - compose/$HOSTNAME/mergerfs.yml
-  # - compose/$HOSTNAME/syncthing.yml
-  # - compose/$HOSTNAME/vscode.yml
-  # # MONITORING
-  # - compose/$HOSTNAME/glances.yml
-  # # - compose/$HOSTNAME/qdirstat.yml
-  # # MAINTENANCE
-  # - compose/$HOSTNAME/docker-gc.yml
-  # - compose/$HOSTNAME/ddns-updater.yml
-  # # - compose/$HOSTNAME/certdumper.yml
+    #other
+    - compose/irc/thelounge.yaml
+    - compose/fresh-rss/fresh-rss.yaml  

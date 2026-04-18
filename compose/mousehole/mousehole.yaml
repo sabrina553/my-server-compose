@@ -1,0 +1,24 @@
+services:   
+  mousehole:
+    container_name: mousehole
+    image: ${MOUSEHOLE__IMAGE}:${MOUSEHOLE__VERSION}
+    restart: unless-stopped
+    depends_on:
+      traefik:
+        condition: service_started  
+      vpn:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+    environment:
+      TZ: ${TZ}
+    network_mode: "service:vpn"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mousehole.rule=Host(`mousehole.int.$DOMAINNAME`)"      
+      - "traefik.http.services.mousehole.loadbalancer.server.port=5010" 
+    volumes:
+      - ${VOLDIR}/mousehole:/srv/mousehole

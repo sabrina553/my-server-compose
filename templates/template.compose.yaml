@@ -1,0 +1,34 @@
+services:
+  <NAME>:
+    container_name: <NAME>
+    image: 
+    restart: unless-stopped
+    #profiles: 
+    #extends:
+    #command: 
+    #deploy:
+    #security_opt:
+    depends_on:
+      traefik:
+        condition: service_started
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+    #env:
+    #secrets:
+    environment:
+    #ports:
+    networks:
+      - external
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.<NAME>-https.rule=Host(`<NAME>.$DOMAINNAME`)"
+      - "traefik.http.services.<NAME>.loadbalancer.server.port=<PORT>"      
+      - "deunhealth.restart.on.unhealthy=true"
+    volumes:
+      - ${VOLDIR}/<NAME>:/config
+    #devices:
+    healthcheck: 

@@ -1,21 +1,25 @@
 services:
   chaptarr:
     container_name: chaptarr
-    image: robertlordhood/chaptarr:develop
+    image: ${CHAPTARR__IMAGE}:${CHAPTARR__VERSION}
     restart: unless-stopped
     depends_on:
       traefik:
         condition: service_started
         restart: false
     logging:
+      driver: "json-file"
       options:
-        max-size: 10m
-    env_file:
-      - .env
+        max-size: "1m"
+        max-file: "3"
     environment:
+      TZ: ${TZ}   
       PUID: ${PUID}
-      PGID: ${PGID}    
-
+      PGID: ${PGID}
+      Chaptarr__Postgres__Host: ${POSTGRESQL__HOST}
+      Chaptarr__Postgres__User: ${CHAPTARR__DB_USER}
+      Chaptarr__Postgres__Password: ${CHAPTARR__DB_PASSWORD}
+      Chaptarr__Postgres__Port: ${CHAPTARR__DB_PORT}      
     networks:
       - external
       - internal
@@ -23,7 +27,6 @@ services:
       - "traefik.enable=true"       
       - "traefik.http.routers.chaptarr.rule=Host(`chaptarr.${DOMAINNAME}`)"      
       - "traefik.http.services.chaptarr.loadbalancer.server.port=8789"
-      
       - "deunhealth.restart.on.unhealthy=true"
     volumes:
       - ${VOLDIR}/chaptarr:/config

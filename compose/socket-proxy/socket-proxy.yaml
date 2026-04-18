@@ -1,12 +1,14 @@
 services:
   socket-proxy:
     container_name: socket-proxy
-    image: ${SOCKET_PROXY_IMAGE:-lscr.io/linuxserver/socket-proxy}:${SOCKET_PROXY_IMAGE_TAG:-latest}
+    image: ${SOCKET_PROXY__IMAGE}:${SOCKET_PROXY__VERSION}
     restart: unless-stopped
     read_only: true
     logging:
+      driver: "json-file"
       options:
-        max-size: 10m
+        max-size: "1m"
+        max-file: "3"
     environment:
       TZ: "${TZ}"
       LOG_LEVEL: "notice" # debug, info, notice, warning, err, crit, alert, emerg
@@ -36,8 +38,7 @@ services:
       SYSTEM: "0"
       TASKS: "0"
       VERSION: "1"
-      VOLUMES: "1"
-    
+      VOLUMES: "1"    
     networks:
       - socket_proxy
     labels:
