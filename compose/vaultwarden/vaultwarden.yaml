@@ -1,0 +1,65 @@
+services:
+  vaultwarden:
+    container_name: vaultwarden
+    image: ${VAULTWARDEN__IMAGE}:${VAULTWARDEN__VERSION}
+    restart: unless-stopped
+    depends_on:
+      traefik:
+        condition: service_started
+        restart: false
+      postgres:
+        condition: service_started
+        restart: false
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+    secrets:
+      - vaultwarden_pg_url
+      - vaultwarden_oidc_clientid
+      - vaultwarden_oidc_clientsecret
+      - vaultwarden_admin_token
+      - vaultwarden_push_id
+      - vaultwarden_push_key
+      - smtp_password
+    environment:
+      - TZ=${TZ}
+      - DOMAIN=https://vw.${DOMAIN}
+      - ADMIN_TOKEN=${VAULTWARDEN__ADMIN_TOKEN}
+      - WEBSOCKET_ENABLED=${VAULTWARDEN__WEBSOCKET_ENABLED}
+      - SIGNUPS_ALLOWED=${VAULTWARDEN__SIGNUPS_ALLOWED}
+      - SMTP_HOST=${SMTP__EMAIL_HOST}
+      - SMTP_FROM=${VAULTWARDEN__SMTP_FROM}
+      - SMTP_TIMEOUT=${SMTP__EMAIL_TIMEOUT}
+      - SMTP_USERNAME=${SMTP__EMAIL_USERNAME}
+      - SMTP_SECURITY=${SMTP__EMAIL_SECURITY}
+      - SMTP_PORT=${SMTP__EMAIL_PORT}
+      - SMTP_PASSWORD=${SMTP__EMAIL_PASSWORD}
+      - PUSH_ENABLED=${VAULTWARDEN__PUSH_ENABLED}
+      - PUSH_RELAY_URI=${VAULTWARDEN__PUSH_RELAY_URI}
+      - PUSH_IDENTITY_URI=${VAULTWARDEN__PUSH_IDENTITY_URI}
+      - PUSH_INSTALLATION_ID_FILE=${VAULTWARDEN__PUSH_INSTALLATION_ID_FILE}
+      - PUSH_INSTALLATION_KEY_FILE=${VAULTWARDEN__PUSH_INSTALLATION_KEY_FILE}
+      - EXTENDED_LOGGING=${VAULTWARDEN__EXTENDED_LOGGING}
+      - USE_SYSLOG=${VAULTWARDEN__USE_SYSLOG}
+      - LOG_FILE=${VAULTWARDEN__LOG_FILE}
+      - DATABASE_URL_FILE=${VAULTWARDEN__DATABASE_URL_FILE}
+      - SSO_ENABLED=${VAULTWARDEN__SSO_ENABLED}
+      - SSO_AUTHORITY=${VAULTWARDEN__SSO_AUTHORITY}
+      - SSO_SCOPES=${VAULTWARDEN__SSO_SCOPES}
+      - SSO_CLIENT_ID_FILE=${VAULTWARDEN__SSO_CLIENT_ID_FILE}
+      - SSO_CLIENT_SECRET_FILE=${VAULTWARDEN__SSO_CLIENT_SECRET_FILE}
+      - SSO_ALLOW_UNKNOWN_EMAIL_VERIFICATION=${VAULTWARDEN__SSO_ALLOW_UNKNOWN_EMAIL_VERIFICATION}
+      - SSO_SIGNUPS_MATCH_EMAIL=${VAULTWARDEN__SSO_SIGNUPS_MATCH_EMAIL}
+      - SSO_CLIENT_CACHE_EXPIRATION=${VAULTWARDEN__SSO_CLIENT_CACHE_EXPIRATION}
+    networks:
+      - external
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vaultwarden-https.rule=Host(`vw.$DOMAINNAME`)"
+      - "traefik.http.services.vaultwarden.loadbalancer.server.port=80"      
+      - "deunhealth.restart.on.unhealthy=true"
+    volumes:
+      - ${VOLDIR}/vaultwarden/:/data/

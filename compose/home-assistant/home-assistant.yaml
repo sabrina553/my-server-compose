@@ -1,15 +1,17 @@
 services:
   homeassistant:
     container_name: homeassistant
-    image: ghcr.io/home-assistant/home-assistant:stable
+    image: ${HOMEASSISTANT__IMAGE}:${HOMEASSISTANT__VERSION}
     restart: unless-stopped
     depends_on:
       traefik:
         condition: service_started
         restart: false
     logging:
+      driver: "json-file"
       options:
-        max-size: 10m
+        max-size: "1m"
+        max-file: "3"
     networks:
       - external
     labels:
