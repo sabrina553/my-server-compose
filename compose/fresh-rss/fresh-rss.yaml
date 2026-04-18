@@ -15,8 +15,6 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
-    # env_file:
-    #   - .env
     secrets:
       - freshrss_oidc_clientid
       - freshrss_oidc_secret
@@ -35,7 +33,7 @@ services:
       - DB_USER=${FRESHRSS__DB_USER}
       - DB_PASSWORD_FILE=${FRESHRSS__DB_PASSWORD_FILE}
       - CRON_MIN=${FRESHRSS__CRON_MIN}
-      - TRUSTED_PROXY=${FRESHRSS__TRUSTED_PROXY} ##change?
+      - TRUSTED_PROXY=${FRESHRSS__TRUSTED_PROXY}
       - OIDC_ENABLED=${FRESHRSS__OIDC_ENABLED}
       - OIDC_PROVIDER_METADATA_URL=${FRESHRSS__OIDC_PROVIDER_METADATA_URL}
       - OIDC_CLIENT_ID=${FRESHRSS__OIDC_CLIENT_ID}
