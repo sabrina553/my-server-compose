@@ -25,17 +25,17 @@ services:
       - smtp_password
     environment:
       - TZ=${TZ}
-      - DOMAIN=https://vw.${DOMAIN}
+      - DOMAIN=https://vw.${DOMAINNAME}
       - ADMIN_TOKEN=${VAULTWARDEN__ADMIN_TOKEN}
       - WEBSOCKET_ENABLED=${VAULTWARDEN__WEBSOCKET_ENABLED}
       - SIGNUPS_ALLOWED=${VAULTWARDEN__SIGNUPS_ALLOWED}
-      - SMTP_HOST=${SMTP__EMAIL_HOST}
+      - SMTP_HOST=${SMTP__HOST}
       - SMTP_FROM=${VAULTWARDEN__SMTP_FROM}
-      - SMTP_TIMEOUT=${SMTP__EMAIL_TIMEOUT}
-      - SMTP_USERNAME=${SMTP__EMAIL_USERNAME}
-      - SMTP_SECURITY=${SMTP__EMAIL_SECURITY}
-      - SMTP_PORT=${SMTP__EMAIL_PORT}
-      - SMTP_PASSWORD=${SMTP__EMAIL_PASSWORD}
+      - SMTP_TIMEOUT=${SMTP__TIMEOUT}
+      - SMTP_USERNAME=${SMTP__USERNAME}
+      - SMTP_SECURITY=${SMTP__SECURITY}
+      - SMTP_PORT=${SMTP__PORT}
+      - SMTP_PASSWORD=${SMTP__PASSWORD}
       - PUSH_ENABLED=${VAULTWARDEN__PUSH_ENABLED}
       - PUSH_RELAY_URI=${VAULTWARDEN__PUSH_RELAY_URI}
       - PUSH_IDENTITY_URI=${VAULTWARDEN__PUSH_IDENTITY_URI}
@@ -58,7 +58,7 @@ services:
       - internal
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.vaultwarden-https.rule=Host(`vw.$DOMAINNAME`)"
+      - "traefik.http.routers.vaultwarden-https.rule=Host(`vw.${DOMAINNAME}`)"
       - "traefik.http.services.vaultwarden.loadbalancer.server.port=80"      
       - "deunhealth.restart.on.unhealthy=true"
     volumes:
