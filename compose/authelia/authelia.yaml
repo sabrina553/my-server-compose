@@ -24,7 +24,7 @@ services:
           - authelia_pg_password
           - authelia_encryption
           - authelia_hmac_secret
-          - authelia_
+          - authelia_jwks
           - lldap_user_pass
           - smtp_password
         environment:
