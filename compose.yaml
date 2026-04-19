@@ -121,7 +121,7 @@ secrets:
   vaultwarden_push_key:
     file: $DOCKERDIR/secrets/vaultwarden/push_key
   vaultwarden_admin_token:
-    file: $DOCKERDIR/secrets/vault/wardenvaultwarden_admin_token
+    file: $DOCKERDIR/secrets/vaultwarden/admin_token
  #WIREGUARD####################################################
   wireguard_private_key:
     file: $DOCKERDIR/secrets/wireguard/private_key
