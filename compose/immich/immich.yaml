@@ -1,8 +1,7 @@
-name: immich
 services:
   immich-server:
     container_name: immich_server
-    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
+    image: ${IMMICH__IMAGE}:${IMMICH__VERSION}
     restart: always
     depends_on:
       redis:
@@ -19,10 +18,18 @@ services:
       options:
         max-size: "1m"
         max-file: "3"    
-    env_file:
-      - .env
     secrets:
       - immich_pg_password
+    environment:
+      - TZ="${TZ}"
+      - PUID="${PUID}"
+      - PGID="${PGID}" 
+      - UPLOAD_LOCATION=${IMMICH__UPLOAD_LOCATION}
+      - DB_HOSTNAME=${POSTGRESQL__HOST}
+      - DB_PORT=${POSTGRESQL__PORT}
+      - DB_USERNAME=${IMMICH__DB_USERNAME}
+      - DB_DATABASE_NAME=${IMMICH__DB_DATABASE_NAME}
+      - DB_PASSWORD_FILE=${IMMICH__DB_PASSWORD_FILE}
     networks:
       - external
       - internal
@@ -32,42 +39,23 @@ services:
       - "traefik.http.services.immich.loadbalancer.server.port=2283"  
       - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - ${UPLOAD_LOCATION}:/data
+      - ${IMMICH__UPLOAD_LOCATION}:/data
       - /etc/localtime:/etc/localtime:ro
     devices:
       - "/dev/dri:/dev/dri" 
-    healthcheck:
-      disable: false
 
   immich-machine-learning:
     container_name: immich_machine_learning
-    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}-openvino
+    image: ${IMMICH_ML__IMAGE}:${IMMICH_ML__VERSION}
     restart: always
     logging:
+      driver: "json-file"
       options:
-        max-size: 10m
-    env_file:
-      - .env
+        max-size: "1m"
+        max-file: "3"
     networks:
       - internal
     labels:
       - "deunhealth.restart.on.unhealthy=true"
     volumes:
       - ${VOLDIR}/immich/model-cache:/cache
-    healthcheck:
-      disable: false
-  redis:
-    container_name: redis
-    image: docker.io/valkey/valkey:8-bookworm@sha256:a137a2b60aca1a75130022d6bb96af423fefae4eb55faf395732db3544803280
-    restart: always
-    logging:
-      options:
-        max-size: 10m
-    networks:
-      - internal
-    labels:
-      - "deunhealth.restart.on.unhealthy=true"
-    volumes:
-      - ${VOLDIR}/immich/redis:/data
-    healthcheck:
-      test: redis-cli ping || exit 1
