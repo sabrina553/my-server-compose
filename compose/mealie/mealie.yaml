@@ -15,8 +15,6 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
-    # env_file: 
-    #   - .env
     secrets:
       - smtp_password
       - mealie_oidc_clientid
