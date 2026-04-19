@@ -40,7 +40,7 @@ services:
       - POSTGRES_DB=${MEALIE__POSTGRES_DB}
       - POSTGRES_PASSWORD_FILE=${MEALIE__POSTGRES_PASSWORD_FILE}
       - BASE_URL=https://mealie.${DOMAINNAME}
-      - OIDC_AUTH_ENABLED=true
+      - OIDC_AUTH_ENABLED=false
       - OIDC_PROVIDER_NAME=${MEALIE__OIDC_PROVIDER_NAME}
       - OIDC_CONFIGURATION_URL=${MEALIE__OIDC_CONFIGURATION_URL}
       - OIDC_CLIENT_ID_FILE=${MEALIE__OIDC_CLIENT_ID_FILE}
@@ -55,6 +55,7 @@ services:
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.mealie.rule=Host(`mealie.$DOMAINNAME`)"      
+      - "traefik.http.routers.mealie.middlewares=authelia@docker"  
       - "traefik.http.services.mealie.loadbalancer.server.port=9000"
       - "deunhealth.restart.on.unhealthy=true"
     volumes:

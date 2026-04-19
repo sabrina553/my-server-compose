@@ -23,6 +23,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.audiobookshelf.rule=Host(`audiobookshelf.${DOMAINNAME}`)"
+      - "traefik.http.routers.audiobookshelf.middlewares=authelia@docker"  
       - "traefik.http.services.audiobookshelf.loadbalancer.server.port=80"
       - "deunhealth.restart.on.unhealthy=true"
     volumes:

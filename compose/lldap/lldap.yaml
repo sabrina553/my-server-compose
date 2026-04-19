@@ -50,6 +50,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.lldap-https.rule=Host(`lldap.int.${DOMAINNAME}`)" # Extract hostname from URL, assuming https:// is used. Adjust if using http or a non-standard port.
+      - "traefik.http.routers.lldap.middlewares=authelia@docker"
       - "traefik.http.services.lldap.loadbalancer.server.port=17170"      
       - "deunhealth.restart.on.unhealthy=true"
     volumes:

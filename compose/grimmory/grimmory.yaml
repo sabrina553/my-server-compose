@@ -34,6 +34,7 @@ services:
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.grimmory.rule=Host(`grimmory.$DOMAINNAME`)"      
+      - "traefik.http.routers.grimmory.middlewares=authelia@docker"  
       - "traefik.http.services.grimmory.loadbalancer.server.port=${GRIMMORY__PORT}"
       - "deunhealth.restart.on.unhealthy=true"
   
