@@ -3,6 +3,10 @@ services:
     container_name: bookkeep
     image: akiraslingshot/bookkeep
     restart: unless-stopped
+    depends_on:
+      traefik:
+        condition: service_started
+        restart: false
     logging:
       driver: "json-file"
       options:
@@ -11,16 +15,18 @@ services:
     networks:
       - external
       - internal
-    env_file:
-      - .env
     environment:
-      HARDCOVER_API_TOKEN: ${HARDCOVER_API_TOKEN}
+      TZ: "${TZ}"
+      PUID: "${PUID}"
+      PGID: "${PGID}"
+      HARDCOVER_API_TOKEN: ${BOOKKEEP__HARDCOVER_API_TOKEN}
+      BOOKKEEP__SECRET_KEY: ${BOOKKEEP__SECRET_KEY}
+      BOOKKEEP__DATABASE_URL: ${BOOKKEEP__DATABASE_URL}
       REDIS_URL: ${REDIS__URL}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.bookkeep-https.rule=Host(`bookkeep.$DOMAINNAME`)"
-      - "traefik.http.services.bookkeep.loadbalancer.server.port=8000"
-      
+      - "traefik.http.services.bookkeep.loadbalancer.server.port=8000"      
       - "deunhealth.restart.on.unhealthy=true"
     volumes:      
       - ${DATADIR}/torrents/books:/ebooks
