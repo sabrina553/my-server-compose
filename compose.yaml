@@ -46,6 +46,8 @@ secrets:
     file: $DOCKERDIR/secrets/authelia_pg_password
   authelia_encryption:
     file: $DOCKERDIR/secrets/authelia_encryption
+  authelia_hmac_secret:
+    file: $DOCKERDIR/secrets/authelia_hmac_secret
 
 
   #AUTHENTIK####################################################
@@ -134,7 +136,7 @@ include:
     - compose/traefik/traefik.yaml   
     - compose/authelia/authelia.yaml 
     - compose/lldap/lldap.yaml
-    - compose/auth/authentik.yaml
+    #- compose/auth/authentik.yaml
     - compose/vpn/gluetun.yaml   
     - compose/dozzle/dozzle.yaml 
     - compose/deunhealth/deunhealth.yaml
