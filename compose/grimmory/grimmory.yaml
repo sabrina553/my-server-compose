@@ -1,7 +1,7 @@
 services:
-  booklore:
-    image: ${BOOKLORE__IMAGE}:${BOOKLORE__VERSION}
-    container_name: booklore
+  grimmory:
+    image: ${GRIMMORY__IMAGE}:${GRIMMORY__VERSION}
+    container_name: grimmory
     restart: unless-stopped
     depends_on:
       traefik:
@@ -20,25 +20,25 @@ services:
       - TZ="${TZ}"
       - PUID="${PUID}"
       - PGID="${PGID}"      
-      - DATABASE_URL=${BOOKLORE__DB_URL}
-      - DATABASE_USERNAME=${BOOKLORE__DB_USER}
-      - DATABASE_PASSWORD=${BOOKLORE__DB_PASSWORD}
-      - BOOKLORE_PORT=${BOOKLORE__PORT}   
+      - DATABASE_URL=${GRIMMORY__DB_URL}
+      - DATABASE_USERNAME=${GRIMMORY__DB_USER}
+      - DATABASE_PASSWORD=${GRIMMORY__DB_PASSWORD}
+      - GRIMMORY_PORT=${GRIMMORY__PORT}   
     volumes:
-      - ${VOLDIR}/booklore/data:/app/data
+      - ${VOLDIR}/grimmory/data:/app/data
       - ${DATADIR}/torrents/:/books
-      - ${VOLDIR}/booklore/:/bookdrop
+      - ${VOLDIR}/grimmory/:/bookdrop
     networks:
       - external
       - internal
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.booklore.rule=Host(`booklore.$DOMAINNAME`)"      
-      - "traefik.http.services.booklore.loadbalancer.server.port=${BOOKLORE__PORT}"
+      - "traefik.http.routers.grimmory.rule=Host(`grimmory.$DOMAINNAME`)"      
+      - "traefik.http.services.grimmory.loadbalancer.server.port=${GRIMMORY__PORT}"
       - "deunhealth.restart.on.unhealthy=true"
   
   mariadb:
-    container_name: booklore-mariadb
+    container_name: grimmory-mariadb
     image: ${MARIADB__IMAGE}:${MARIADB__VERSION}
     restart: unless-stopped
     logging:
@@ -50,12 +50,12 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
-      - MYSQL_USER=${BOOKLORE__DB_USER}
-      - MYSQL_DATABASE=${BOOKLORE__DB_NAME}
-      - MYSQL_PASSWORD=${BOOKLORE__DB_PASSWORD}      
-      - MYSQL_ROOT_PASSWORD=${BOOKLORE__ROOT_PASSWORD}   
+      - MYSQL_USER=${GRIMMORY__DB_USER}
+      - MYSQL_DATABASE=${GRIMMORY__DB_NAME}
+      - MYSQL_PASSWORD=${GRIMMORY__DB_PASSWORD}      
+      - MYSQL_ROOT_PASSWORD=${GRIMMORY__ROOT_PASSWORD}   
     volumes:
-      - ${VOLDIR}/booklore/mariadb/:/config
+      - ${VOLDIR}/grimmory/mariadb/:/config
     networks:
       - internal
     labels:      
