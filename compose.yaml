@@ -36,16 +36,28 @@ secrets:
     file: $DOCKERDIR/secrets/cf_tunnel_token
   postgres_password:
     file: $DOCKERDIR/secrets/postgres_password
+
+  #AUHELIA####################################################
+  authelia_jwt:
+    file: $DOCKERDIR/secrets/authelia_jwt
+  authelia_secret_key:
+    file: $DOCKERDIR/secrets/authelia_secret_key
+  authelia_pg_password:
+    file: $DOCKERDIR/secrets/authelia_pg_password
+  authelia_encryption:
+    file: $DOCKERDIR/secrets/authelia_encryption
+
+
   #AUTHENTIK####################################################
   authentik_secret_key:
     file: $DOCKERDIR/secrets/authentik_secret_key
   authentik_pg_password:
     file: $DOCKERDIR/secrets/authentik_pg_password
-  #BOOKLORE####################################################  
-  booklore_db_password:
-    file: $DOCKERDIR/secrets/booklore_db_password
-  booklore_mdb_password:
-    file: $DOCKERDIR/secrets/booklore_mdb_password
+  #FILEBROWSER####################################################
+  filebrowser_oidc_client_id:
+    file: $DOCKERDIR/secrets/filebrowser_oidc_clientid
+  filebrowser_oidc_client_secret:
+    file: $DOCKERDIR/secrets/filebrowser_oidc_secret
   #FRESHRSS####################################################
   freshrss_oidc_clientid:
     file: $DOCKERDIR/secrets/freshrss_oidc_clientid
@@ -53,6 +65,11 @@ secrets:
     file: $DOCKERDIR/secrets/freshrss_oidc_secret
   freshrss_pg_password:
     file: $DOCKERDIR/secrets/freshrss_pg_password
+  #GRIMMORY####################################################  
+  grimmory_db_password:
+    file: $DOCKERDIR/secrets/grimmory_db_password
+  grimmory_mdb_password:
+    file: $DOCKERDIR/secrets/grimmory_mdb_password
   #home-assistant####################################################
   homeassis_oidc_clientid:
     file: $DOCKERDIR/secrets/homeassis_oidc_clientid 
@@ -105,17 +122,20 @@ secrets:
 include:
     #core
     - compose/cloudflared/cloudflared.yaml
-    - compose/traefik/traefik.yaml    
+    - compose/traefik/traefik.yaml   
+    #- compose/authelia/authelia.yaml 
     - compose/auth/authentik.yaml
     - compose/vpn/gluetun.yaml   
     - compose/dozzle/dozzle.yaml 
     - compose/deunhealth/deunhealth.yaml
     - compose/watchtower/watchtower.yaml
-    - compose/postgresql/postgresql.yaml 
+    - compose/postgresql/postgresql.yaml
+    - compose/pg-admin/pg-admin.yaml
     - compose/socket-proxy/socket-proxy.yaml
+    
     #arrstack
     - compose/audiobookshelf/audiobookshelf.yaml
-    - compose/booklore/booklore.yaml    
+    - compose/grimmory/grimmory.yaml    
     - compose/chaptarr/chaptarr.yaml
     - compose/prowlarr/prowlarr.yaml
     - compose/qbittorrent/qbittorrent.yaml
@@ -123,10 +143,7 @@ include:
     #- compose/bookkeep/bookkeep.yaml
 
     #data
-    #- compose/cloudreve/cloudreve.yaml
-    #- compose/copyparty/copyparty.yaml
-    #- compose/filestash/filestash.yaml
-    #- compose/filebrowser/filebrowser.yaml 
+    - compose/filebrowser/filebrowser.yaml 
 
     #organization
     - compose/mealie/mealie.yaml
