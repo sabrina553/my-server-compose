@@ -131,6 +131,7 @@ include:
     - compose/watchtower/watchtower.yaml
     - compose/postgresql/postgresql.yaml
     - compose/pg-admin/pg-admin.yaml
+    - compose/redis/redis.yaml
     - compose/socket-proxy/socket-proxy.yaml
     
     #arrstack
