@@ -49,7 +49,7 @@ secrets:
   authelia_hmac_secret:
     file: $DOCKERDIR/secrets/authelia/hmac_secret
   authelia_jwks:
-    file: $DOCKERDIR/secrets/authelia/hmac_secret
+    file: $DOCKERDIR/secrets/authelia/jwks
   #AUTHENTIK####################################################
   authentik_secret_key:
     file: $DOCKERDIR/secrets/authentik/secret_key
