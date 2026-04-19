@@ -1,7 +1,7 @@
 services:
   mealie:
     container_name: mealie
-    image: ghcr.io/mealie-recipes/mealie
+    image: ${MEALIE__IMAGE}:${MEALIE__VERSION}
     restart: always
     depends_on:
       traefik:
@@ -11,15 +11,46 @@ services:
         condition: service_started
         restart: false
     logging:
+      driver: "json-file"
       options:
-        max-size: 10m
-    env_file: 
-      - .env
+        max-size: "1m"
+        max-file: "3"
+    # env_file: 
+    #   - .env
     secrets:
       - smtp_password
       - mealie_oidc_clientid
       - mealie_oidc_secret
       - mealie_pg_password
+    environment:
+      - TZ=${TZ}
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - ALLOW_SIGNUP=${MEALIE__ALLOW_SIGNUP}
+      - SMTP_FROM_NAME="Mealie"
+      - SMTP_FROM_EMAIL="mealie@${DOMAINNAME}"
+      - SMTP_HOST={SMTP__HOST}
+      - SMTP_PORT={SMTP__PORT}
+      - SMTP_USER={SMTP__USER}
+      - SMTP_PASSWORD_FILE=${SMTP__PASSWORD}  
+      - SMTP_AUTH_STRATEGY={MEALIE__SMTP_AUTH_STRATEGY}
+      - DB_ENGINE=postgres
+      - POSTGRES_SERVER=${POSTGRESQL__HOST}
+      - POSTGRES_PORT=${POSTGRESQL__PORT}
+      - POSTGRES_USER=${MEALIE__POSTGRES_USER}
+      - POSTGRES_DB=${MEALIE__POSTGRES_DB}
+      - POSTGRES_PASSWORD_FILE=${MEALIE__POSTGRES_PASSWORD_FILE}
+      - BASE_URL=https://mealie.${DOMAINNAME}
+      - OIDC_AUTH_ENABLED=true
+      - OIDC_PROVIDER_NAME=${MEALIE__OIDC_PROVIDER_NAME}
+      - OIDC_CONFIGURATION_URL=${MEALIE__OIDC_CONFIGURATION_URL}
+      - OIDC_CLIENT_ID_FILE=${MEALIE__OIDC_CLIENT_ID_FILE}
+      - OIDC_CLIENT_SECRET_FILE=${MEALIE__OIDC_CLIENT_SECRET_FILE}
+      - OIDC_SIGNUP_ENABLED=${MEALIE__OIDC_SIGNUP_ENABLED}
+      - OIDC_ADMIN_GROUP=${MEALIE__OIDC_ADMIN_GROUP}
+      - OIDC_AUTO_REDIRECT=${MEALIE__OIDC_AUTO_REDIRECT}
+      - OIDC_REMEMBER_ME=${MEALIE__OIDC_REMEMBER_ME}
     networks:
       - external
       - internal
