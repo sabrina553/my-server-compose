@@ -22,6 +22,7 @@ services:
     labels:
       - "deunhealth.restart.on.unhealthy=true"
       - "com.centurylinklabs.watchtower.monitor-only=true"
+      - "traefik.enable=false"
     volumes:
       - ${VOLDIR}/postgres:/var/lib/postgresql
     healthcheck:
