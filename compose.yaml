@@ -91,6 +91,15 @@ secrets:
     file: $DOCKERDIR/secrets/linkwarden_pg_password
   linkwarden_nextauth_secret:
     file: $DOCKERDIR/secrets/linkwarden_nextauth_secret
+#LLDAP#################################################### 
+  lldap_jwt_secret:
+    file: $DOCKERDIR/secrets/lldap_jwt_secret
+  lldap_key_seed:
+    file: $DOCKERDIR/secrets/lldap_key_seed
+  lldap_user_pass:
+    file: $DOCKERDIR/secrets/lldap_user_pass
+  lldap_database_url:
+    file: $DOCKERDIR/secrets/lldap_database_url
 #MEALIE####################################################
   mealie_oidc_clientid:
     file: $DOCKERDIR/secrets/mealie_oidc_clientid
@@ -123,7 +132,8 @@ include:
     #core
     - compose/cloudflared/cloudflared.yaml
     - compose/traefik/traefik.yaml   
-    #- compose/authelia/authelia.yaml 
+    - compose/authelia/authelia.yaml 
+    - compose/lldap/lldap.yaml
     - compose/auth/authentik.yaml
     - compose/vpn/gluetun.yaml   
     - compose/dozzle/dozzle.yaml 

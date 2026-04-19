@@ -1,0 +1,64 @@
+services:
+  lldap:
+    container_name: lldap
+    image: ${LLDAP__IMAGE}:${LLDAP__VERSION}
+    restart: unless-stopped
+    depends_on:
+      traefik:
+        condition: service_started
+        restart: false
+      postgres:
+        condition: service_started
+        restart: false
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+    secrets:
+      - smtp_password
+      - lldap_jwt_secret
+      - lldap_key_seed
+      - lldap_user_pass
+      - lldap_database_url
+    environment:
+      - UID=${PUID}
+      - GID=${PGID}
+      - TZ=${TZ}
+      - LLDAP_JWT_SECRET_FILE=${LLDAP__JWT_SECRET} 
+      - LLDAP_KEY_SEED_FILE=${LLDAP__KEY_SEED} 
+      - LLDAP_LDAP_BASE_DN=${LLDAP__LDAP_BASE_DN} 
+      - LLDAP_LDAP_USER_PASS_FILE=${LLDAP__LDAP_USER_PASS}     
+      - LLDAP_DATABASE_URL_FILE=${LLDAP__DATABASE_URL} 
+      - LLDAP_HTTP_URL=${LLDAP__HTTP_URL}
+      - LLDAP_SMTP_OPTIONS__ENABLE_PASSWORD_RESET=${LLDAP__SMTP_OPTIONS__ENABLE_PASSWORD_RESET}
+      - LLDAP_SMTP_OPTIONS__SERVER=${SMTP__HOST}
+      - LLDAP_SMTP_OPTIONS__PORT=${SMTP__PORT}
+      - LLDAP_SMTP_OPTIONS__SMTP_ENCRYPTION=${LLDAP__SMTP_OPTIONS__SMTP_ENCRYPTION}
+      - LLDAP_SMTP_OPTIONS__USER=${SMTP__USERNAME}  
+      - LLDAP_SMTP_OPTIONS__PASSWORD_FILE=${SMTP__PASSWORD}
+      - LLDAP_SMTP_OPTIONS__FROM=${LLDAP__SMTP_OPTIONS__FROM}
+      - LLDAP_SMTP_OPTIONS__TO=${LLDAP__SMTP_OPTIONS__TO}
+
+      # If using LDAPS, set enabled true and configure cert and key path
+      # - LLDAP_LDAPS_OPTIONS__ENABLED=true
+      # - LLDAP_LDAPS_OPTIONS__CERT_FILE=/path/to/certfile.crt
+      # - LLDAP_LDAPS_OPTIONS__KEY_FILE=/path/to/keyfile.key
+    networks:
+      - external
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.lldap-https.rule=Host(`lldap.int.${DOMAINNAME}`)" # Extract hostname from URL, assuming https:// is used. Adjust if using http or a non-standard port.
+      - "traefik.http.services.lldap.loadbalancer.server.port=17170"      
+      - "deunhealth.restart.on.unhealthy=true"
+    volumes:
+      - ${VOLDIR}/lldap:/data
+      
+    # ports:
+    #   # For LDAP, not recommended to expose, see Usage section.
+    #   #- "3890:3890"
+    #   # For LDAPS (LDAP Over SSL), enable port if LLDAP_LDAPS_OPTIONS__ENABLED set true, look env below
+    #   #- "6360:6360"
+    #   # For the web front-end
+    #   - "17170:17170"
