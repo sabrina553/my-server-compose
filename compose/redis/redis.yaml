@@ -11,7 +11,9 @@ services:
     networks:
       - internal
     labels:
+      - "traefik.enable=false"
       - "deunhealth.restart.on.unhealthy=true"
+      
     volumes:
       - ${VOLDIR}/redis:/data
     healthcheck:
