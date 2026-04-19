@@ -42,7 +42,8 @@ services:
       - OIDC_SCOPES=${FRESHRSS__OIDC_SCOPES}
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.freshrss.rule=Host(`rss.${DOMAINNAME}`)"      
+      - "traefik.http.routers.freshrss.rule=Host(`rss.${DOMAINNAME}`)"     
+      - "traefik.http.routers.freshrss.middlewares=authelia@docker"   
       - "traefik.http.services.freshrss.loadbalancer.server.port=80"
       - "deunhealth.restart.on.unhealthy=true"
     volumes:
