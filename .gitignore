@@ -5,3 +5,4 @@ secrets/*
 compose/copyparty/*
 compose/filebrowser/*
 compose/filestash/*
+compose/authelia/authelia.yaml
