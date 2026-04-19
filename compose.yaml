@@ -29,106 +29,106 @@ networks:
 ###########################SECRETS###########################
 secrets:
   smtp_password:
-    file: $DOCKERDIR/secrets/smtp_password
+    file: $DOCKERDIR/secrets/smtp/password
   cf_dns_api_token:
-    file: $DOCKERDIR/secrets/cf_dns_api_token
+    file: $DOCKERDIR/secrets/cloudflare/dns_api_token
   cf_tunnel_token:
-    file: $DOCKERDIR/secrets/cf_tunnel_token
+    file: $DOCKERDIR/secrets/cloudflare/tunnel_token
   postgres_password:
-    file: $DOCKERDIR/secrets/postgres_password
+    file: $DOCKERDIR/secrets/postgres/password
 
   #AUHELIA####################################################
   authelia_jwt:
-    file: $DOCKERDIR/secrets/authelia_jwt
+    file: $DOCKERDIR/secrets/authelia/jwt
   authelia_secret_key:
-    file: $DOCKERDIR/secrets/authelia_secret_key
+    file: $DOCKERDIR/secrets/authelia/secret_key
   authelia_pg_password:
-    file: $DOCKERDIR/secrets/authelia_pg_password
+    file: $DOCKERDIR/secrets/authelia/pg_password
   authelia_encryption:
-    file: $DOCKERDIR/secrets/authelia_encryption
+    file: $DOCKERDIR/secrets/authelia/encryption
   authelia_hmac_secret:
-    file: $DOCKERDIR/secrets/authelia_hmac_secret
-
-
+    file: $DOCKERDIR/secrets/authelia/hmac_secret
+  authelia_jwks:
+    file: $DOCKERDIR/secrets/authelia/hmac_secret
   #AUTHENTIK####################################################
   authentik_secret_key:
-    file: $DOCKERDIR/secrets/authentik_secret_key
+    file: $DOCKERDIR/secrets/authentik/secret_key
   authentik_pg_password:
-    file: $DOCKERDIR/secrets/authentik_pg_password
+    file: $DOCKERDIR/secrets/authentik/pg_password
   #FILEBROWSER####################################################
   filebrowser_oidc_client_id:
-    file: $DOCKERDIR/secrets/filebrowser_oidc_clientid
+    file: $DOCKERDIR/secrets/filebrowser/oidc_clientid
   filebrowser_oidc_client_secret:
-    file: $DOCKERDIR/secrets/filebrowser_oidc_secret
+    file: $DOCKERDIR/secrets/filebrowser/oidc_secret
   #FRESHRSS####################################################
   freshrss_oidc_clientid:
-    file: $DOCKERDIR/secrets/freshrss_oidc_clientid
+    file: $DOCKERDIR/secrets/freshrss/oidc_clientid
   freshrss_oidc_secret:
-    file: $DOCKERDIR/secrets/freshrss_oidc_secret
+    file: $DOCKERDIR/secrets/freshrss/oidc_secret
   freshrss_pg_password:
-    file: $DOCKERDIR/secrets/freshrss_pg_password
+    file: $DOCKERDIR/secrets/freshrss/pg_password
   #GRIMMORY####################################################  
   grimmory_db_password:
-    file: $DOCKERDIR/secrets/grimmory_db_password
+    file: $DOCKERDIR/secrets/grimmory/db_password
   grimmory_mdb_password:
-    file: $DOCKERDIR/secrets/grimmory_mdb_password
+    file: $DOCKERDIR/secrets/grimmory/mdb_password
   #home-assistant####################################################
   homeassis_oidc_clientid:
-    file: $DOCKERDIR/secrets/homeassis_oidc_clientid 
+    file: $DOCKERDIR/secrets/homeassis/oidc_clientid 
   homeassis_oidc_secret:
-    file: $DOCKERDIR/secrets/homeassis_oidc_secret
+    file: $DOCKERDIR/secrets/homeassis/oidc_secret
   #immich###########################################################
   immich_oidc_clientid:
-    file: $DOCKERDIR/secrets/immich_oidc_clientid
+    file: $DOCKERDIR/secrets/immich/oidc_clientid
   immich_oidc_secret:
-    file: $DOCKERDIR/secrets/immich_oidc_secret
+    file: $DOCKERDIR/secrets/immich/oidc_secret
   immich_pg_password:
-    file: $DOCKERDIR/secrets/immich_pg_password
+    file: $DOCKERDIR/secrets/immich/pg_password
   #LINKWARDEN#################################################### 
   linkwarden_oidc_clientid:
-    file: $DOCKERDIR/secrets/linkwarden_oidc_clientid
+    file: $DOCKERDIR/secrets/linkwarden/oidc_clientid
   linkwarden_oidc_secret:
-    file: $DOCKERDIR/secrets/linkwarden_oidc_secret
+    file: $DOCKERDIR/secrets/linkwarden/oidc_secret
   linkwarden_pg_password:
-    file: $DOCKERDIR/secrets/linkwarden_pg_password
+    file: $DOCKERDIR/secrets/linkwarden/pg_password
   linkwarden_nextauth_secret:
-    file: $DOCKERDIR/secrets/linkwarden_nextauth_secret
+    file: $DOCKERDIR/secrets/linkwarden/nextauth_secret
 #LLDAP#################################################### 
   lldap_jwt_secret:
-    file: $DOCKERDIR/secrets/lldap_jwt_secret
+    file: $DOCKERDIR/secrets/lldap/jwt_secret
   lldap_key_seed:
-    file: $DOCKERDIR/secrets/lldap_key_seed
+    file: $DOCKERDIR/secrets/lldap/key_seed
   lldap_user_pass:
-    file: $DOCKERDIR/secrets/lldap_user_pass
+    file: $DOCKERDIR/secrets/lldap/user_pass
   lldap_database_url:
-    file: $DOCKERDIR/secrets/lldap_database_url
+    file: $DOCKERDIR/secrets/lldap/database_url
 #MEALIE####################################################
   mealie_oidc_clientid:
-    file: $DOCKERDIR/secrets/mealie_oidc_clientid
+    file: $DOCKERDIR/secrets/mealie/oidc_clientid
   mealie_oidc_secret:
-    file: $DOCKERDIR/secrets/mealie_oidc_secret
+    file: $DOCKERDIR/secrets/mealie/oidc_secret
   mealie_pg_password:
-    file: $DOCKERDIR/secrets/mealie_pg_password
+    file: $DOCKERDIR/secrets/mealie/pg_password
 #VAULTWARDEN####################################################
   vaultwarden_pg_url:
-    file: $DOCKERDIR/secrets/vaultwarden_pg_url
+    file: $DOCKERDIR/secrets/vaultwarden/pg_url
   vaultwarden_oidc_clientid:
-    file: $DOCKERDIR/secrets/vaultwarden_oidc_clientid
+    file: $DOCKERDIR/secrets/vaultwarden/oidc_clientid
   vaultwarden_oidc_clientsecret:
-    file: $DOCKERDIR/secrets/vaultwarden_oidc_clientsecret
+    file: $DOCKERDIR/secrets/vaultwarden/oidc_clientsecret
   vaultwarden_push_id:
-    file: $DOCKERDIR/secrets/vaultwarden_push_id
+    file: $DOCKERDIR/secrets/vaultwarden/push_id
   vaultwarden_push_key:
-    file: $DOCKERDIR/secrets/vaultwarden_push_key
+    file: $DOCKERDIR/secrets/vaultwarden/push_key
   vaultwarden_admin_token:
-    file: $DOCKERDIR/secrets/vaultwarden_admin_token
+    file: $DOCKERDIR/secrets/vault/wardenvaultwarden_admin_token
  #WIREGUARD####################################################
   wireguard_private_key:
-    file: $DOCKERDIR/secrets/wireguard_private_key
+    file: $DOCKERDIR/secrets/wireguard/private_key
   wireguard_preshared_key: 
-    file: $DOCKERDIR/secrets/wireguard_preshared_key
+    file: $DOCKERDIR/secrets/wireguard/preshared_key
   wireguard_addresses: 
-    file: $DOCKERDIR/secrets/wireguard_addresses
+    file: $DOCKERDIR/secrets/wireguard/addresses
 ###########################SERVICES###########################
 include:
     #core
