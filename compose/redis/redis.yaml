@@ -1,0 +1,18 @@
+services:
+  redis:
+    container_name: redis
+    image: ${REDIS__IMAGE}:${REDIS__VERSION}
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+    networks:
+      - internal
+    labels:
+      - "deunhealth.restart.on.unhealthy=true"
+    volumes:
+      - ${VOLDIR}/redis:/data
+    healthcheck:
+      test: redis-cli ping || exit 1
