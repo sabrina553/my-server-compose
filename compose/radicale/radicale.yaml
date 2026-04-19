@@ -36,6 +36,7 @@ services:
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.radicale.rule=Host(`radi.int.$DOMAINNAME`)"      
+      - "traefik.http.routers.radicale.middlewares=authelia@docker"
       - "traefik.http.services.radicale.loadbalancer.server.port=5232"      
       - "deunhealth.restart.on.unhealthy=true"
     volumes:
