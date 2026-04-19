@@ -80,5 +80,5 @@ services:
       # traefik.http.middlewares.authelia.forwardAuth.address: 'http://authelia:9091/api/authz/forward-auth?authelia_url=https%3A%2F%2Fauthelia.lilyvitta.com%2F'
 
         volumes:
-            - "${VOLDIR}/authelia:/config"
+            - ".:/config"
 
