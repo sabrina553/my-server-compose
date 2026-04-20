@@ -4,9 +4,6 @@ services:
         image: ${AUTHELIA__IMAGE}:${AUTHELIA__VERSION}
         restart: "unless-stopped"
         depends_on:
-          traefik:
-            condition: service_started
-            restart: false
           postgres:
             condition: service_started
             restart: false
