@@ -40,6 +40,9 @@ services:
     networks:
       - external
       - internal
+    labels:
+      - "deunhealth.restart.on.unhealthy=true"
+      - "traefik.enable=false"
     volumes:
       - "/etc/localtime:/etc/localtime:ro"
     devices:

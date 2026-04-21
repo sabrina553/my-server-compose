@@ -19,6 +19,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.mousehole.rule=Host(`mousehole.int.$DOMAINNAME`)"      
-      - "traefik.http.services.mousehole.loadbalancer.server.port=5010" 
+      - "traefik.http.routers.mousehole.middlewares=authelia@docker"
+      - "traefik.http.services.mousehole.loadbalancer.server.port=5010"      
     volumes:
       - ${VOLDIR}/mousehole:/srv/mousehole
