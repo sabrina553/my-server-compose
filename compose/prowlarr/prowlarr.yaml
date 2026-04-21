@@ -35,7 +35,8 @@ services:
       - external
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.int.${DOMAINNAME}`)"      
+      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.int.${DOMAINNAME}`)"
+      - "traefik.http.routers.prowlarr.middlewares=authelia@docker"      
       - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
       - "deunhealth.restart.on.unhealthy=true"
     volumes:

@@ -19,13 +19,14 @@ services:
       TZ: "${TZ}"
       PUID: "${PUID}"
       PGID: "${PGID}"
-      HARDCOVER_API_TOKEN: ${BOOKKEEP__HARDCOVER_API_TOKEN}
-      BOOKKEEP__SECRET_KEY: ${BOOKKEEP__SECRET_KEY}
-      BOOKKEEP__DATABASE_URL: ${BOOKKEEP__DATABASE_URL}
-      REDIS_URL: ${REDIS__URL}
+      HARDCOVER_API_TOKEN: "${BOOKKEEP__HARDCOVER_API_TOKEN}"
+      BOOKKEEP_SECRET_KEY: "${BOOKKEEP__SECRET_KEY}"
+      DATABASE_URL: "${BOOKKEEP__DATABASE_URL}"
+      REDIS_URL: "${REDIS__URL}"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.bookkeep-https.rule=Host(`bookkeep.$DOMAINNAME`)"
+      - "traefik.http.routers.bookkeep.middlewares=authelia@docker"
       - "traefik.http.services.bookkeep.loadbalancer.server.port=8000"      
       - "deunhealth.restart.on.unhealthy=true"
     volumes:      
