@@ -25,7 +25,8 @@ services:
       - internal
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.chaptarr.rule=Host(`chaptarr.${DOMAINNAME}`)"      
+      - "traefik.http.routers.chaptarr.rule=Host(`chaptarr.${DOMAINNAME}`)"   
+      - "traefik.http.routers.chaptarr.middlewares=authelia@docker"     
       - "traefik.http.services.chaptarr.loadbalancer.server.port=8789"
       - "deunhealth.restart.on.unhealthy=true"
     volumes:

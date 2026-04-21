@@ -16,7 +16,8 @@ services:
       - external
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.irc.rule=Host(`irc.int.$DOMAINNAME`)"      
+      - "traefik.http.routers.irc.rule=Host(`irc.int.$DOMAINNAME`)"   
+      - "traefik.http.routers.irc.middlewares=authelia@docker"     
       - "traefik.http.services.irc.loadbalancer.server.port=9000" 
       - "deunhealth.restart.on.unhealthy=true" 
     volumes:
