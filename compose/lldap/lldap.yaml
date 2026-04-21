@@ -4,9 +4,6 @@ services:
     image: ${LLDAP__IMAGE}:${LLDAP__VERSION}
     restart: unless-stopped
     depends_on:
-      traefik:
-        condition: service_started
-        restart: false
       postgres:
         condition: service_started
         restart: false
