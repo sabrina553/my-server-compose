@@ -4,6 +4,14 @@ services:
     image: ${WATCHTOWER__IMAGE}:${WATCHTOWER__VERSION}
     #profiles: ["${WATCHTOWER_PROFILE:-infrastructure}"]
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
     networks:
       - external
       - internal
