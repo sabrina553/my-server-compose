@@ -4,13 +4,21 @@ services:
     image: ${VPN__IMAGE}:${VPN__VERSION}
     #profiles: ["${VPN_PROFILE:-network}"]
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - "NET_ADMIN"
+    #read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
     logging:
       driver: "json-file"
       options:
         max-size: "1m"
-        max-file: "3"
-    cap_add:
-      - "NET_ADMIN"
+        max-file: "3"    
     cpu_shares: 2048  # Ensure this always gets what is needed
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=0
