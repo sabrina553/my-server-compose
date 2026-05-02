@@ -3,6 +3,14 @@ services:
     container_name: immich_server
     image: ${IMMICH__IMAGE}:${IMMICH__VERSION}
     restart: always
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:unconfined
+    cap_drop:
+      - ALL
+    #read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
     depends_on:
       redis:
         condition: service_started
@@ -49,6 +57,14 @@ services:
     container_name: immich_machine_learning
     image: ${IMMICH_ML__IMAGE}:${IMMICH_ML__VERSION}
     restart: always
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:unconfined
+    cap_drop:
+      - ALL
+    #read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
     logging:
       driver: "json-file"
       options:

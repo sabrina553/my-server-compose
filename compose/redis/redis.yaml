@@ -3,6 +3,18 @@ services:
     container_name: redis
     image: ${REDIS__IMAGE}:${REDIS__VERSION}
     restart: always
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      #- chown
+      - SETGID
+      - SETUID
+    #read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
     logging:
       driver: "json-file"
       options:
