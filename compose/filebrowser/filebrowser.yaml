@@ -3,8 +3,18 @@ services:
     container_name: filebrowser
     image: ${FILEBROWSER__IMAGE}:${FILEBROWSER__VERSION}
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:unconfined
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
     depends_on:
       traefik:
+        condition: service_started
+        restart: false
+      authelia:
         condition: service_started
         restart: false
     logging:
@@ -27,7 +37,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.filebrowser.rule=Host(`files.${DOMAINNAME}`)"
-      - "traefik.http.routers.filebrowser.middlewares=authelia@docker"        
+      #- "traefik.http.routers.filebrowser.middlewares=authelia@docker"        
       - "traefik.http.services.filebrowser.loadbalancer.server.port=80" 
     volumes:
       - ${DATADIR}/filebrowser:/srv # Do not use a root "/" directory or include the "/var" folder
