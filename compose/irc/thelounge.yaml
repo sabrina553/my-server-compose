@@ -3,6 +3,18 @@ services:
     container_name: thelounge
     image: ${IRC__IMAGE}:${IRC__VERSION}
     restart: always
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      #- chown
+      - SETGID
+      - SETUID
+    #read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
     depends_on:
       traefik:
         condition: service_started
