@@ -3,11 +3,21 @@ services:
     container_name: mousehole
     image: ${MOUSEHOLE__IMAGE}:${MOUSEHOLE__VERSION}
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
     depends_on:
       traefik:
-        condition: service_started  
+        condition: service_started
+        restart: false  
       vpn:
         condition: service_healthy
+        restart: false
     logging:
       driver: "json-file"
       options:

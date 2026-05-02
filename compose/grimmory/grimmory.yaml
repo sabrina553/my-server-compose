@@ -3,6 +3,18 @@ services:
     image: ${GRIMMORY__IMAGE}:${GRIMMORY__VERSION}
     container_name: grimmory
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    #read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
     depends_on:
       traefik:
         condition: service_started
@@ -34,7 +46,7 @@ services:
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.grimmory.rule=Host(`grimmory.$DOMAINNAME`)"      
-      - "traefik.http.routers.grimmory.middlewares=authelia@docker"  
+      #- "traefik.http.routers.grimmory.middlewares=authelia@docker"  
       - "traefik.http.services.grimmory.loadbalancer.server.port=${GRIMMORY__PORT}"
       - "deunhealth.restart.on.unhealthy=true"
   
@@ -42,6 +54,14 @@ services:
     container_name: grimmory-mariadb
     image: ${MARIADB__IMAGE}:${MARIADB__VERSION}
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:unconfined
+    #cap_drop:
+    #  - ALL ??? 
+    #read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
     logging:
       driver: "json-file"
       options:
