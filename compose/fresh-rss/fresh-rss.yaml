@@ -3,6 +3,18 @@ services:
     container_name: freshrss
     image: ${FRESHRSS__IMAGE}:${FRESHRSS__VERSION}
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      #- chown
+      - SETGID
+      - SETUID
+    #read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
     depends_on:
       traefik:
         condition: service_started
@@ -24,6 +36,8 @@ services:
      - internal
     environment:
       - TZ=${TZ}
+      - PUID=${PUID}
+      - PGID=${PGID}
       - ADMIN_EMAIL=${EMAIL_ADMIN}
       - BASE_URL=https://rss.${DOMAINNAME}
       - SERVER_DNS=rss.${DOMAINNAME}
@@ -44,7 +58,7 @@ services:
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.freshrss.rule=Host(`rss.${DOMAINNAME}`)"     
-      - "traefik.http.routers.freshrss.middlewares=authelia@docker"   
+      #- "traefik.http.routers.freshrss.middlewares=authelia@docker"   
       - "traefik.http.services.freshrss.loadbalancer.server.port=80"
       - "deunhealth.restart.on.unhealthy=true"
     volumes:
