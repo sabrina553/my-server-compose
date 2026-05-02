@@ -11,7 +11,7 @@ services:
         max-file: "3"
     environment:
       TZ: "${TZ}"
-      LOG_LEVEL: "notice" # debug, info, notice, warning, err, crit, alert, emerg
+      LOG_LEVEL: "info" # debug, info, notice, warning, err, crit, alert, emerg
       DISABLE_IPV6: "0"
       ALLOW_START: "1"
       ALLOW_STOP: "1"
