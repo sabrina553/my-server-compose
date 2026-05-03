@@ -1,0 +1,43 @@
+services:
+  baikal:
+    container_name: baikal
+    image: ghcr.io/aalmenar/baikal
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - chown
+      - SETGID
+      - SETUID
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
+    depends_on:
+      traefik:
+        condition: service_started
+        restart: false
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+    #env:
+    #secrets:
+    #environment:
+    #ports:
+    networks:
+      - external
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.baikal-https.rule=Host(`baikal.${DOMAINNAME}`)"
+      - "traefik.http.services.baikal.loadbalancer.server.port=80"      
+      - "deunhealth.restart.on.unhealthy=true"
+    volumes:
+      - ${VOLDIR}/baikal:/var/www/baikal/config
+      - ${VOLDIR}/baikal:/var/www/baikal/Specific
+
+    #devices:
+    #healthcheck: 
