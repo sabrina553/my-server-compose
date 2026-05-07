@@ -3,6 +3,21 @@ services:
     container_name: postgres-web
     image: dpage/pgadmin4
     restart: unless-stopped
+    # security_opt:
+    #   - no-new-privileges:true
+    #   - apparmor:unconfined
+    # cap_drop:
+    #   - ALL
+    # cap_add:
+    #   - AUDIT_CONTROL
+    #   - AUDIT_WRITE
+    #   - AUDIT_READ
+    #   - CHOWN
+    #   - SETGID
+    #   - SETUID
+    #read_only: true
+    # tmpfs:
+    #   - /tmp:rw,noexec,nosuid
     depends_on:
       postgres:
         condition: service_started
@@ -15,7 +30,6 @@ services:
           options:
             max-size: "1m"
             max-file: "3"
-    user: '0:0' ###ermmmm
     environment:
       - TZ=${TZ}
       - PGADMIN_DEFAULT_EMAIL=${PGADMIN__DEFAULT_EMAIL}
