@@ -41,6 +41,6 @@ services:
       - "traefik.http.services.chaptarr.loadbalancer.server.port=8789"
       - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - ${VOLDIR}/chaptarr:/config
-      - ${DATADIR}/torrents/books:/ebooks
-      - ${DATADIR}/torrents/downloads:/downloads
+      - ${VOLDIR}/chaptarr:/config:rw
+      - ${DATADIR}/torrents/books:/ebooks:rw
+      - ${DATADIR}/torrents/downloads:/downloads:rw
