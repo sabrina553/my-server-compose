@@ -25,10 +25,10 @@ services:
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.homeassistant.rule=Host(`ha.$DOMAINNAME`)"     
-      #- "traefik.http.routers.homeassistant.middlewares=authelia@docker"   
+      - "traefik.http.routers.homeassistant.middlewares=authelia@docker"   
       - "traefik.http.services.homeassistant.loadbalancer.server.port=8123"
       - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - ${VOLDIR}/home-assistant:/config
+      - ${VOLDIR}/home-assistant:/config:rw
       - /etc/localtime:/etc/localtime:ro
       - /run/dbus:/run/dbus:ro
