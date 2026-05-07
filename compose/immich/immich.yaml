@@ -44,7 +44,7 @@ services:
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.immich.rule=Host(`photos.$DOMAINNAME`)"
-      #- "traefik.http.routers.immich.middlewares=authelia@docker"        
+      - "traefik.http.routers.immich.middlewares=authelia@docker"        
       - "traefik.http.services.immich.loadbalancer.server.port=2283"  
       - "deunhealth.restart.on.unhealthy=true"
     volumes:
@@ -75,4 +75,4 @@ services:
     labels:
       - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - ${VOLDIR}/immich/model-cache:/cache
+      - ${VOLDIR}/immich/model-cache:/cache:rw
