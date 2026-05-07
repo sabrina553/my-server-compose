@@ -9,10 +9,10 @@ services:
     cap_drop:
       - ALL
     cap_add:
-      #- chown
+      - CHOWN
       - SETGID
       - SETUID
-    #read_only: true
+    read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid
     depends_on:
@@ -73,4 +73,4 @@ services:
       - "traefik.http.services.mealie.loadbalancer.server.port=9000"
       - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - ${VOLDIR}/mealie/:/app/data/
+      - ${VOLDIR}/mealie/:/app/data/:rw
