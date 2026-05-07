@@ -37,16 +37,16 @@ services:
       - DATABASE_PASSWORD=${GRIMMORY__DB_PASSWORD}
       - GRIMMORY_PORT=${GRIMMORY__PORT}   
     volumes:
-      - ${VOLDIR}/grimmory/data:/app/data
-      - ${DATADIR}/torrents/:/books
-      - ${VOLDIR}/grimmory/:/bookdrop
+      - ${VOLDIR}/grimmory/data:/app/data:rw
+      - ${DATADIR}/torrents/:/books:rw
+      - ${VOLDIR}/grimmory/:/bookdrop:rw
     networks:
       - external
       - internal
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.grimmory.rule=Host(`grimmory.$DOMAINNAME`)"      
-      #- "traefik.http.routers.grimmory.middlewares=authelia@docker"  
+      - "traefik.http.routers.grimmory.middlewares=authelia@docker"  
       - "traefik.http.services.grimmory.loadbalancer.server.port=${GRIMMORY__PORT}"
       - "deunhealth.restart.on.unhealthy=true"
   
