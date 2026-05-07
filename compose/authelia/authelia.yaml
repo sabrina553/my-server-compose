@@ -33,7 +33,7 @@ services:
       - authelia_pg_password
       - authelia_encryption
       - authelia_hmac_secret
-      - authelia_jwks.2048.pem
+      - authelia_jwks
       - lldap_user_pass
       - smtp_password
     environment:
