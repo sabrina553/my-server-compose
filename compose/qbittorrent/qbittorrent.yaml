@@ -5,11 +5,11 @@ services:
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
-      - apparmor:unconfined
+    #   - apparmor:unconfined
     cap_drop:
       - ALL
     cap_add:
-      #- chown
+      - CHOWN
       - SETGID
       - SETUID
     #read_only: true
@@ -40,5 +40,9 @@ services:
       - "traefik.http.services.qbittorrent.loadbalancer.server.port=${WEBUI_PORT}"
       - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - $VOLDIR/qbittorrent:/config
-      - $DATADIR/torrents/downloads:/downloads
+      - $VOLDIR/qbittorrent:/config:rw
+      - $DATADIR/torrents/downloads:/downloads:rw
+
+    healthcheck:
+      start_period: "30s"
+      test: "curl --connect-timeout 5 --silent --show-error --fail http://localhost:8080/"
