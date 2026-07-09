@@ -1,7 +1,7 @@
 services:
   pgadmin:
     container_name: postgres-web
-    image: dpage/pgadmin4
+    image: ${PGADMIN__IMAGE}:${PGADMIN__VERSION}
     restart: unless-stopped
     # security_opt:
     #   - no-new-privileges:true
