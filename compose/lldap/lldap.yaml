@@ -3,6 +3,18 @@ services:
     container_name: lldap
     image: ${LLDAP__IMAGE}:${LLDAP__VERSION}
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:unconfined
+    #cap_drop:
+    #  - ALL
+    #cap_add: ??????????????
+    #  - chown
+    #  - SETGID
+    #  - SETUID
+    #read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
     depends_on:
       postgres:
         condition: service_started
