@@ -172,3 +172,4 @@ include:
     #other
     - compose/irc/thelounge.yaml
     - compose/fresh-rss/fresh-rss.yaml  
+    - compose/crosswatch/crosswatch.yaml
