@@ -21,7 +21,7 @@ services:
         restart: false
       vpn:
         condition: service_healthy
-        restart: false
+        restart: true
     logging:
       driver: "json-file"
       options:
@@ -42,7 +42,9 @@ services:
     volumes:
       - $VOLDIR/qbittorrent:/config:rw
       - $DATADIR/torrents/downloads:/downloads:rw
-
     healthcheck:
-      start_period: "30s"
-      test: "curl --connect-timeout 5 --silent --show-error --fail http://localhost:8080/"
+      test: ["CMD", "curl", "--connect-timeout", "5", "--silent", "--show-error", "--fail", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 15s
+      start_period: 30s
+      retries: 3
