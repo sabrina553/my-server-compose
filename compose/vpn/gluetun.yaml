@@ -2,7 +2,6 @@ services:
   vpn:
     container_name: ${VPN__NAME}
     image: ${VPN__IMAGE}:${VPN__VERSION}
-    #profiles: ["${VPN_PROFILE:-network}"]
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
