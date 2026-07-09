@@ -1,8 +1,7 @@
 services:
-  watchtower: # https://containrrr.dev/watchtower/usage-overview/
+  watchtower: 
     container_name: watchtower
     image: ${WATCHTOWER__IMAGE}:${WATCHTOWER__VERSION}
-    #profiles: ["${WATCHTOWER_PROFILE:-infrastructure}"]
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
