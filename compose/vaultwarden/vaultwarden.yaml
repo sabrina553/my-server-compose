@@ -1,6 +1,6 @@
 services:
   vaultwarden:
-    container_name: vaultwarden
+    container_name: ${VAULTWARDEN__NAME}
     image: ${VAULTWARDEN__IMAGE}:${VAULTWARDEN__VERSION}
     restart: unless-stopped
     security_opt:
@@ -33,7 +33,7 @@ services:
       - smtp_password
     environment:
       - TZ=${TZ}
-      - DOMAIN=https://vw.${DOMAINNAME}
+      - DOMAIN=${VAULTWARDEN__DOMAIN}
       - ADMIN_TOKEN=${VAULTWARDEN__ADMIN_TOKEN}
       - WEBSOCKET_ENABLED=${VAULTWARDEN__WEBSOCKET_ENABLED}
       - SIGNUPS_ALLOWED=${VAULTWARDEN__SIGNUPS_ALLOWED}
@@ -43,7 +43,7 @@ services:
       - SMTP_USERNAME=${SMTP__USERNAME}
       - SMTP_SECURITY=${SMTP__SECURITY}
       - SMTP_PORT=${SMTP__PORT}
-      - SMTP_PASSWORD=${SMTP__PASSWORD}
+      - SMTP_PASSWORD_FILE=${SMTP__PASSWORD}
       - PUSH_ENABLED=${VAULTWARDEN__PUSH_ENABLED}
       - PUSH_RELAY_URI=${VAULTWARDEN__PUSH_RELAY_URI}
       - PUSH_IDENTITY_URI=${VAULTWARDEN__PUSH_IDENTITY_URI}
@@ -51,6 +51,7 @@ services:
       - PUSH_INSTALLATION_KEY_FILE=${VAULTWARDEN__PUSH_INSTALLATION_KEY_FILE}
       - EXTENDED_LOGGING=${VAULTWARDEN__EXTENDED_LOGGING}
       - USE_SYSLOG=${VAULTWARDEN__USE_SYSLOG}
+      - LOG_LEVEL=${LOG_LEVEL}
       - LOG_FILE=${VAULTWARDEN__LOG_FILE}
       - DATABASE_URL_FILE=${VAULTWARDEN__DATABASE_URL_FILE}
       - SSO_ENABLED=${VAULTWARDEN__SSO_ENABLED}
@@ -66,9 +67,9 @@ services:
       - internal
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.vaultwarden-https.rule=Host(`vw.${DOMAINNAME}`)"
-      - "traefik.http.routers.vaultwarden.middlewares=authelia@docker"
-      - "traefik.http.services.vaultwarden.loadbalancer.server.port=80"      
+      - "traefik.http.routers.${VAULTWARDEN__NAME}-https.rule=Host(`vw.${DOMAINNAME}`)"
+      - "traefik.http.routers.${VAULTWARDEN__NAME}.middlewares=authelia@docker"
+      - "traefik.http.services.${VAULTWARDEN__NAME}.loadbalancer.server.port=80"      
       - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - ${VOLDIR}/vaultwarden/:/data/
+      - ${VOLDIR}/${VAULTWARDEN__NAME}:/data:rw
