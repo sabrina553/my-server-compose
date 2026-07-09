@@ -25,6 +25,7 @@ services:
     environment:
       - TZ=${TZ}
       - CF_DNS_API_TOKEN_FILE=${TRAEFIK__CF_DNS_API_TOKEN_FILE}
+      - LOG_LEVEL=${LOG_LEVEL}
     ports:
       - 80:80
       - 443:443    
@@ -82,7 +83,7 @@ services:
       - traefik.http.services.api.loadbalancer.server.port=8080      
       - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - ${VOLDIR}/traefik:/etc/traefik
+      - ${VOLDIR}/traefik:/etc/traefik:rw
     healthcheck:
       test: wget --quiet --tries=1 --spider http://127.0.0.1:8080/ping || exit 1
       interval: 5s
