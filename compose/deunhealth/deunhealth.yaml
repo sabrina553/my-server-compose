@@ -4,6 +4,14 @@ services:
     image: ${DEUNHEALTH__IMAGE}:${DEUNHEALTH__VERSION}
     #profiles: ["${DEUNHEALTH_PROFILE:-infrastructure}"]
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
     depends_on:
       socket-proxy:
         condition: service_healthy

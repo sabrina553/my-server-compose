@@ -1,9 +1,16 @@
 services:
-  watchtower: # https://containrrr.dev/watchtower/usage-overview/
+  watchtower: 
     container_name: watchtower
     image: ${WATCHTOWER__IMAGE}:${WATCHTOWER__VERSION}
-    #profiles: ["${WATCHTOWER_PROFILE:-infrastructure}"]
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
     networks:
       - external
       - internal
@@ -18,8 +25,8 @@ services:
         max-size: "1m"
         max-file: "3"
     environment:
-      TZ: "${TZ}"
-      DOCKER_HOST: "${DOCKER_HOST}"
+      TZ: ${TZ}
+      DOCKER_HOST: ${DOCKER_HOST}
       WATCHTOWER_CLEANUP: "true"
       WATCHTOWER_INCLUDE_STOPPED: "true"
       WATCHTOWER_LABEL_TAKE_PRECEDENCE: "true"

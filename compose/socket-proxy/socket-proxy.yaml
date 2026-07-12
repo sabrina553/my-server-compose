@@ -3,7 +3,15 @@ services:
     container_name: socket-proxy
     image: ${SOCKET_PROXY__IMAGE}:${SOCKET_PROXY__VERSION}
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:unconfined
+    cap_drop:
+      - ALL
     read_only: true
+    tmpfs:
+      - "/run"
+    #  - /run:rw,noexec,nosuid
     logging:
       driver: "json-file"
       options:
@@ -11,7 +19,7 @@ services:
         max-file: "3"
     environment:
       TZ: "${TZ}"
-      LOG_LEVEL: "notice" # debug, info, notice, warning, err, crit, alert, emerg
+      LOG_LEVEL: "warning" # debug, info, notice, warning, err, crit, alert, emerg
       DISABLE_IPV6: "0"
       ALLOW_START: "1"
       ALLOW_STOP: "1"
@@ -44,8 +52,7 @@ services:
     labels:
       - "traefik.enable=false"
       - "deunhealth.restart.on.unhealthy=true"
-    tmpfs:
-      - "/run"
+      - "com.centurylinklabs.watchtower.monitor-only=true"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
     healthcheck:

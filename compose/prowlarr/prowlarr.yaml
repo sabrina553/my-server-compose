@@ -3,6 +3,14 @@ services:
     container_name: flaresolverr
     image: ${FLARESOLVERR__IMAGE}:${FLARESOLVERR__VERSION}
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:unconfined
+    cap_drop:
+      - ALL
+    # read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
     logging:
       driver: "json-file"
       options:
@@ -22,6 +30,16 @@ services:
     container_name: prowlarr
     image: ${PROWLARR__IMAGE}:${PROWLARR__VERSION}
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETGID
+      - SETUID
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
     depends_on:
       traefik:
         condition: service_started
@@ -35,8 +53,9 @@ services:
       - external
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.int.${DOMAINNAME}`)"      
+      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.int.${DOMAINNAME}`)"
+      - "traefik.http.routers.prowlarr.middlewares=authelia@docker"      
       - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
       - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - ${VOLDIR}/prowlarr/:/config
+      - ${VOLDIR}/prowlarr/:/config:rw
