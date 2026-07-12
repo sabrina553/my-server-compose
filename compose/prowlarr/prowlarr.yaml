@@ -36,10 +36,8 @@ services:
     cap_drop:
       - ALL
     cap_add:
-      #- CHOWN
       - SETGID
       - SETUID
-    #read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid
     depends_on:
@@ -60,4 +58,4 @@ services:
       - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
       - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - ${VOLDIR}/prowlarr/:/config
+      - ${VOLDIR}/prowlarr/:/config:rw
