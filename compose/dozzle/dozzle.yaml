@@ -3,6 +3,14 @@ services:
     container_name: dozzle
     image: ${DOZZLE__IMAGE}:${DOZZLE__VERSION}
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:unconfined
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
     depends_on:
       socket-proxy:
         condition: service_healthy
@@ -25,6 +33,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.dozzle.rule=Host(`dozzle.int.${DOMAINNAME}`)"
+      - "traefik.http.routers.dozzle.middlewares=authelia@docker"  
       - "traefik.http.services.dozzle.loadbalancer.server.port=8080"
       
       - "deunhealth.restart.on.unhealthy=true"

@@ -1,8 +1,23 @@
 services:
   pgadmin:
     container_name: postgres-web
-    image: dpage/pgadmin4
+    image: ${PGADMIN__IMAGE}:${PGADMIN__VERSION}
     restart: unless-stopped
+    # security_opt:
+    #   - no-new-privileges:true
+    #   - apparmor:unconfined
+    # cap_drop:
+    #   - ALL
+    # cap_add:
+    #   - AUDIT_CONTROL
+    #   - AUDIT_WRITE
+    #   - AUDIT_READ
+    #   - CHOWN
+    #   - SETGID
+    #   - SETUID
+    #read_only: true
+    # tmpfs:
+    #   - /tmp:rw,noexec,nosuid
     depends_on:
       postgres:
         condition: service_started
@@ -11,19 +26,19 @@ services:
         condition: service_started
         restart: false
     logging:
-      options:
-        max-size: 10m
-    user: '0:0' ###ermmmm
+          driver: "json-file"
+          options:
+            max-size: "1m"
+            max-file: "3"
     environment:
       - TZ=${TZ}
-      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
-      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN__DEFAULT_PASSWORD}
-      - PGADMIN_CONFIG_SERVER_MODE="False"
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN__DEFAULT_EMAIL}
     networks:
       - internal
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.pgadmin.rule=Host(`pg.int.$DOMAINNAME`)"      
+      - "traefik.http.routers.pgadmin.middlewares=authelia@docker"  
       - "traefik.http.services.pgadmin.loadbalancer.server.port=80"
       - "deunhealth.restart.on.unhealthy=true"
     volumes:
