@@ -25,8 +25,8 @@ services:
         max-size: "1m"
         max-file: "3"
     environment:
-      TZ: "${TZ}"
-      DOCKER_HOST: "${DOCKER_HOST}"
+      TZ: ${TZ}
+      DOCKER_HOST: ${DOCKER_HOST}
       WATCHTOWER_CLEANUP: "true"
       WATCHTOWER_INCLUDE_STOPPED: "true"
       WATCHTOWER_LABEL_TAKE_PRECEDENCE: "true"
