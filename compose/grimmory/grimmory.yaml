@@ -1,7 +1,7 @@
 services:
   grimmory:
     image: ${GRIMMORY__IMAGE}:${GRIMMORY__VERSION}
-    container_name: grimmory
+    container_name: ${GRIMMORY__NAME}
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -9,10 +9,9 @@ services:
     cap_drop:
       - ALL
     cap_add:
-      - CHOWN
+      # - CHOWN
       - SETGID
       - SETUID
-    #read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid
     depends_on:
@@ -28,26 +27,26 @@ services:
         max-size: "1m"
         max-file: "3"
     environment:
-      - UMASK="000"
-      - TZ="${TZ}"
-      - PUID="${PUID}"
-      - PGID="${PGID}"      
+      - TZ=${TZ}
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - LOG_LEVEL=${LOG_LEVEL}
       - DATABASE_URL=${GRIMMORY__DB_URL}
       - DATABASE_USERNAME=${GRIMMORY__DB_USER}
       - DATABASE_PASSWORD=${GRIMMORY__DB_PASSWORD}
       - GRIMMORY_PORT=${GRIMMORY__PORT}   
     volumes:
-      - ${VOLDIR}/grimmory/data:/app/data:rw
+      - ${VOLDIR}/${GRIMMORY__NAME}/data:/app/data:rw
       - ${DATADIR}/torrents/:/books:rw
-      - ${VOLDIR}/grimmory/:/bookdrop:rw
+      - ${DATADIR}/downloads/:/bookdrop:rw
     networks:
       - external
       - internal
     labels:
-      - "traefik.enable=true"       
-      - "traefik.http.routers.grimmory.rule=Host(`grimmory.$DOMAINNAME`)"      
-      - "traefik.http.routers.grimmory.middlewares=authelia@docker"  
-      - "traefik.http.services.grimmory.loadbalancer.server.port=${GRIMMORY__PORT}"
+      - "traefik.enable=true"
+      - "traefik.http.routers.${GRIMMORY__NAME}.rule=Host(`${GRIMMORY__NAME}.$DOMAINNAME`)"      
+      - "traefik.http.routers.${GRIMMORY__NAME}.middlewares=authelia@docker"  
+      - "traefik.http.services.${GRIMMORY__NAME}.loadbalancer.server.port=${GRIMMORY__PORT}"
       - "deunhealth.restart.on.unhealthy=true"
   
   mariadb:
@@ -57,8 +56,12 @@ services:
     security_opt:
       - no-new-privileges:true
       - apparmor:unconfined
-    #cap_drop:
-    #  - ALL ??? 
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
     #read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid
@@ -71,12 +74,13 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
+      - LOG_LEVEL=${LOG_LEVEL}
       - MYSQL_USER=${GRIMMORY__DB_USER}
       - MYSQL_DATABASE=${GRIMMORY__DB_NAME}
       - MYSQL_PASSWORD=${GRIMMORY__DB_PASSWORD}      
       - MYSQL_ROOT_PASSWORD=${GRIMMORY__ROOT_PASSWORD}   
     volumes:
-      - ${VOLDIR}/grimmory/mariadb/:/config
+      - ${VOLDIR}/${GRIMMORY__NAME}/mariadb/:/config:rw
     networks:
       - internal
     labels:      
