@@ -3,6 +3,14 @@ services:
     container_name: homeassistant
     image: ${HOMEASSISTANT__IMAGE}:${HOMEASSISTANT__VERSION}
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:unconfined
+    cap_drop:
+      - ALL
+    #read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
     depends_on:
       traefik:
         condition: service_started
@@ -16,10 +24,11 @@ services:
       - external
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.homeassistant.rule=Host(`ha.$DOMAINNAME`)"      
+      - "traefik.http.routers.homeassistant.rule=Host(`ha.$DOMAINNAME`)"     
+      - "traefik.http.routers.homeassistant.middlewares=authelia@docker"   
       - "traefik.http.services.homeassistant.loadbalancer.server.port=8123"
       - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - ${VOLDIR}/home-assistant:/config
+      - ${VOLDIR}/home-assistant:/config:rw
       - /etc/localtime:/etc/localtime:ro
       - /run/dbus:/run/dbus:ro

@@ -1,16 +1,23 @@
 services:
   vpn:
-    container_name: vpn
+    container_name: ${VPN__NAME}
     image: ${VPN__IMAGE}:${VPN__VERSION}
-    #profiles: ["${VPN_PROFILE:-network}"]
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
     logging:
       driver: "json-file"
       options:
         max-size: "1m"
-        max-file: "3"
-    cap_add:
-      - "NET_ADMIN"
+        max-file: "3"    
     cpu_shares: 2048  # Ensure this always gets what is needed
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=0
@@ -19,11 +26,8 @@ services:
       - wireguard_preshared_key
       - wireguard_addresses
     environment:
-      # Default
       - TZ=${TZ}
-      - PUID=${PUID}
-      - PGID=${PGID}
-      # Image
+      - LOG_LEVEL=${LOG_LEVEL}
       - WIREGUARD_PRIVATE_KEY_FILE=${WIREGUARD_PRIVATE_KEY_FILE}
       - WIREGUARD_PRESHARED_KEY_FILE=${WIREGUARD_PRESHARED_KEY_FILE}
       - WIREGUARD_ADDRESSES_FILE=${WIREGUARD_ADDRESSES_FILE}
@@ -31,16 +35,22 @@ services:
       - VPN_TYPE="${VPN__TYPE}" 
       - SERVER_COUNTRIES="${VPN__SERVER_COUNTRIES}"
       - FIREWALL_VPN_INPUT_PORTS="${TORRENTING_PORT}"
-      - FIREWALL_OUTBOUND_SUBNETS="${VPN__EXTERNAL_SUBNETS}" #? not sure if this is needed, but it doesn't hurt to be explicit about it  
+      - FIREWALL_OUTBOUND_SUBNETS="${VPN__EXTERNAL_SUBNETS}" 
       - HTTPPROXY="on"
     ports:
       - 8080:8080 # qbittorrent webui      
       - 38534:38534 # qbittorrent
       - 8888:8888 # HTTP proxy
+      - 5010:5010 # Mousehole's port on the VPN container
     networks:
       - external
       - internal
+    labels:
+      - "deunhealth.restart.on.unhealthy=false"
+      - "com.centurylinklabs.watchtower.monitor-only=true"
+      - "traefik.enable=false"
     volumes:
       - "/etc/localtime:/etc/localtime:ro"
+      - "${VOLDIR}/${VPN__NAME}:/gluetun:rw"
     devices:
       - "/dev/net/tun:/dev/net/tun"

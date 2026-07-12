@@ -3,6 +3,18 @@ services:
     container_name: qbittorrent
     image: ${QBITTORRENT__IMAGE}:${QBITTORRENT__VERSION}
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    #   - apparmor:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    #read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
     depends_on:
       traefik:
         condition: service_started
@@ -24,8 +36,15 @@ services:
     labels:
       - "traefik.enable=true"       
       - "traefik.http.routers.qbittorrent.rule=Host(`q.int.$DOMAINNAME`)"      
+      - "traefik.http.routers.qbittorrent.middlewares=authelia@docker"
       - "traefik.http.services.qbittorrent.loadbalancer.server.port=${WEBUI_PORT}"
       - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - $VOLDIR/qbittorrent:/config
-      - $DATADIR/torrents/downloads:/downloads
+      - $VOLDIR/qbittorrent:/config:rw
+      - $DATADIR/torrents/downloads:/downloads:rw
+    healthcheck:
+      test: ["CMD", "curl", "--connect-timeout", "5", "--silent", "--show-error", "--fail", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 15s
+      start_period: 30s
+      retries: 3

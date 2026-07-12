@@ -1,8 +1,19 @@
 services:
   chaptarr:
-    container_name: chaptarr
+    container_name: ${CHAPTARR__NAME}
     image: ${CHAPTARR__IMAGE}:${CHAPTARR__VERSION}
     restart: unless-stopped
+    # security_opt:
+    #   - no-new-privileges:true
+    #   - apparmor:unconfined
+    # cap_drop:
+    #   - ALL
+    # cap_add:
+    #   - SETGID
+    #   - SETUID
+    # read_only: true
+    # tmpfs:
+    #   - /tmp:rw,noexec,nosuid
     depends_on:
       traefik:
         condition: service_started
@@ -25,10 +36,11 @@ services:
       - internal
     labels:
       - "traefik.enable=true"       
-      - "traefik.http.routers.chaptarr.rule=Host(`chaptarr.${DOMAINNAME}`)"      
+      - "traefik.http.routers.chaptarr.rule=Host(`${CHAPTARR__NAME}.${DOMAINNAME}`)"   
+      - "traefik.http.routers.chaptarr.middlewares=authelia@docker"     
       - "traefik.http.services.chaptarr.loadbalancer.server.port=8789"
       - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - ${VOLDIR}/chaptarr:/config
-      - ${DATADIR}/torrents/books:/ebooks
-      - ${DATADIR}/torrents/downloads:/downloads
+      - ${VOLDIR}/${CHAPTARR__NAME}:/config:rw
+      - ${DATADIR}/torrents/books:/ebooks:rw
+      - ${DATADIR}/torrents/downloads:/downloads:rw

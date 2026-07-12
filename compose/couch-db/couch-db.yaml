@@ -3,6 +3,14 @@ services:
     container_name: couchdb
     image: ${COUCHDB__IMAGE}:${COUCHDB__VERSION}
     restart: always
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:unconfined
+    #cap_drop:
+    #  - ALL
+    #read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
     depends_on:
       traefik:
         condition: service_started
@@ -12,6 +20,10 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
+    environment:
+      TZ: ${TZ}   
+      PUID: ${PUID}
+      PGID: ${PGID}
     networks:
       - internal
     labels:
