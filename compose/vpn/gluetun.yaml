@@ -46,7 +46,7 @@ services:
       - external
       - internal
     labels:
-      - "deunhealth.restart.on.unhealthy=true"
+      - "deunhealth.restart.on.unhealthy=false"
       - "com.centurylinklabs.watchtower.monitor-only=true"
       - "traefik.enable=false"
     volumes:
