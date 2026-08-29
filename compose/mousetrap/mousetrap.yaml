@@ -31,6 +31,7 @@ services:
         max-file: "3"
     environment:
     - TZ=${TZ}
+    - LOGLEVEL=DEBUG
     - PUID=${PUID}
     - PGID=${PGID}
     - LOGLEVEL=${LOG_LEVEL}
