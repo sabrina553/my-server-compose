@@ -50,11 +50,6 @@ secrets:
     file: $DOCKERDIR/secrets/authelia/hmac_secret
   authelia_jwks:
     file: $DOCKERDIR/secrets/authelia/jwks
-  #AUTHENTIK####################################################
-  authentik_secret_key:
-    file: $DOCKERDIR/secrets/authentik/secret_key
-  authentik_pg_password:
-    file: $DOCKERDIR/secrets/authentik/pg_password
   #FILEBROWSER####################################################
   filebrowser_oidc_client_id:
     file: $DOCKERDIR/secrets/filebrowser/oidc_clientid
@@ -136,7 +131,6 @@ include:
     - compose/traefik/traefik.yaml   
     - compose/authelia/authelia.yaml 
     - compose/lldap/lldap.yaml
-    #- compose/auth/authentik.yaml
     - compose/vpn/gluetun.yaml   
     - compose/dozzle/dozzle.yaml 
     - compose/deunhealth/deunhealth.yaml
@@ -153,6 +147,7 @@ include:
     - compose/prowlarr/prowlarr.yaml
     - compose/qbittorrent/qbittorrent.yaml
     - compose/mousehole/mousehole.yaml
+    # - compose/mousetrap/mousetrap.yaml
     #- compose/bookkeep/bookkeep.yaml
 
     #data
@@ -161,8 +156,8 @@ include:
     #organization
     - compose/mealie/mealie.yaml
     - compose/couch-db/couch-db.yaml
-    #- compose/linkwarden/linkwarden.yaml
-    #- compose/leantime/leantime.yaml
+    - compose/linkwarden/linkwarden.yaml
+    - compose/leantime/leantime.yaml
 
     #storage 
     - compose/immich/immich.yaml   
