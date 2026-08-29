@@ -1,20 +1,20 @@
-services:   
+services:
   mousehole:
     container_name: ${MOUSEHOLE__NAME}
     image: ${MOUSEHOLE__IMAGE}:${MOUSEHOLE__VERSION}
     restart: unless-stopped
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
+    - apparmor:unconfined
     cap_drop:
-      - ALL
+    - ALL
     read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
     depends_on:
       traefik:
         condition: service_started
-        restart: false  
+        restart: false
       vpn:
         condition: service_healthy
         restart: true
@@ -24,17 +24,17 @@ services:
         max-size: "1m"
         max-file: "3"
     environment:
-      - TZ=${TZ}
-      - MOUSEHOLE_AUTH_PASSWORD=${MOUSEHOLE__AUTH_PASSWORD}
-      - MOUSEHOLE_ALLOWED_HOSTS=${MOUSEHOLE__ALLOWED_HOST}
-      - MOUSEHOLE_ALLOWED_ORIGINS=${MOUSEHOLE__ALLOWED_ORIGINS}
-      - MOUSEHOLE_HTTPS_ONLY_COOKIES=${MOUSEHOLE__HTTPS_ONLY_COOKIES}
+    - TZ=${TZ}
+    - MOUSEHOLE_AUTH_PASSWORD=${MOUSEHOLE__AUTH_PASSWORD}
+    - MOUSEHOLE_ALLOWED_HOSTS=${MOUSEHOLE__ALLOWED_HOST}
+    - MOUSEHOLE_ALLOWED_ORIGINS=${MOUSEHOLE__ALLOWED_ORIGINS}
+    - MOUSEHOLE_HTTPS_ONLY_COOKIES=${MOUSEHOLE__HTTPS_ONLY_COOKIES}
     network_mode: "service:vpn"
     labels:
-      - "traefik.enable=true"       
-      - "traefik.http.routers.${MOUSEHOLE__NAME}.rule=Host(`${MOUSEHOLE__NAME}.int.${DOMAINNAME}`)"
-      - "traefik.http.routers.${MOUSEHOLE__NAME}.middlewares=authelia@docker"      
-      - "traefik.http.services.${MOUSEHOLE__NAME}.loadbalancer.server.port=5010"
-      - "deunhealth.restart.on.unhealthy=true"
+    - "traefik.enable=true"
+    - "traefik.http.routers.${MOUSEHOLE__NAME}.rule=Host(`${MOUSEHOLE__NAME}.int.${DOMAINNAME}`)"
+    - "traefik.http.routers.${MOUSEHOLE__NAME}.middlewares=authelia@docker"
+    - "traefik.http.services.${MOUSEHOLE__NAME}.loadbalancer.server.port=5010"
+    - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - ${VOLDIR}/${MOUSEHOLE__NAME}:/var/lib/mousehole:rw
+    - ${VOLDIR}/${MOUSEHOLE__NAME}:/var/lib/mousehole:rw

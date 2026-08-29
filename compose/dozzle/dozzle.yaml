@@ -4,13 +4,13 @@ services:
     image: ${DOZZLE__IMAGE}:${DOZZLE__VERSION}
     restart: unless-stopped
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
+    - apparmor:unconfined
     cap_drop:
-      - ALL
+    - ALL
     read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
     depends_on:
       socket-proxy:
         condition: service_healthy
@@ -22,25 +22,25 @@ services:
       driver: "json-file"
       options:
         max-size: "1m"
-        max-file: "3"    
+        max-file: "3"
     environment:
       DOCKER_HOST: ${DOCKER_HOST}
       #DOZZLE_HOSTNAME: "${DOMAINNAME}"
       #DOZZLE_AUTH_PROVIDER: forward-proxy
     networks:
-      - internal
-      - socket_proxy
+    - internal
+    - socket_proxy
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.dozzle.rule=Host(`dozzle.int.${DOMAINNAME}`)"
-      - "traefik.http.routers.dozzle.middlewares=authelia@docker"  
-      - "traefik.http.services.dozzle.loadbalancer.server.port=8080"
-      
-      - "deunhealth.restart.on.unhealthy=true"
+    - "traefik.enable=true"
+    - "traefik.http.routers.dozzle.rule=Host(`dozzle.int.${DOMAINNAME}`)"
+    - "traefik.http.routers.dozzle.middlewares=authelia@docker"
+    - "traefik.http.services.dozzle.loadbalancer.server.port=8080"
+
+    - "deunhealth.restart.on.unhealthy=true"
 
     healthcheck:
       interval: "30s"
       timeout: "5s"
       retries: 3
       start_period: "10s"
-      test: ["CMD", "/dozzle", "healthcheck"]
+      test: [ "CMD", "/dozzle", "healthcheck" ]

@@ -26,20 +26,20 @@ services:
         condition: service_started
         restart: false
     logging:
-          driver: "json-file"
-          options:
-            max-size: "1m"
-            max-file: "3"
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
     environment:
-      - TZ=${TZ}
-      - PGADMIN_DEFAULT_EMAIL=${PGADMIN__DEFAULT_EMAIL}
+    - TZ=${TZ}
+    - PGADMIN_DEFAULT_EMAIL=${PGADMIN__DEFAULT_EMAIL}
     networks:
-      - internal
+    - internal
     labels:
-      - "traefik.enable=true"       
-      - "traefik.http.routers.pgadmin.rule=Host(`pg.int.$DOMAINNAME`)"      
-      - "traefik.http.routers.pgadmin.middlewares=authelia@docker"  
-      - "traefik.http.services.pgadmin.loadbalancer.server.port=80"
-      - "deunhealth.restart.on.unhealthy=true"
+    - "traefik.enable=true"
+    - "traefik.http.routers.pgadmin.rule=Host(`pg.int.$DOMAINNAME`)"
+    - "traefik.http.routers.pgadmin.middlewares=authelia@docker"
+    - "traefik.http.services.pgadmin.loadbalancer.server.port=80"
+    - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - ${VOLDIR}/pgadmin:/var/lib/pgadmin
+    - ${VOLDIR}/pgadmin:/var/lib/pgadmin

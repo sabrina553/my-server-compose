@@ -1,20 +1,20 @@
 services:
-  watchtower: 
+  watchtower:
     container_name: watchtower
     image: ${WATCHTOWER__IMAGE}:${WATCHTOWER__VERSION}
     restart: unless-stopped
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
+    - apparmor:unconfined
     cap_drop:
-      - ALL
+    - ALL
     read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
     networks:
-      - external
-      - internal
-      - socket_proxy
+    - external
+    - internal
+    - socket_proxy
     depends_on:
       socket-proxy:
         condition: service_started
@@ -31,10 +31,10 @@ services:
       WATCHTOWER_INCLUDE_STOPPED: "true"
       WATCHTOWER_LABEL_TAKE_PRECEDENCE: "true"
       WATCHTOWER_USE_COMPOSE_DEPENDS_ON: "false"
-      WATCHTOWER_POLL_INTERVAL: "3600"            
+      WATCHTOWER_POLL_INTERVAL: "3600"
       WATCHTOWER_REMOVE_VOLUMES: "true"
       WATCHTOWER_TIMEOUT: "30s"
     labels:
-      - "com.centurylinklabs.watchtower.monitor-only=true"
-      - "deunhealth.restart.on.unhealthy=true"
-      - "traefik.enable=false"
+    - "com.centurylinklabs.watchtower.monitor-only=true"
+    - "deunhealth.restart.on.unhealthy=true"
+    - "traefik.enable=false"

@@ -1,16 +1,16 @@
-services: 
+services:
   audiobookshelf:
     container_name: audiobookshelf
     image: ${AUDIOBOOKSHELF__IMAGE}:${AUDIOBOOKSHELF__VERSION}
     restart: unless-stopped
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
+    - apparmor:unconfined
     cap_drop:
-      - ALL
+    - ALL
     read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
     depends_on:
       traefik:
         condition: service_started
@@ -26,15 +26,15 @@ services:
       PGID: "${PGID}"
       UMASK: "000"
     networks:
-      - external   
-      - internal 
+    - external
+    - internal
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.audiobookshelf.rule=Host(`audiobookshelf.${DOMAINNAME}`)"
-      - "traefik.http.routers.audiobookshelf.middlewares=authelia@docker"  
-      - "traefik.http.services.audiobookshelf.loadbalancer.server.port=80"
-      - "deunhealth.restart.on.unhealthy=true"
+    - "traefik.enable=true"
+    - "traefik.http.routers.audiobookshelf.rule=Host(`audiobookshelf.${DOMAINNAME}`)"
+    - "traefik.http.routers.audiobookshelf.middlewares=authelia@docker"
+    - "traefik.http.services.audiobookshelf.loadbalancer.server.port=80"
+    - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - ${DATADIR}/torrents:/audiobooks
-      - ${VOLDIR}/abs/config:/config
-      - ${VOLDIR}/abs/meta:/metadata
+    - ${DATADIR}/torrents:/audiobooks
+    - ${VOLDIR}/abs/config:/config
+    - ${VOLDIR}/abs/meta:/metadata

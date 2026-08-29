@@ -42,9 +42,11 @@ services:
       - 38534:38534 # qbittorrent
       - 8888:8888 # HTTP proxy
       - 5010:5010 # Mousehole's port on the VPN container
+      - 39842:39842 # Mousetrap 
     networks:
       - external
       - internal
+      - socket_proxy
     labels:
       - "deunhealth.restart.on.unhealthy=false"
       - "com.centurylinklabs.watchtower.monitor-only=true"
