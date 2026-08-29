@@ -4,13 +4,13 @@ services:
     image: akiraslingshot/bookkeep
     restart: unless-stopped
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
+    - apparmor:unconfined
     cap_drop:
-      - ALL
+    - ALL
     read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
     depends_on:
       traefik:
         condition: service_started
@@ -21,8 +21,8 @@ services:
         max-size: "1m"
         max-file: "3"
     networks:
-      - external
-      - internal
+    - external
+    - internal
     environment:
       TZ: "${TZ}"
       PUID: "${PUID}"
@@ -32,12 +32,11 @@ services:
       DATABASE_URL: "${BOOKKEEP__DATABASE_URL}"
       REDIS_URL: "${REDIS__URL}"
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.bookkeep-https.rule=Host(`bookkeep.$DOMAINNAME`)"
-      - "traefik.http.routers.bookkeep.middlewares=authelia@docker"
-      - "traefik.http.services.bookkeep.loadbalancer.server.port=8000"      
-      - "deunhealth.restart.on.unhealthy=true"
-    volumes:      
-      - ${DATADIR}/torrents/books:/ebooks
-      - ${DATADIR}/torrents/downloads:/downloads   
-    
+    - "traefik.enable=true"
+    - "traefik.http.routers.bookkeep-https.rule=Host(`bookkeep.$DOMAINNAME`)"
+    - "traefik.http.routers.bookkeep.middlewares=authelia@docker"
+    - "traefik.http.services.bookkeep.loadbalancer.server.port=8000"
+    - "deunhealth.restart.on.unhealthy=true"
+    volumes:
+    - ${DATADIR}/torrents/books:/ebooks
+    - ${DATADIR}/torrents/downloads:/downloads

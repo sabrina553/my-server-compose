@@ -1,0 +1,46 @@
+services:
+  mousetrap:
+    container_name: ${MOUSETRAP__NAME}
+    image: ${MOUSETRAP__IMAGE}:${MOUSETRAP__VERSION}
+    restart: unless-stopped
+    # security_opt:
+    #   - no-new-privileges:true
+    #   - apparmor:unconfined
+    # cap_drop:
+    #   - ALL
+    # cap_add:
+    #   - SETGID
+    #   - SETUID
+    # #read_only: true
+    # tmpfs:
+    #   - /tmp:rw,noexec,nosuid
+    depends_on:
+      socket-proxy:
+        condition: service_started
+        restart: false
+      traefik:
+        condition: service_started
+        restart: false
+      vpn:
+        condition: service_healthy
+        restart: true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+    environment:
+    - TZ=${TZ}
+    - PUID=${PUID}
+    - PGID=${PGID}
+    - LOGLEVEL=${LOG_LEVEL}
+    # - DOCKER_HOST=${DOCKER_HOST}
+    network_mode: "service:vpn"
+    labels:
+    - "traefik.enable=true"
+    - "traefik.http.routers.${MOUSETRAP__NAME}.rule=Host(`${MOUSETRAP__NAME}.int.${DOMAINNAME}`)"
+    - "traefik.http.routers.${MOUSETRAP__NAME}.middlewares=authelia@docker"
+    - "traefik.http.services.${MOUSETRAP__NAME}.loadbalancer.server.port=39842"
+    - "deunhealth.restart.on.unhealthy=true"
+    volumes:
+    - ${VOLDIR}/${MOUSETRAP__NAME}:/config:rw

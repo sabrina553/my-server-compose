@@ -4,17 +4,17 @@ services:
     image: ${MEALIE__IMAGE}:${MEALIE__VERSION}
     restart: always
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
+    - apparmor:unconfined
     cap_drop:
-      - ALL
+    - ALL
     cap_add:
-      - CHOWN
-      - SETGID
-      - SETUID
+    - CHOWN
+    - SETGID
+    - SETUID
     read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
     depends_on:
       traefik:
         condition: service_started
@@ -28,49 +28,49 @@ services:
         max-size: "1m"
         max-file: "3"
     secrets:
-      - smtp_password
-      - mealie_oidc_clientid
-      - mealie_oidc_secret
-      - mealie_pg_password
+    - smtp_password
+    - mealie_oidc_clientid
+    - mealie_oidc_secret
+    - mealie_pg_password
     environment:
-      - TZ=${TZ}
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - LOG_LEVEL=${LOG_LEVEL}
-      - ALLOW_PASSWORD_LOGIN=${MEALIE__ALLOW_PASSWORD_LOGIN}
-      - ALLOW_SIGNUP=${MEALIE__ALLOW_SIGNUP}
-      - SMTP_FROM_NAME="Mealie"
-      - SMTP_FROM_EMAIL="mealie@${DOMAINNAME}"
-      - SMTP_HOST={SMTP__HOST}
-      - SMTP_PORT={SMTP__PORT}
-      - SMTP_USER={SMTP__USER}
-      - SMTP_PASSWORD_FILE=${SMTP__PASSWORD}  
-      - SMTP_AUTH_STRATEGY={MEALIE__SMTP_AUTH_STRATEGY}
-      - DB_ENGINE=postgres
-      - POSTGRES_SERVER=${POSTGRESQL__HOST}
-      - POSTGRES_PORT=${POSTGRESQL__PORT}
-      - POSTGRES_USER=${MEALIE__POSTGRES_USER}
-      - POSTGRES_DB=${MEALIE__POSTGRES_DB}
-      - POSTGRES_PASSWORD_FILE=${MEALIE__POSTGRES_PASSWORD_FILE}
-      - BASE_URL=https://mealie.${DOMAINNAME}
-      - OIDC_AUTH_ENABLED=true
-      - OIDC_PROVIDER_NAME=${MEALIE__OIDC_PROVIDER_NAME}
-      - OIDC_CONFIGURATION_URL=${MEALIE__OIDC_CONFIGURATION_URL}
-      - OIDC_CLIENT_ID_FILE=${MEALIE__OIDC_CLIENT_ID_FILE}
-      - OIDC_CLIENT_SECRET_FILE=${MEALIE__OIDC_CLIENT_SECRET_FILE}
-      - OIDC_SIGNUP_ENABLED=${MEALIE__OIDC_SIGNUP_ENABLED}
-      - OIDC_ADMIN_GROUP=${MEALIE__OIDC_ADMIN_GROUP}
-      - OIDC_USER_GROUP=${MEALIE__OIDC_USER_GROUP}
-      - OIDC_AUTO_REDIRECT=${MEALIE__OIDC_AUTO_REDIRECT}
-      - OIDC_REMEMBER_ME=${MEALIE__OIDC_REMEMBER_ME}
+    - TZ=${TZ}
+    - PUID=${PUID}
+    - PGID=${PGID}
+    - LOG_LEVEL=${LOG_LEVEL}
+    - ALLOW_PASSWORD_LOGIN=${MEALIE__ALLOW_PASSWORD_LOGIN}
+    - ALLOW_SIGNUP=${MEALIE__ALLOW_SIGNUP}
+    - SMTP_FROM_NAME="Mealie"
+    - SMTP_FROM_EMAIL="mealie@${DOMAINNAME}"
+    - SMTP_HOST={SMTP__HOST}
+    - SMTP_PORT={SMTP__PORT}
+    - SMTP_USER={SMTP__USER}
+    - SMTP_PASSWORD_FILE=${SMTP__PASSWORD}
+    - SMTP_AUTH_STRATEGY={MEALIE__SMTP_AUTH_STRATEGY}
+    - DB_ENGINE=postgres
+    - POSTGRES_SERVER=${POSTGRESQL__HOST}
+    - POSTGRES_PORT=${POSTGRESQL__PORT}
+    - POSTGRES_USER=${MEALIE__POSTGRES_USER}
+    - POSTGRES_DB=${MEALIE__POSTGRES_DB}
+    - POSTGRES_PASSWORD_FILE=${MEALIE__POSTGRES_PASSWORD_FILE}
+    - BASE_URL=https://mealie.${DOMAINNAME}
+    - OIDC_AUTH_ENABLED=true
+    - OIDC_PROVIDER_NAME=${MEALIE__OIDC_PROVIDER_NAME}
+    - OIDC_CONFIGURATION_URL=${MEALIE__OIDC_CONFIGURATION_URL}
+    - OIDC_CLIENT_ID_FILE=${MEALIE__OIDC_CLIENT_ID_FILE}
+    - OIDC_CLIENT_SECRET_FILE=${MEALIE__OIDC_CLIENT_SECRET_FILE}
+    - OIDC_SIGNUP_ENABLED=${MEALIE__OIDC_SIGNUP_ENABLED}
+    - OIDC_ADMIN_GROUP=${MEALIE__OIDC_ADMIN_GROUP}
+    - OIDC_USER_GROUP=${MEALIE__OIDC_USER_GROUP}
+    - OIDC_AUTO_REDIRECT=${MEALIE__OIDC_AUTO_REDIRECT}
+    - OIDC_REMEMBER_ME=${MEALIE__OIDC_REMEMBER_ME}
     networks:
-      - external
-      - internal
+    - external
+    - internal
     labels:
-      - "traefik.enable=true"       
-      - "traefik.http.routers.mealie.rule=Host(`mealie.$DOMAINNAME`)"      
-      - "traefik.http.routers.mealie.middlewares=authelia@docker"  
-      - "traefik.http.services.mealie.loadbalancer.server.port=9000"
-      - "deunhealth.restart.on.unhealthy=true"
+    - "traefik.enable=true"
+    - "traefik.http.routers.mealie.rule=Host(`mealie.$DOMAINNAME`)"
+    - "traefik.http.routers.mealie.middlewares=authelia@docker"
+    - "traefik.http.services.mealie.loadbalancer.server.port=9000"
+    - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - ${VOLDIR}/mealie/:/app/data/:rw
+    - ${VOLDIR}/mealie/:/app/data/:rw

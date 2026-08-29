@@ -5,13 +5,13 @@ services:
     #profiles: ["${DEUNHEALTH_PROFILE:-infrastructure}"]
     restart: unless-stopped
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
+    - apparmor:unconfined
     cap_drop:
-      - ALL
+    - ALL
     read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
     depends_on:
       socket-proxy:
         condition: service_healthy
@@ -26,8 +26,8 @@ services:
       DOCKER_HOST: ${DOCKER_HOST}
       LOG_LEVEL: ${LOG_LEVEL}
     networks:
-      - internal
-      - socket_proxy
+    - internal
+    - socket_proxy
     labels:
-      - "deunhealth.restart.on.unhealthy=false"
-      - "traefik.enable=false"
+    - "deunhealth.restart.on.unhealthy=false"
+    - "traefik.enable=false"

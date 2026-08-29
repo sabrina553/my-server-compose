@@ -4,13 +4,13 @@ services:
     image: ${SOCKET_PROXY__IMAGE}:${SOCKET_PROXY__VERSION}
     restart: unless-stopped
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
+    - apparmor:unconfined
     cap_drop:
-      - ALL
+    - ALL
     read_only: true
     tmpfs:
-      - "/run"
+    - "/run"
     #  - /run:rw,noexec,nosuid
     logging:
       driver: "json-file"
@@ -46,15 +46,15 @@ services:
       SYSTEM: "0"
       TASKS: "0"
       VERSION: "1"
-      VOLUMES: "1"    
+      VOLUMES: "1"
     networks:
-      - socket_proxy
+    - socket_proxy
     labels:
-      - "traefik.enable=false"
-      - "deunhealth.restart.on.unhealthy=true"
-      - "com.centurylinklabs.watchtower.monitor-only=true"
+    - "traefik.enable=false"
+    - "deunhealth.restart.on.unhealthy=true"
+    - "com.centurylinklabs.watchtower.monitor-only=true"
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    - "/var/run/docker.sock:/var/run/docker.sock:ro"
     healthcheck:
       interval: "30s"
       timeout: "5s"

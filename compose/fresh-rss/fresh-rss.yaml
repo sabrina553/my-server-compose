@@ -4,17 +4,17 @@ services:
     image: ${FRESHRSS__IMAGE}:${FRESHRSS__VERSION}
     restart: unless-stopped
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
+    - apparmor:unconfined
     cap_drop:
-      - ALL
+    - ALL
     cap_add:
-      #- chown
-      - SETGID
-      - SETUID
+    #- chown
+    - SETGID
+    - SETUID
     #read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
     depends_on:
       traefik:
         condition: service_started
@@ -28,44 +28,44 @@ services:
         max-size: "1m"
         max-file: "3"
     secrets:
-      - freshrss_oidc_clientid
-      - freshrss_oidc_secret
-      - freshrss_pg_password
+    - freshrss_oidc_clientid
+    - freshrss_oidc_secret
+    - freshrss_pg_password
     networks:
-     - external
-     - internal
+    - external
+    - internal
     environment:
-      - TZ=${TZ}
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - ADMIN_EMAIL=${EMAIL_ADMIN}
-      - BASE_URL=https://rss.${DOMAINNAME}
-      - SERVER_DNS=rss.${DOMAINNAME}
-      - DB_TYPE=${POSTGRESQL__HOST}
-      - DB_HOST=${POSTGRESQL__HOST}
-      - DB_NAME=${FRESHRSS__DB_NAME}
-      - DB_USER=${FRESHRSS__DB_USER}
-      - DB_PASSWORD_FILE=${FRESHRSS__DB_PASSWORD_FILE}
-      - CRON_MIN=${FRESHRSS__CRON_MIN}
-      - TRUSTED_PROXY=${FRESHRSS__TRUSTED_PROXY}
-      - OIDC_ENABLED=${FRESHRSS__OIDC_ENABLED}
-      - OIDC_PROVIDER_METADATA_URL=${FRESHRSS__OIDC_PROVIDER_METADATA_URL}
-      - OIDC_CLIENT_ID=${FRESHRSS__OIDC_CLIENT_ID}
-      - OIDC_CLIENT_SECRET=${FRESHRSS__OIDC_CLIENT_SECRET}
-      - OIDC_CLIENT_CRYPTO_KEY=${FRESHRSS__OIDC_CLIENT_CRYPTO_KEY}
-      - OIDC_X_FORWARDED_HEADERS=${FRESHRSS__OIDC_X_FORWARDED_HEADERS}
-      - OIDC_SCOPES=${FRESHRSS__OIDC_SCOPES}
+    - TZ=${TZ}
+    - PUID=${PUID}
+    - PGID=${PGID}
+    - ADMIN_EMAIL=${EMAIL_ADMIN}
+    - BASE_URL=https://rss.${DOMAINNAME}
+    - SERVER_DNS=rss.${DOMAINNAME}
+    - DB_TYPE=${POSTGRESQL__HOST}
+    - DB_HOST=${POSTGRESQL__HOST}
+    - DB_NAME=${FRESHRSS__DB_NAME}
+    - DB_USER=${FRESHRSS__DB_USER}
+    - DB_PASSWORD_FILE=${FRESHRSS__DB_PASSWORD_FILE}
+    - CRON_MIN=${FRESHRSS__CRON_MIN}
+    - TRUSTED_PROXY=${FRESHRSS__TRUSTED_PROXY}
+    - OIDC_ENABLED=${FRESHRSS__OIDC_ENABLED}
+    - OIDC_PROVIDER_METADATA_URL=${FRESHRSS__OIDC_PROVIDER_METADATA_URL}
+    - OIDC_CLIENT_ID=${FRESHRSS__OIDC_CLIENT_ID}
+    - OIDC_CLIENT_SECRET=${FRESHRSS__OIDC_CLIENT_SECRET}
+    - OIDC_CLIENT_CRYPTO_KEY=${FRESHRSS__OIDC_CLIENT_CRYPTO_KEY}
+    - OIDC_X_FORWARDED_HEADERS=${FRESHRSS__OIDC_X_FORWARDED_HEADERS}
+    - OIDC_SCOPES=${FRESHRSS__OIDC_SCOPES}
     labels:
-      - "traefik.enable=true"       
-      - "traefik.http.routers.freshrss.rule=Host(`rss.${DOMAINNAME}`)"     
-      - "traefik.http.routers.freshrss.middlewares=authelia@docker"   
-      - "traefik.http.services.freshrss.loadbalancer.server.port=80"
-      - "deunhealth.restart.on.unhealthy=true"
+    - "traefik.enable=true"
+    - "traefik.http.routers.freshrss.rule=Host(`rss.${DOMAINNAME}`)"
+    - "traefik.http.routers.freshrss.middlewares=authelia@docker"
+    - "traefik.http.services.freshrss.loadbalancer.server.port=80"
+    - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - ${VOLDIR}/fresh-rss/data:/var/www/FreshRSS/data:rw
-      - ${VOLDIR}/fresh-rss/extensions:/var/www/FreshRSS/extensions:rw
+    - ${VOLDIR}/fresh-rss/data:/var/www/FreshRSS/data:rw
+    - ${VOLDIR}/fresh-rss/extensions:/var/www/FreshRSS/extensions:rw
     healthcheck:
-      test: ["CMD", "cli/health.php"]
+      test: [ "CMD", "cli/health.php" ]
       timeout: 10s
       start_period: 60s
       start_interval: 11s

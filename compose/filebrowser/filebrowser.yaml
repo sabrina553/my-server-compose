@@ -4,13 +4,13 @@ services:
     image: ${FILEBROWSER__IMAGE}:${FILEBROWSER__VERSION}
     restart: unless-stopped
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
+    - apparmor:unconfined
     cap_drop:
-      - ALL
+    - ALL
     #read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
     depends_on:
       traefik:
         condition: service_started
@@ -24,22 +24,22 @@ services:
         max-size: "1m"
         max-file: "3"
     secrets:
-      - filebrowser_oidc_client_id
-      - filebrowser_oidc_client_secret
+    - filebrowser_oidc_client_id
+    - filebrowser_oidc_client_secret
     environment:
-      - TZ=${TZ}
-      - PUID=${PUID}
-      - PGID=${PGID}      
-      - FILEBROWSER_DATABASE=${FILEBROWSER__DATABASE}
-      - FILEBROWSER_OIDC_CLIENT_ID=${FILEBROWSER__OIDC_CLIENT_ID}
-      - FILEBROWSER_OIDC_CLIENT_SECRET=${FILEBROWSER__OIDC_CLIENT_SECRET}
+    - TZ=${TZ}
+    - PUID=${PUID}
+    - PGID=${PGID}
+    - FILEBROWSER_DATABASE=${FILEBROWSER__DATABASE}
+    - FILEBROWSER_OIDC_CLIENT_ID=${FILEBROWSER__OIDC_CLIENT_ID}
+    - FILEBROWSER_OIDC_CLIENT_SECRET=${FILEBROWSER__OIDC_CLIENT_SECRET}
     networks:
-      - external
+    - external
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.filebrowser.rule=Host(`files.${DOMAINNAME}`)"
-      - "traefik.http.routers.filebrowser.middlewares=authelia@docker"        
-      - "traefik.http.services.filebrowser.loadbalancer.server.port=80" 
+    - "traefik.enable=true"
+    - "traefik.http.routers.filebrowser.rule=Host(`files.${DOMAINNAME}`)"
+    - "traefik.http.routers.filebrowser.middlewares=authelia@docker"
+    - "traefik.http.services.filebrowser.loadbalancer.server.port=80"
     volumes:
-      - ${DATADIR}/filebrowser:/srv:rw # Do not use a root "/" directory or include the "/var" folder
-      - ${VOLDIR}/filebrowser:${FILEBROWSER__DATABASE_PATH}:rw  # Do not use a root "/" directory or include the "/var" folder
+    - ${DATADIR}/filebrowser:/srv:rw # Do not use a root "/" directory or include the "/var" folder
+    - ${VOLDIR}/filebrowser:${FILEBROWSER__DATABASE_PATH}:rw # Do not use a root "/" directory or include the "/var" folder

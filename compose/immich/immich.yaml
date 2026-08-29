@@ -4,13 +4,13 @@ services:
     image: ${IMMICH__IMAGE}:${IMMICH__VERSION}
     restart: always
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
+    - apparmor:unconfined
     cap_drop:
-      - ALL
+    - ALL
     #read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
     depends_on:
       redis:
         condition: service_started
@@ -25,54 +25,54 @@ services:
       driver: "json-file"
       options:
         max-size: "1m"
-        max-file: "3"    
+        max-file: "3"
     secrets:
-      - immich_pg_password
+    - immich_pg_password
     environment:
-      - TZ="${TZ}"
-      - PUID="${PUID}"
-      - PGID="${PGID}" 
-      - UPLOAD_LOCATION=${IMMICH__UPLOAD_LOCATION}
-      - DB_HOSTNAME=${POSTGRESQL__HOST}
-      - DB_PORT=${POSTGRESQL__PORT}
-      - DB_USERNAME=${IMMICH__DB_USERNAME}
-      - DB_DATABASE_NAME=${IMMICH__DB_DATABASE_NAME}
-      - DB_PASSWORD_FILE=${IMMICH__DB_PASSWORD_FILE}
+    - TZ="${TZ}"
+    - PUID="${PUID}"
+    - PGID="${PGID}"
+    - UPLOAD_LOCATION=${IMMICH__UPLOAD_LOCATION}
+    - DB_HOSTNAME=${POSTGRESQL__HOST}
+    - DB_PORT=${POSTGRESQL__PORT}
+    - DB_USERNAME=${IMMICH__DB_USERNAME}
+    - DB_DATABASE_NAME=${IMMICH__DB_DATABASE_NAME}
+    - DB_PASSWORD_FILE=${IMMICH__DB_PASSWORD_FILE}
     networks:
-      - external
-      - internal
+    - external
+    - internal
     labels:
-      - "traefik.enable=true"       
-      - "traefik.http.routers.immich.rule=Host(`photos.$DOMAINNAME`)"
-      - "traefik.http.routers.immich.middlewares=authelia@docker"        
-      - "traefik.http.services.immich.loadbalancer.server.port=2283"  
-      - "deunhealth.restart.on.unhealthy=true"
+    - "traefik.enable=true"
+    - "traefik.http.routers.immich.rule=Host(`photos.$DOMAINNAME`)"
+    - "traefik.http.routers.immich.middlewares=authelia@docker"
+    - "traefik.http.services.immich.loadbalancer.server.port=2283"
+    - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - ${IMMICH__UPLOAD_LOCATION}:/data
-      - /etc/localtime:/etc/localtime:ro
+    - ${IMMICH__UPLOAD_LOCATION}:/data
+    - /etc/localtime:/etc/localtime:ro
     devices:
-      - "/dev/dri:/dev/dri" 
+    - "/dev/dri:/dev/dri"
 
   immich-machine-learning:
     container_name: immich_machine_learning
     image: ${IMMICH_ML__IMAGE}:${IMMICH_ML__VERSION}
     restart: always
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
+    - apparmor:unconfined
     cap_drop:
-      - ALL
+    - ALL
     #read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
     logging:
       driver: "json-file"
       options:
         max-size: "1m"
         max-file: "3"
     networks:
-      - internal
+    - internal
     labels:
-      - "deunhealth.restart.on.unhealthy=true"
+    - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - ${VOLDIR}/immich/model-cache:/cache:rw
+    - ${VOLDIR}/immich/model-cache:/cache:rw

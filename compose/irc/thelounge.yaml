@@ -4,17 +4,17 @@ services:
     image: ${IRC__IMAGE}:${IRC__VERSION}
     restart: always
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
+    - apparmor:unconfined
     cap_drop:
-      - ALL
+    - ALL
     cap_add:
-      #- chown
-      - SETGID
-      - SETUID
+    #- chown
+    - SETGID
+    - SETUID
     #read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
     depends_on:
       traefik:
         condition: service_started
@@ -24,13 +24,13 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
-    networks: 
-      - external
+    networks:
+    - external
     labels:
-      - "traefik.enable=true"       
-      - "traefik.http.routers.irc.rule=Host(`irc.int.$DOMAINNAME`)"   
-      - "traefik.http.routers.irc.middlewares=authelia@docker"     
-      - "traefik.http.services.irc.loadbalancer.server.port=9000" 
-      - "deunhealth.restart.on.unhealthy=true" 
+    - "traefik.enable=true"
+    - "traefik.http.routers.irc.rule=Host(`irc.int.$DOMAINNAME`)"
+    - "traefik.http.routers.irc.middlewares=authelia@docker"
+    - "traefik.http.services.irc.loadbalancer.server.port=9000"
+    - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - ${VOLDIR}/irc/:/var/opt/thelounge
+    - ${VOLDIR}/irc/:/var/opt/thelounge

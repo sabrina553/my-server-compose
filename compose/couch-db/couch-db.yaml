@@ -4,13 +4,13 @@ services:
     image: ${COUCHDB__IMAGE}:${COUCHDB__VERSION}
     restart: always
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
+    - apparmor:unconfined
     #cap_drop:
     #  - ALL
     #read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
     depends_on:
       traefik:
         condition: service_started
@@ -21,16 +21,16 @@ services:
         max-size: "1m"
         max-file: "3"
     environment:
-      TZ: ${TZ}   
+      TZ: ${TZ}
       PUID: ${PUID}
       PGID: ${PGID}
     networks:
-      - internal
+    - internal
     labels:
-      - "traefik.enable=true"       
-      - "traefik.http.routers.couchserver.rule=Host(`couch.$DOMAINNAME`)"      
-      - "traefik.http.services.couchserver.loadbalancer.server.port=5984"  
-      - "deunhealth.restart.on.unhealthy=true"
+    - "traefik.enable=true"
+    - "traefik.http.routers.couchserver.rule=Host(`couch.$DOMAINNAME`)"
+    - "traefik.http.services.couchserver.loadbalancer.server.port=5984"
+    - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - ${VOLDIR}/couch/dbdata:/opt/couchdb/data
-      - ${VOLDIR}/couch/config:/opt/couchdb/etc
+    - ${VOLDIR}/couch/dbdata:/opt/couchdb/data
+    - ${VOLDIR}/couch/config:/opt/couchdb/etc
