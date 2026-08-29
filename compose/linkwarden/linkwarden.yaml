@@ -1,0 +1,28 @@
+services:
+  linkwarden:
+    container_name: linkwarden
+    image: ghcr.io/linkwarden/linkwarden:latest # comment to build from source
+    restart: always
+    secrets:
+    - smtp_password
+    - linkwarden_nextauth_secret
+    - linkwarden_oidc_clientid
+    - linkwarden_oidc_secret
+    - linkwarden_pg_password
+    environment:
+    - NEXTAUTH_URL=${LINKWARDEN__NEXTAUTH_URL}
+    - NEXTAUTH_SECRET=${LINKWARDEN__NEXTAUTH_SECRET}
+    - DATABASE_URL=${LINKWARDEN__DATABASE_URL}
+    - NEXT_PUBLIC_AUTHELIA_ENABLED=${LINKWARDEN__NEXT_PUBLIC_AUTHELIA_ENABLED}
+    - AUTHELIA_CLIENT_ID=${LINKWARDEN__AUTHELIA_CLIENT_ID}
+    - AUTHELIA_CLIENT_SECRET=${LINKWARDEN__AUTHELIA_CLIENT_SECRET}
+    - AUTHELIA_WELLKNOWN_URL=${LINKWARDEN__AUTHELIA_WELLKNOWN_URL}
+    volumes:
+    - ${VOLDIR}/linkwarden:/data/data
+    networks:
+    - internal
+    - external
+    labels:
+    - "traefik.enable=true"
+    - "traefik.http.routers.linkwarden.rule=Host(`bookmark.$DOMAINNAME`)"
+    - "traefik.http.services.linkwarden.loadbalancer.server.port=3000"
