@@ -3,15 +3,15 @@ services:
     image: ${GRIMMORY__IMAGE}:${GRIMMORY__VERSION}
     container_name: ${GRIMMORY__NAME}
     restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
-    cap_drop:
-      - ALL
-    cap_add:
-      # - CHOWN
-      - SETGID
-      - SETUID
+    #security_opt:
+    #  - no-new-privileges:true
+    #  - apparmor:unconfined
+    # cap_drop:
+    #   - ALL
+    # cap_add:
+    #   - CHOWN
+    #   - SETGID
+    #   - SETUID
     tmpfs:
       - /tmp:rw,noexec,nosuid
     depends_on:
@@ -53,15 +53,15 @@ services:
     container_name: grimmory-mariadb
     image: ${MARIADB__IMAGE}:${MARIADB__VERSION}
     restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
-    cap_drop:
-      - ALL
-    cap_add:
-      - CHOWN
-      - SETGID
-      - SETUID
+    # security_opt:
+    #   - no-new-privileges:true
+    #   - apparmor:unconfined
+    # cap_drop:
+    #   - ALL
+    # cap_add:
+    #   - CHOWN
+    #   - SETGID
+    #   - SETUID
     #read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid

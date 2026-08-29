@@ -4,13 +4,13 @@ services:
     image: ${CLOUDFLARED__IMAGE}:${CLOUDFLARED__VERSION}
     restart: unless-stopped
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
+    - apparmor:unconfined
     cap_drop:
-      - ALL
+    - ALL
     read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
     logging:
       driver: "json-file"
       options:
@@ -18,11 +18,11 @@ services:
         max-file: "3"
     command: tunnel run
     secrets:
-      - cf_tunnel_token
+    - cf_tunnel_token
     networks:
-      - external
+    - external
     environment:
-      - TUNNEL_TOKEN_FILE=${CLOUDFLARED__TUNNEL_TOKEN_FILE}
+    - TUNNEL_TOKEN_FILE=${CLOUDFLARED__TUNNEL_TOKEN_FILE}
     labels:
-      - "traefik.enable=false"
-      - "deunhealth.restart.on.unhealthy=true"
+    - "traefik.enable=false"
+    - "deunhealth.restart.on.unhealthy=true"

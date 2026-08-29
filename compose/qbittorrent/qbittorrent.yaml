@@ -4,17 +4,17 @@ services:
     image: ${QBITTORRENT__IMAGE}:${QBITTORRENT__VERSION}
     restart: unless-stopped
     security_opt:
-      - no-new-privileges:true
+    - no-new-privileges:true
     #   - apparmor:unconfined
     cap_drop:
-      - ALL
+    - ALL
     cap_add:
-      - CHOWN
-      - SETGID
-      - SETUID
+    - CHOWN
+    - SETGID
+    - SETUID
     #read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
     depends_on:
       traefik:
         condition: service_started
@@ -28,20 +28,20 @@ services:
         max-size: "1m"
         max-file: "3"
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - WEBUI_PORT=${WEBUI_PORT}
-      - TORRENTING_PORT=${TORRENTING_PORT}
+    - PUID=${PUID}
+    - PGID=${PGID}
+    - WEBUI_PORT=${WEBUI_PORT}
+    - TORRENTING_PORT=${TORRENTING_PORT}
     network_mode: "container:vpn"
     labels:
-      - "traefik.enable=true"       
-      - "traefik.http.routers.qbittorrent.rule=Host(`q.int.$DOMAINNAME`)"      
-      - "traefik.http.routers.qbittorrent.middlewares=authelia@docker"
-      - "traefik.http.services.qbittorrent.loadbalancer.server.port=${WEBUI_PORT}"
-      - "deunhealth.restart.on.unhealthy=true"
+    - "traefik.enable=true"
+    - "traefik.http.routers.qbittorrent.rule=Host(`q.int.$DOMAINNAME`)"
+    - "traefik.http.routers.qbittorrent.middlewares=authelia@docker"
+    - "traefik.http.services.qbittorrent.loadbalancer.server.port=${WEBUI_PORT}"
+    - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - $VOLDIR/qbittorrent:/config:rw
-      - $DATADIR/torrents/downloads:/downloads:rw
+    - $VOLDIR/qbittorrent:/config:rw
+    - $DATADIR/torrents/downloads:/downloads:rw
     # healthcheck:
     #   test: ["CMD", "curl", "--connect-timeout", "5", "--silent", "--show-error", "--fail", "http://localhost:8080/"]
     #   interval: 30s
@@ -50,8 +50,7 @@ services:
     #   retries: 3
 
     healthcheck:
-      test: ["CMD", "curl", "-f", "-s", "-o", "/dev/null",
-             "http://localhost:8080/api/v2/app/version"]
+      test: [ "CMD", "curl", "-f", "-s", "-o", "/dev/null", "http://localhost:8080/api/v2/app/version" ]
       interval: 30s
       timeout: 10s
       retries: 3

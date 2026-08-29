@@ -4,16 +4,16 @@ services:
     image: ${CROSSWATCH__IMAGE}:${CROSSWATCH__VERSION}
     restart: unless-stopped
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
+    - apparmor:unconfined
     cap_drop:
-      - ALL
+    - ALL
     cap_add:
-      - CHOWN
-      - SETGID
-      - SETUID
+    - CHOWN
+    - SETGID
+    - SETUID
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
     depends_on:
       traefik:
         condition: service_started
@@ -26,12 +26,12 @@ services:
     environment:
       TZ: ${TZ}
     networks:
-      - external
+    - external
     labels:
-      - "traefik.enable=true"       
-      - "traefik.http.routers.${CROSSWATCH__NAME}.rule=Host(`${CROSSWATCH__NAME}.int.${DOMAINNAME}`)"
-      - "traefik.http.routers.${CROSSWATCH__NAME}.middlewares=authelia@docker"      
-      - "traefik.http.services.${CROSSWATCH__NAME}.loadbalancer.server.port=8787"
-      - "deunhealth.restart.on.unhealthy=true"
+    - "traefik.enable=true"
+    - "traefik.http.routers.${CROSSWATCH__NAME}.rule=Host(`${CROSSWATCH__NAME}.int.${DOMAINNAME}`)"
+    - "traefik.http.routers.${CROSSWATCH__NAME}.middlewares=authelia@docker"
+    - "traefik.http.services.${CROSSWATCH__NAME}.loadbalancer.server.port=8787"
+    - "deunhealth.restart.on.unhealthy=true"
     volumes:
-      - ${VOLDIR}/${CROSSWATCH__NAME}:/config:rw
+    - ${VOLDIR}/${CROSSWATCH__NAME}:/config:rw

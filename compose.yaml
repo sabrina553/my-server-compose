@@ -147,11 +147,8 @@ include:
     - compose/prowlarr/prowlarr.yaml
     - compose/qbittorrent/qbittorrent.yaml
     - compose/mousehole/mousehole.yaml
-    # - compose/mousetrap/mousetrap.yaml
+    - compose/mousetrap/mousetrap.yaml
     #- compose/bookkeep/bookkeep.yaml
-
-    #data
-    - compose/filebrowser/filebrowser.yaml 
 
     #organization
     - compose/mealie/mealie.yaml
@@ -160,6 +157,7 @@ include:
     - compose/leantime/leantime.yaml
 
     #storage 
+    - compose/filebrowser/filebrowser.yaml 
     - compose/immich/immich.yaml   
     - compose/vaultwarden/vaultwarden.yaml
     - compose/home-assistant/home-assistant.yaml
