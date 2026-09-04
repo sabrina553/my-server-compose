@@ -141,7 +141,7 @@ include:
     - compose/socket-proxy/socket-proxy.yaml
     
     #arrstack
-    - compose/audiobookshelf/audiobookshelf.yaml
+    #- compose/audiobookshelf/audiobookshelf.yaml
     - compose/grimmory/grimmory.yaml    
     - compose/chaptarr/chaptarr.yaml
     - compose/prowlarr/prowlarr.yaml
@@ -166,3 +166,4 @@ include:
     - compose/irc/thelounge.yaml
     - compose/fresh-rss/fresh-rss.yaml  
     - compose/crosswatch/crosswatch.yaml
+    - compose/ghost/ghost.yaml
