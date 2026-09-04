@@ -4,55 +4,56 @@ services:
     image: ${VPN__IMAGE}:${VPN__VERSION}
     restart: unless-stopped
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
+    - apparmor:unconfined
     cap_drop:
-      - ALL
+    - ALL
     cap_add:
-      - NET_ADMIN
-      - NET_RAW
+    - NET_ADMIN
+    - NET_RAW
+    - CHOWN
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
     logging:
       driver: "json-file"
       options:
         max-size: "1m"
-        max-file: "3"    
-    cpu_shares: 2048  # Ensure this always gets what is needed
+        max-file: "3"
+    cpu_shares: 2048 # Ensure this always gets what is needed
     sysctls:
-      - net.ipv6.conf.all.disable_ipv6=0
+    - net.ipv6.conf.all.disable_ipv6=0
     secrets:
-      - wireguard_private_key
-      - wireguard_preshared_key
-      - wireguard_addresses
+    - wireguard_private_key
+    - wireguard_preshared_key
+    - wireguard_addresses
     environment:
-      - TZ=${TZ}
-      - LOG_LEVEL=${LOG_LEVEL}
-      - WIREGUARD_PRIVATE_KEY_FILE=${WIREGUARD_PRIVATE_KEY_FILE}
-      - WIREGUARD_PRESHARED_KEY_FILE=${WIREGUARD_PRESHARED_KEY_FILE}
-      - WIREGUARD_ADDRESSES_FILE=${WIREGUARD_ADDRESSES_FILE}
-      - VPN_SERVICE_PROVIDER="${VPN__SERVICE_PROVIDER}"
-      - VPN_TYPE="${VPN__TYPE}" 
-      - SERVER_COUNTRIES="${VPN__SERVER_COUNTRIES}"
-      - FIREWALL_VPN_INPUT_PORTS="${TORRENTING_PORT}"
-      - FIREWALL_OUTBOUND_SUBNETS="${VPN__EXTERNAL_SUBNETS}" 
-      - HTTPPROXY="on"
+    - TZ=${TZ}
+    - LOG_LEVEL=${LOG_LEVEL}
+    - WIREGUARD_PRIVATE_KEY_FILE=${WIREGUARD_PRIVATE_KEY_FILE}
+    - WIREGUARD_PRESHARED_KEY_FILE=${WIREGUARD_PRESHARED_KEY_FILE}
+    - WIREGUARD_ADDRESSES_FILE=${WIREGUARD_ADDRESSES_FILE}
+    - VPN_SERVICE_PROVIDER="${VPN__SERVICE_PROVIDER}"
+    - VPN_TYPE="${VPN__TYPE}"
+    - SERVER_COUNTRIES="${VPN__SERVER_COUNTRIES}"
+    - FIREWALL_VPN_INPUT_PORTS="${TORRENTING_PORT}"
+    - FIREWALL_OUTBOUND_SUBNETS="${VPN__EXTERNAL_SUBNETS}"
+    - HTTPPROXY="on"
     ports:
-      - 8080:8080 # qbittorrent webui      
-      - 38534:38534 # qbittorrent
-      - 8888:8888 # HTTP proxy
-      - 5010:5010 # Mousehole's port on the VPN container
-      - 39842:39842 # Mousetrap 
+    - 8080:8080 # qbittorrent webui      
+    - 38534:38534 # qbittorrent
+    - 8888:8888 # HTTP proxy
+    - 5010:5010 # Mousehole's port on the VPN container
+    - 39842:39842 # Mousetrap 
     networks:
-      - external
-      - internal
-      - socket_proxy
+    - external
+    - internal
+    - socket_proxy
     labels:
-      - "deunhealth.restart.on.unhealthy=false"
-      - "com.centurylinklabs.watchtower.monitor-only=true"
-      - "traefik.enable=false"
+    - "deunhealth.restart.on.unhealthy=false"
+    - "com.centurylinklabs.watchtower.monitor-only=true"
+    - "traefik.enable=false"
     volumes:
-      - "/etc/localtime:/etc/localtime:ro"
-      - "${VOLDIR}/${VPN__NAME}:/gluetun:rw"
+    - "/etc/localtime:/etc/localtime:ro"
+    - "${VOLDIR}/${VPN__NAME}:/gluetun:rw"
     devices:
-      - "/dev/net/tun:/dev/net/tun"
+    - "/dev/net/tun:/dev/net/tun"
