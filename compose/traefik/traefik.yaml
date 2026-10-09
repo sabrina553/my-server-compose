@@ -30,7 +30,7 @@ services:
     - 443:443
     networks:
     - external
-    - internal
+    - proxy_internal
     - socket_proxy_ro
     command:
     #API + Dash
@@ -70,6 +70,9 @@ services:
     - "--providers.docker=true"
     - "--providers.docker.endpoint=${DOCKER_HOST_RO:-tcp://socket-proxy-ro:2375}"
     - "--providers.docker.exposedbydefault=false"
+    #Containers sit on several networks; route over external unless a service
+    #says otherwise with the traefik.docker.network label (see proxy_internal).
+    - "--providers.docker.network=external"
     #certs 
     - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
     - "--certificatesresolvers.letsencrypt.acme.dnschallenge.propagation.delayBeforeChecks=10"

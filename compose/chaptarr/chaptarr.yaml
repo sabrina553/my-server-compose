@@ -48,7 +48,7 @@ services:
       Chaptarr__Postgres__Port: ${CHAPTARR__DB_PORT}
     networks:
     - external
-    - internal
+    - db_postgres
     labels:
     - "traefik.enable=true"
     - "traefik.http.routers.chaptarr.rule=Host(`${CHAPTARR__NAME}.${DOMAINNAME}`)"

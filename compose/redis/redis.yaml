@@ -20,7 +20,7 @@ services:
         max-size: "1m"
         max-file: "3"
     networks:
-    - internal
+    - immich_backend
     labels:
     - "traefik.enable=false"
     - "deunhealth.restart.on.unhealthy=true"

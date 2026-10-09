@@ -57,7 +57,7 @@ services:
       - ${DATADIR}/downloads/:/bookdrop:rw
     networks:
       - external
-      - internal
+      - grimmory_backend
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.${GRIMMORY__NAME}.rule=Host(`${GRIMMORY__NAME}.$DOMAINNAME`)"      
@@ -102,6 +102,6 @@ services:
     volumes:
       - ${VOLDIR}/${GRIMMORY__NAME}/mariadb/:/config:rw
     networks:
-      - internal
+      - grimmory_backend
     labels:      
       - "deunhealth.restart.on.unhealthy=true"

@@ -49,7 +49,6 @@ services:
     # use an SSH tunnel, e.g.:  - 127.0.0.1:8080:8080
     networks:
     - external
-    - internal
     labels:
     - "deunhealth.restart.on.unhealthy=false"
     - "com.centurylinklabs.watchtower.monitor-only=true"

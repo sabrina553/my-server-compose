@@ -26,7 +26,6 @@ services:
       UMASK: "000"
     networks:
     - external
-    - internal
     labels:
     - "traefik.enable=true"
     - "traefik.http.routers.audiobookshelf.rule=Host(`audiobookshelf.${DOMAINNAME}`)"

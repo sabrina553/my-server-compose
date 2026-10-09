@@ -32,8 +32,10 @@ services:
     environment:
     #ports:
     networks:
-      - external
-      - internal
+      - external          # internet + Traefik
+      #- db_postgres      # only if it uses the shared Postgres
+      # Own database? Add a <NAME>_backend network (internal: true) in
+      # compose.yaml and put just this service and its database on it.
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.<NAME>-https.rule=Host(`<NAME>.${DOMAINNAME}`)"

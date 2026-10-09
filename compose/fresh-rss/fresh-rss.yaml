@@ -58,7 +58,7 @@ services:
     - freshrss_oidc_crypto_key
     networks:
     - external
-    - internal
+    - db_postgres
     environment:
     - TZ=${TZ}
     - PUID=${PUID}

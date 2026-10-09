@@ -55,7 +55,7 @@ services:
     volumes:
     - ${VOLDIR}/linkwarden:/data/data
     networks:
-    - internal
+    - db_postgres
     - external
     labels:
     - "traefik.enable=true"

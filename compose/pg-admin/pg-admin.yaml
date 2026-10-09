@@ -32,9 +32,11 @@ services:
     - PGADMIN_DEFAULT_EMAIL=${PGADMIN__DEFAULT_EMAIL}
     - PGADMIN_DISABLE_POSTFIX=true
     networks:
-    - internal
+    - db_postgres
+    - proxy_internal
     labels:
     - "traefik.enable=true"
+    - "traefik.docker.network=proxy_internal"
     - "traefik.http.routers.pgadmin.rule=Host(`pg.int.$DOMAINNAME`)"
     - "traefik.http.routers.pgadmin.middlewares=authelia@docker"
     - "traefik.http.services.pgadmin.loadbalancer.server.port=80"

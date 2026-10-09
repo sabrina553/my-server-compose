@@ -92,7 +92,7 @@ services:
       AUTHELIA_IDENTITY_PROVIDERS_OIDC_HMAC_SECRET_FILE: ${AUTHELIA__IDENTITY_HMAC_SECRET}
 
     networks:
-    - internal
+    - db_postgres
     - external
     labels:
     - "traefik.enable=true"

@@ -31,7 +31,7 @@ services:
     - MYSQL_USER=${LEAN__MYSQL_USER}
     - MYSQL_PASSWORD_FILE=/run/secrets/leantime_mysql_password
     networks:
-    - internal
+    - leantime_backend
     command: --character-set-server=UTF8MB4 --collation-server=UTF8MB4_unicode_ci
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
@@ -132,7 +132,7 @@ services:
     - LEAN_RATELIMIT_API=${LEAN__RATELIMIT_API}
     - LEAN_RATELIMIT_AUTH=${LEAN__RATELIMIT_AUTH}
     networks:
-    - internal
+    - leantime_backend
     - external
     labels:
     - "traefik.enable=true"

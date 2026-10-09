@@ -21,7 +21,9 @@ services:
         max-file: "3"
     networks:
     - external
-    - internal
+    - db_postgres
+    # Bookkeep also uses Redis (REDIS__URL). Redis is on immich_backend; give
+    # Bookkeep its own Redis or a shared redis network before re-enabling it.
     environment:
       TZ: "${TZ}"
       PUID: "${PUID}"

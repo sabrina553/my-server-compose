@@ -78,7 +78,7 @@ services:
     - THEME_DARK_ERROR=${MEALIE__THEME_DARK_ERROR}
     networks:
     - external
-    - internal
+    - db_postgres
     labels:
     - "traefik.enable=true"
     - "traefik.http.routers.mealie.rule=Host(`mealie.$DOMAINNAME`)"

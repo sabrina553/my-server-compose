@@ -56,7 +56,7 @@ services:
     # - LLDAP_LDAPS_OPTIONS__KEY_FILE=/path/to/keyfile.key
     networks:
     - external
-    - internal
+    - db_postgres
     labels:
     - "traefik.enable=true"
     - "traefik.http.routers.lldap-https.rule=Host(`lldap.int.${DOMAINNAME}`)" # Extract hostname from URL, assuming https:// is used. Adjust if using http or a non-standard port.

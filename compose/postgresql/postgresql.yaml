@@ -28,7 +28,7 @@ services:
     - POSTGRES_INITDB_ARGS=${POSTGRESQL__INITDB_ARGS}
     - POSTGRES_PORT=${POSTGRESQL__PORT}
     networks:
-    - internal
+    - db_postgres
     labels:
     - "deunhealth.restart.on.unhealthy=true"
     - "com.centurylinklabs.watchtower.monitor-only=true"
