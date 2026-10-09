@@ -20,7 +20,6 @@ services:
     - mousehole_auth_password
     security_opt:
     - no-new-privileges:true
-    - apparmor:unconfined
     cap_drop:
     - ALL
     read_only: true

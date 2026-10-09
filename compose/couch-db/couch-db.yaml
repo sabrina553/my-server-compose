@@ -5,10 +5,14 @@ services:
     restart: always
     security_opt:
     - no-new-privileges:true
-    - apparmor:unconfined
-    #cap_drop:
-    #  - ALL
-    #read_only: true
+    cap_drop:
+    - ALL
+    cap_add:   # entrypoint chowns data/config to couchdb, then drops to it
+    - CHOWN
+    - DAC_READ_SEARCH
+    - FOWNER
+    - SETGID
+    - SETUID
     tmpfs:
     - /tmp:rw,noexec,nosuid
     depends_on:

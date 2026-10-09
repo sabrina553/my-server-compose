@@ -6,7 +6,6 @@ services:
     restart: unless-stopped
     security_opt:
     - no-new-privileges:true
-    - apparmor:unconfined
     cap_drop:
     - ALL
     read_only: true

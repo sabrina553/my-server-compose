@@ -19,7 +19,14 @@ services:
     command: ["node", "current/index.js"]
     security_opt:
     - no-new-privileges:true
-    - apparmor:unconfined
+    cap_drop:
+    - ALL
+    cap_add:   # entrypoint chowns content/ to node, then drops to it
+    - CHOWN
+    - DAC_READ_SEARCH
+    - FOWNER
+    - SETGID
+    - SETUID
     tmpfs:
     - /tmp:rw,noexec,nosuid
     depends_on:
@@ -66,7 +73,14 @@ services:
     restart: always
     security_opt:
     - no-new-privileges:true
-    - apparmor:unconfined
+    cap_drop:
+    - ALL
+    cap_add:   # entrypoint chowns the datadir to mysql, then drops to it
+    - CHOWN
+    - DAC_READ_SEARCH
+    - FOWNER
+    - SETGID
+    - SETUID
     tmpfs:
     - /tmp:rw,noexec,nosuid
     logging:
