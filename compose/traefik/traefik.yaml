@@ -34,6 +34,9 @@ services:
         # (FreshRSS TRUSTED_PROXY, Home Assistant trusted_proxies).
         ipv4_address: 172.20.0.249
       proxy_internal:
+        # Fixed: pgAdmin trusts the Remote-User header only from this address
+        # (WEBSERVER_TRUSTED_PROXIES in compose/pg-admin/config_local.py).
+        ipv4_address: 172.21.7.249
       filebrowser_proxy:
       arr:
       socket_proxy_ro:
