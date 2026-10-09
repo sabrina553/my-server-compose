@@ -38,35 +38,35 @@ services:
         max-file: "3"
 
     secrets:
-    - authelia_jwt
-    - authelia_secret_key
-    - authelia_pg_password
-    - authelia_encryption
-    - authelia_hmac_secret
-    - authelia_jwks
+    - authelia_jwt_secret
+    - authelia_session_secret
+    - authelia_db_password
+    - authelia_storage_encryption_key
+    - authelia_oidc_hmac_secret
+    - authelia_oidc_jwks_key
     - authelia_ldap_password
     - authelia_redis_password
     - smtp_password
     # OIDC client IDs (shared with each app)
     - filebrowser_oidc_client_id
-    - freshrss_oidc_clientid
-    - grimmory_oidc_clientid
-    - homeassis_oidc_clientid
-    - immich_oidc_clientid
-    - leantime_oidc_clientid
-    - linkwarden_oidc_clientid
-    - mealie_oidc_clientid
-    - vaultwarden_oidc_clientid
+    - freshrss_oidc_client_id
+    - grimmory_oidc_client_id
+    - homeassistant_oidc_client_id
+    - immich_oidc_client_id
+    - leantime_oidc_client_id
+    - linkwarden_oidc_client_id
+    - mealie_oidc_client_id
+    - vaultwarden_oidc_client_id
     # OIDC client secret digests (Authelia only)
-    - authelia_oidc_filebrowser
-    - authelia_oidc_freshrss
-    - authelia_oidc_grimmory
-    - authelia_oidc_homeassistant
-    - authelia_oidc_immich
-    - authelia_oidc_leantime
-    - authelia_oidc_linkwarden
-    - authelia_oidc_mealie
-    - authelia_oidc_vaultwarden
+    - authelia_oidc_filebrowser_digest
+    - authelia_oidc_freshrss_digest
+    - authelia_oidc_grimmory_digest
+    - authelia_oidc_homeassistant_digest
+    - authelia_oidc_immich_digest
+    - authelia_oidc_leantime_digest
+    - authelia_oidc_linkwarden_digest
+    - authelia_oidc_mealie_digest
+    - authelia_oidc_vaultwarden_digest
     environment:
       # configuration.yml is a Go template; see the header of that file.
       X_AUTHELIA_CONFIG_FILTERS: template

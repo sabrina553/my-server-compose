@@ -17,9 +17,9 @@ services:
     - -c
     - >-
       NEXTAUTH_SECRET=$$(cat /run/secrets/linkwarden_nextauth_secret) &&
-      AUTHELIA_CLIENT_ID=$$(cat /run/secrets/linkwarden_oidc_clientid) &&
-      AUTHELIA_CLIENT_SECRET=$$(cat /run/secrets/linkwarden_oidc_secret) &&
-      DATABASE_URL=$$(cat /run/secrets/linkwarden_database_url) &&
+      AUTHELIA_CLIENT_ID=$$(cat /run/secrets/linkwarden_oidc_client_id) &&
+      AUTHELIA_CLIENT_SECRET=$$(cat /run/secrets/linkwarden_oidc_client_secret) &&
+      DATABASE_URL=$$(cat /run/secrets/linkwarden_db_url) &&
       export AUTHELIA_CLIENT_ID NEXTAUTH_SECRET AUTHELIA_CLIENT_SECRET DATABASE_URL &&
       exec "$$@"
     - --
@@ -48,9 +48,9 @@ services:
 
     secrets:
     - linkwarden_nextauth_secret
-    - linkwarden_oidc_secret
-    - linkwarden_oidc_clientid
-    - linkwarden_database_url
+    - linkwarden_oidc_client_secret
+    - linkwarden_oidc_client_id
+    - linkwarden_db_url
     environment:
       NEXTAUTH_URL: ${LINKWARDEN__NEXTAUTH_URL}
       # SSO only. Set here rather than in .env so they can't silently go missing:

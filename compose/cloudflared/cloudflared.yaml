@@ -24,7 +24,7 @@ services:
         max-file: "3"
 
     secrets:
-    - cf_tunnel_token
+    - cloudflared_tunnel_token
     environment:
       TUNNEL_TOKEN_FILE: ${CLOUDFLARED__TUNNEL_TOKEN_FILE}
 

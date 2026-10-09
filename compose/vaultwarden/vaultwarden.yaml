@@ -32,12 +32,12 @@ services:
         max-file: "3"
 
     secrets:
-    - vaultwarden_pg_url
-    - vaultwarden_oidc_clientid
-    - vaultwarden_oidc_clientsecret
+    - vaultwarden_db_url
+    - vaultwarden_oidc_client_id
+    - vaultwarden_oidc_client_secret
     - vaultwarden_admin_token
-    - vaultwarden_push_id
-    - vaultwarden_push_key
+    - vaultwarden_push_installation_id
+    - vaultwarden_push_installation_key
     - smtp_password
     environment:
       TZ: ${TZ}

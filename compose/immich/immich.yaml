@@ -35,7 +35,7 @@ services:
         max-file: "3"
 
     secrets:
-    - immich_pg_password
+    - immich_db_password
     environment:
       TZ: ${TZ}
       PUID: ${PUID}
