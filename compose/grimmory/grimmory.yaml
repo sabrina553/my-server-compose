@@ -3,6 +3,22 @@ services:
     image: ${GRIMMORY__IMAGE}:${GRIMMORY__VERSION}
     container_name: ${GRIMMORY__NAME}
     restart: unless-stopped
+    # Grimmory can't read secret files, so load them into its env vars at start.
+    # command is the image's CMD (overriding entrypoint discards it); re-check
+    # after upgrades, as this tracks :latest:
+    #   docker image inspect --format '{{json .Config.Cmd}}' <image>
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >-
+        DATABASE_PASSWORD=$$(cat /run/secrets/grimmory_db_password) &&
+        export DATABASE_PASSWORD &&
+        exec "$$@"
+      - --
+      - /usr/local/bin/entrypoint.sh
+    command: ["java", "--enable-native-access=ALL-UNNAMED", "--enable-preview", "-jar", "/app/app.jar"]
+    secrets:
+      - grimmory_db_password
     #security_opt:
     #  - no-new-privileges:true
     #  - apparmor:unconfined
@@ -33,7 +49,6 @@ services:
       - LOG_LEVEL=${LOG_LEVEL}
       - DATABASE_URL=${GRIMMORY__DB_URL}
       - DATABASE_USERNAME=${GRIMMORY__DB_USER}
-      - DATABASE_PASSWORD=${GRIMMORY__DB_PASSWORD}
       - GRIMMORY_PORT=${GRIMMORY__PORT}   
     volumes:
       - ${VOLDIR}/${GRIMMORY__NAME}/data:/app/data:rw

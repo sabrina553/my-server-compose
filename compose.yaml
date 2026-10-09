@@ -142,6 +142,9 @@ secrets:
     file: $DOCKERDIR/secrets/linkwarden/oidc_secret
   linkwarden_pg_password:
     file: $DOCKERDIR/secrets/linkwarden/pg_password
+  # Full postgresql:// URL including the password (Linkwarden only takes a URL).
+  linkwarden_database_url:
+    file: $DOCKERDIR/secrets/linkwarden/database_url
   linkwarden_nextauth_secret:
     file: $DOCKERDIR/secrets/linkwarden/nextauth_secret
 #LLDAP#################################################### 

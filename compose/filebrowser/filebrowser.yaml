@@ -3,6 +3,17 @@ services:
     container_name: filebrowser
     image: ${FILEBROWSER__IMAGE}:${FILEBROWSER__VERSION}
     restart: unless-stopped
+    # FileBrowser can't read secret files, so load them into its env vars at start.
+    # The image has no CMD, so only its ENTRYPOINT is repeated here.
+    entrypoint:
+    - /bin/sh
+    - -c
+    - >-
+      FILEBROWSER_OIDC_CLIENT_SECRET=$$(cat /run/secrets/filebrowser_oidc_client_secret) &&
+      export FILEBROWSER_OIDC_CLIENT_SECRET &&
+      exec "$$@"
+    - --
+    - ./filebrowser
     security_opt:
     - no-new-privileges:true
     - apparmor:unconfined
@@ -32,7 +43,6 @@ services:
     - PGID=${PGID}
     - FILEBROWSER_DATABASE=${FILEBROWSER__DATABASE}
     - FILEBROWSER_OIDC_CLIENT_ID=${FILEBROWSER__OIDC_CLIENT_ID}
-    - FILEBROWSER_OIDC_CLIENT_SECRET=${FILEBROWSER__OIDC_CLIENT_SECRET}
     networks:
     - external
     labels:
