@@ -161,7 +161,8 @@ identity_providers:
         client_id: {{ secret "/run/secrets/filebrowser_oidc_client_id" | trim | squote }}
         client_secret: {{ secret "/run/secrets/authelia_oidc_filebrowser" | trim | squote }}
         authorization_policy: 'two_factor'
-        require_pkce: false   # TODO: enable if FileBrowser Quantum supports PKCE
+        require_pkce: true    # set back to false if login fails with a PKCE error
+        pkce_challenge_method: 'S256'
         redirect_uris:
           - 'https://files.{{ env "DOMAINNAME" }}/api/auth/oidc/callback'
         scopes: ['openid', 'profile', 'groups', 'email']
@@ -171,7 +172,8 @@ identity_providers:
         client_id: {{ secret "/run/secrets/freshrss_oidc_clientid" | trim | squote }}
         client_secret: {{ secret "/run/secrets/authelia_oidc_freshrss" | trim | squote }}
         authorization_policy: 'one_factor'
-        require_pkce: false   # TODO: enable with OIDCPKCEMethod S256 in FreshRSS
+        require_pkce: true    # set back to false if login fails with a PKCE error
+        pkce_challenge_method: 'S256'
         redirect_uris:
           - 'https://rss.{{ env "DOMAINNAME" }}:443/i/oidc/'
         scopes: ['openid', 'groups', 'email', 'profile']
@@ -212,7 +214,8 @@ identity_providers:
         client_id: {{ secret "/run/secrets/immich_oidc_clientid" | trim | squote }}
         client_secret: {{ secret "/run/secrets/authelia_oidc_immich" | trim | squote }}
         authorization_policy: 'two_factor'
-        require_pkce: false   # TODO: check whether your Immich version supports PKCE
+        require_pkce: true    # set back to false if login fails with a PKCE error
+        pkce_challenge_method: 'S256'
         redirect_uris:
           - 'https://photos.{{ env "DOMAINNAME" }}/auth/login'
           - 'https://photos.{{ env "DOMAINNAME" }}/user-settings'
@@ -225,7 +228,8 @@ identity_providers:
         client_secret: {{ secret "/run/secrets/authelia_oidc_leantime" | trim | squote }}
         claims_policy: 'leantime'
         authorization_policy: 'two_factor'
-        require_pkce: false
+        require_pkce: true    # set back to false if login fails with a PKCE error
+        pkce_challenge_method: 'S256'
         redirect_uris:
           - 'https://lean.{{ env "DOMAINNAME" }}/oidc/callback'
         scopes: ['openid', 'groups', 'email', 'profile']
@@ -235,7 +239,8 @@ identity_providers:
         client_id: {{ secret "/run/secrets/linkwarden_oidc_clientid" | trim | squote }}
         client_secret: {{ secret "/run/secrets/authelia_oidc_linkwarden" | trim | squote }}
         authorization_policy: 'two_factor'
-        require_pkce: false   # TODO: next-auth supports PKCE; enable once tested
+        require_pkce: true    # set back to false if login fails with a PKCE error
+        pkce_challenge_method: 'S256'
         redirect_uris:
           - 'https://bookmark.{{ env "DOMAINNAME" }}/api/v1/auth/callback/authelia'
         scopes: ['openid', 'groups', 'email', 'profile']
