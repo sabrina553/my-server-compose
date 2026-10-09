@@ -59,10 +59,13 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
+    secrets:
+    - ghost_db_root_password
+    - ghost_db_password
     environment:
-      MYSQL_ROOT_PASSWORD: ${GHOST__DATABASE_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/ghost_db_root_password
       MYSQL_USER: ${GHOST_DATABASE_USERNAME}
-      MYSQL_PASSWORD: ${GHOST__DATABASE_PASSWORD}
+      MYSQL_PASSWORD_FILE: /run/secrets/ghost_db_password
       MYSQL_DATABASE: ${GHOST_DATABASE_USERNAME}
     volumes:
     - ${GHOST__MYSQL_DATA_LOCATION}:/var/lib/mysql

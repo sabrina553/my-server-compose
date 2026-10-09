@@ -80,6 +80,9 @@ secrets:
     file: $DOCKERDIR/secrets/authelia/oidc/mealie
   authelia_oidc_vaultwarden:
     file: $DOCKERDIR/secrets/authelia/oidc/vaultwarden
+  #CHAPTARR####################################################
+  chaptarr_db_password:
+    file: $DOCKERDIR/secrets/chaptarr/db_password
   #FILEBROWSER####################################################
   filebrowser_oidc_client_id:
     file: $DOCKERDIR/secrets/filebrowser/oidc_clientid
@@ -92,6 +95,13 @@ secrets:
     file: $DOCKERDIR/secrets/freshrss/oidc_secret
   freshrss_pg_password:
     file: $DOCKERDIR/secrets/freshrss/pg_password
+  freshrss_oidc_crypto_key:
+    file: $DOCKERDIR/secrets/freshrss/oidc_crypto_key
+  #GHOST####################################################
+  ghost_db_root_password:
+    file: $DOCKERDIR/secrets/ghost/db_root_password
+  ghost_db_password:
+    file: $DOCKERDIR/secrets/ghost/db_password
   #GRIMMORY####################################################  
   grimmory_db_password:
     file: $DOCKERDIR/secrets/grimmory/db_password
@@ -106,6 +116,13 @@ secrets:
     file: $DOCKERDIR/secrets/leantime/oidc_clientid
   leantime_oidc_secret:
     file: $DOCKERDIR/secrets/leantime/oidc_secret
+  leantime_mysql_root_password:
+    file: $DOCKERDIR/secrets/leantime/mysql_root_password
+  # Also the app's LEAN_DB_PASSWORD (same user).
+  leantime_mysql_password:
+    file: $DOCKERDIR/secrets/leantime/mysql_password
+  leantime_session_password:
+    file: $DOCKERDIR/secrets/leantime/session_password
   #home-assistant####################################################
   homeassis_oidc_clientid:
     file: $DOCKERDIR/secrets/homeassis/oidc_clientid 
@@ -143,6 +160,9 @@ secrets:
     file: $DOCKERDIR/secrets/mealie/oidc_secret
   mealie_pg_password:
     file: $DOCKERDIR/secrets/mealie/pg_password
+#MOUSEHOLE####################################################
+  mousehole_auth_password:
+    file: $DOCKERDIR/secrets/mousehole/auth_password
 #VAULTWARDEN####################################################
   vaultwarden_pg_url:
     file: $DOCKERDIR/secrets/vaultwarden/pg_url

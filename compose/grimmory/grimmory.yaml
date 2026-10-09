@@ -70,6 +70,9 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
+    secrets:
+      - grimmory_db_password
+      - grimmory_mdb_password
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -77,8 +80,9 @@ services:
       - LOG_LEVEL=${LOG_LEVEL}
       - MYSQL_USER=${GRIMMORY__DB_USER}
       - MYSQL_DATABASE=${GRIMMORY__DB_NAME}
-      - MYSQL_PASSWORD=${GRIMMORY__DB_PASSWORD}      
-      - MYSQL_ROOT_PASSWORD=${GRIMMORY__ROOT_PASSWORD}   
+      # linuxserver images read FILE__<VAR> from a file into <VAR>.
+      - FILE__MYSQL_PASSWORD=/run/secrets/grimmory_db_password
+      - FILE__MYSQL_ROOT_PASSWORD=/run/secrets/grimmory_mdb_password
     volumes:
       - ${VOLDIR}/${GRIMMORY__NAME}/mariadb/:/config:rw
     networks:
