@@ -8,8 +8,9 @@
 # run this, then `docker compose up -d`. .env is never opened by hand.
 #
 # Only the values inside ###SITE### come from the current .env; every other
-# line comes from .env.example. Before writing, it stops if:
-#   - a setting outside SITE differs between .env and .env.example (someone
+# line comes from .env.example. Each run saves the template it used as
+# .env.applied (gitignored). Before writing, it stops if:
+#   - a setting outside SITE differs between .env and .env.applied (someone
 #     edited .env directly: copy that change into .env.example first), or
 #   - .env has a SITE key that .env.example no longer has (it would be lost).
 # Output names keys only, never values. The old .env is kept as .env.bak-<time>.
@@ -38,13 +39,21 @@ lines() {
     }' "$1"
 }
 
-# 1. Drift check: settings outside SITE must match the template exactly.
+# 1. Drift check: compare .env with the template it was last built from
+#    (.env.applied, written at the end of every run), so edits to
+#    .env.example don't look like hand-edits. Settings outside SITE must match.
+base=.env.applied
+if [[ ! -f $base ]]; then
+  base=.env.example
+  echo "(No record of the last applied template yet; comparing with the current"
+  echo " one, so changes you just made to .env.example will show as drift.)"
+fi
 drift=$(awk -F'\t' '
   NR == FNR { ex[$1 FS $2] = $3; next }
   $1 == "MAIN" && (($1 FS $2) in ex) && ex[$1 FS $2] != $3 { print "  differs:      " $2 }
   $1 == "MAIN" && !(($1 FS $2) in ex)                       { print "  only in .env: " $2 }
   $1 == "SITE" && !(("SITE" FS $2) in ex)                   { print "  SITE key not in template (would be lost): " $2 }
-' <(lines .env.example) <(lines .env))
+' <(lines "$base") <(lines .env))
 
 if [[ -n $drift ]]; then
   echo "Your .env has changes that aren't in .env.example:"
@@ -81,6 +90,7 @@ backup=".env.bak-$(date +%F-%H%M%S)"
 cp -p .env "$backup"
 chmod 600 "$backup"
 mv "$tmp" .env
+cp .env.example .env.applied
 rm -f "$missing_list"
 trap - EXIT
 
