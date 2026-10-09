@@ -89,6 +89,7 @@ as `CHANGE_ME`.
 | `apply-env-example.sh` | Rebuild `.env` from `.env.example`, keeping the SITE values. |
 | `make-env-example.sh` | The reverse: regenerate `.env.example` from `.env`. Recovery only. |
 | `env-to-secret.sh` | Move a value from `.env` into a secret file without printing it. |
+| `redact.sh` | Mask SITE values, `.env.redact` terms, e-mails, IPs, hashes and tokens in piped output. |
 | `authelia-hash-oidc-secrets.sh` | Generate Authelia's PBKDF2 digests of the OIDC client secrets. |
 | `hooks/pre-commit` | Block commits containing `.env*`, `secrets/` or site values. Enable with `git config core.hooksPath scripts/hooks`. |
 

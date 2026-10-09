@@ -31,6 +31,13 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
   the key names and let them decide; don't `--force` on your own.
 - **Never print secret values** from anywhere else either (container env,
   rendered config, logs). Refer to variables by name.
+- **Pipe logs, `docker inspect`, git history and volume reads through
+  `scripts/redact.sh`** (`… 2>&1 | scripts/redact.sh`). It masks the SITE
+  values, `.env.redact` terms, e-mails, IPs, hashes and tokens. The
+  PreToolUse hook `.claude/hooks/redact-guard.py` blocks those commands
+  otherwise (it scans the whole command text, so edit files with the editor,
+  not heredocs that mention them). Hand-written `sed` masking has leaked
+  before; don't rely on it.
 - **Nothing personal in tracked files.** No domains, hostnames, usernames,
   e-mail addresses, IPs outside Docker's 172.x ranges, providers or paths
   from the SITE block; use the variable names. The pre-commit hook
