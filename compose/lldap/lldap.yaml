@@ -9,7 +9,9 @@ services:
     - ALL
     cap_add:   # entrypoint chowns /data to UID/GID, then drops to it
     - CHOWN
-    - DAC_READ_SEARCH
+    # The entrypoint checks /data is writable while still root; /data is owned
+    # by UID, so root needs DAC_OVERRIDE (DAC_READ_SEARCH only covers reads).
+    - DAC_OVERRIDE
     - FOWNER
     - SETGID
     - SETUID
