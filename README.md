@@ -27,12 +27,13 @@ Internet ──► Cloudflare Tunnel (cloudflared)
 |---|---|
 | **Core** | Traefik (reverse proxy), cloudflared (tunnel), Authelia (SSO, 2FA, OIDC provider), LLDAP (users), two Docker socket proxies (read-only / restart-stop-kill), deunhealth (restarts unhealthy containers), Diun (update notifications), Dozzle (logs) |
 | **Data** | Postgres (shared, one database and user per app), Valkey/Redis (Immich; a separate one for Authelia's sessions), pgAdmin |
-| **Books and downloads** | Grimmory (library), Chaptarr (ebook/audiobook manager), Prowlarr + FlareSolverr (indexers), qBittorrent, Mousehole and Mousetrap, all inside a Gluetun WireGuard VPN container |
+| **Books and downloads** | Grimmory (library), Chaptarr (ebook/audiobook manager), Prowlarr + FlareSolverr (indexers), qBittorrent and Mousetrap, all inside a Gluetun WireGuard VPN container |
 | **Personal data** | Immich (photos), Vaultwarden (passwords), FileBrowser (files), CouchDB (Obsidian LiveSync), Home Assistant |
 | **Organisation** | Mealie (recipes), Linkwarden (bookmarks), Leantime (projects) |
 | **Other** | FreshRSS (feeds), The Lounge (IRC), Crosswatch (watch-history sync), Ghost (blog) |
 
-Disabled for now (still in the repo): Audiobookshelf, Bookkeep, Watchtower (replaced by Diun).
+Disabled for now (still in the repo): Audiobookshelf, Bookkeep, Mousehole
+(replaced by Mousetrap), Watchtower (replaced by Diun).
 
 ## How it's secured
 

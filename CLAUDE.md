@@ -94,7 +94,9 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
   `container:vpn`.
 
 **Docker API**
-- `socket-proxy-ro` (GET only): Traefik, Dozzle, Diun.
+- `socket-proxy-ro` (GET only): Traefik, Dozzle, Diun, Mousetrap (the `vpn`
+  container joins `socket_proxy_ro`, and its subnet is in Gluetun's
+  `FIREWALL_OUTBOUND_SUBNETS`).
 - `socket-proxy` (GET + container restart/stop/kill; `ALLOW_RESTARTS` has no
   restart-only mode): deunhealth.
 - Nothing gets general write access.

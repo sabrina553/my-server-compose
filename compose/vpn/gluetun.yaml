@@ -49,6 +49,7 @@ services:
     # use an SSH tunnel, e.g.:  - 127.0.0.1:8080:8080
     networks:
     - external
+    - socket_proxy_ro      # Mousetrap -> read-only Docker API (GET only)
     labels:
     - "deunhealth.restart.on.unhealthy=false"
     - "com.centurylinklabs.watchtower.monitor-only=true"
