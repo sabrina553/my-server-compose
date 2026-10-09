@@ -268,7 +268,7 @@ include:
     - compose/prowlarr/prowlarr.yaml
     - compose/qbittorrent/qbittorrent.yaml
     - compose/mousehole/mousehole.yaml
-    # - compose/mousetrap/mousetrap.yaml
+    - compose/mousetrap/mousetrap.yaml
     #- compose/bookkeep/bookkeep.yaml
 
     #organization

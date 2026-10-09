@@ -3,21 +3,22 @@ services:
     container_name: ${MOUSETRAP__NAME}
     image: ${MOUSETRAP__IMAGE}:${MOUSETRAP__VERSION}
     restart: unless-stopped
-    # security_opt:
-    #   - no-new-privileges:true
-    #   - apparmor:unconfined
-    # cap_drop:
-    #   - ALL
-    # cap_add:
-    #   - SETGID
-    #   - SETUID
-    # #read_only: true
-    # tmpfs:
-    #   - /tmp:rw,noexec,nosuid
+    security_opt:
+    - no-new-privileges:true
+    # Root-then-drop: start.sh rewrites appuser to PUID/PGID, chowns /config,
+    # then su-execs. No read_only: start.sh writes /app/logconfig.yaml (and
+    # /etc/passwd when PUID/PGID differ from the image's 1000).
+    cap_drop:
+    - ALL
+    cap_add:
+    - CHOWN
+    - DAC_READ_SEARCH
+    - FOWNER
+    - SETGID
+    - SETUID
+    tmpfs:
+    - /tmp:rw,noexec,nosuid
     depends_on:
-      socket-proxy:
-        condition: service_started
-        restart: false
       traefik:
         condition: service_started
         restart: false
@@ -31,12 +32,22 @@ services:
         max-file: "3"
     environment:
     - TZ=${TZ}
-    - LOGLEVEL=DEBUG
     - PUID=${PUID}
     - PGID=${PGID}
-    - LOGLEVEL=${LOG_LEVEL}
-    # - DOCKER_HOST=${DOCKER_HOST}
+    # Must be upper case: it goes into a Python logging config verbatim, and
+    # "info" (the shared LOG_LEVEL) crashes uvicorn at start-up.
+    - LOGLEVEL=${MOUSETRAP__LOGLEVEL}
     network_mode: "service:vpn"
+    # Unhealthy when the VPN tunnel is gone from the shared network namespace,
+    # e.g. after Gluetun was recreated but this container wasn't. A restart
+    # can't fix that (it rejoins the old namespace); recreate it:
+    #   docker compose up -d --force-recreate <this service>
+    healthcheck:
+      test: ["CMD-SHELL", "test -e /sys/class/net/tun0"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
     labels:
     - "traefik.enable=true"
     - "traefik.http.routers.${MOUSETRAP__NAME}.rule=Host(`${MOUSETRAP__NAME}.int.${DOMAINNAME}`)"
