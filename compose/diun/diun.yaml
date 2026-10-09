@@ -1,0 +1,64 @@
+services:
+  diun:
+    container_name: diun
+    image: ${DIUN__IMAGE}:${DIUN__VERSION}
+    restart: unless-stopped
+    # Notifies (by email) when a newer image version exists. It never pulls or
+    # changes anything, so it only needs the read-only socket proxy. To update:
+    # bump the version in .env, then `docker compose up -d <service>`.
+    command: serve
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    read_only: true
+    tmpfs:
+    - /tmp:rw,noexec,nosuid
+    depends_on:
+      socket-proxy-ro:
+        condition: service_healthy
+        restart: false
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+    secrets:
+    - smtp_password
+    environment:
+      TZ: ${TZ}
+      LOG_LEVEL: ${LOG_LEVEL}
+      LOG_JSON: "false"
+      DIUN_WATCH_WORKERS: "10"
+      DIUN_WATCH_SCHEDULE: ${DIUN__SCHEDULE}
+      DIUN_WATCH_JITTER: "30s"
+      DIUN_WATCH_FIRSTCHECKNOTIF: "false"
+      # Watch every running container, via the read-only proxy.
+      DIUN_PROVIDERS_DOCKER: "true"
+      DIUN_PROVIDERS_DOCKER_ENDPOINT: ${DOCKER_HOST_RO:-tcp://socket-proxy-ro:2375}
+      DIUN_PROVIDERS_DOCKER_WATCHBYDEFAULT: "true"
+      # Images are pinned to exact versions, so watching the tag alone would
+      # never report anything new. Instead list the repo's tags and report the
+      # newest plain version number (1.2.3 / v1.2.3). A container can override
+      # this with a diun.include_tags label (see immich.yaml).
+      DIUN_DEFAULTS_WATCHREPO: "true"
+      DIUN_DEFAULTS_SORTTAGS: "semver"
+      DIUN_DEFAULTS_MAXTAGS: "1"
+      DIUN_DEFAULTS_NOTIFYON: "new"
+      DIUN_DEFAULTS_INCLUDETAGS: '^v?\d+\.\d+\.\d+$$'
+      # Email, through the same SMTP account as everything else.
+      DIUN_NOTIF_MAIL_HOST: ${SMTP__HOST}
+      DIUN_NOTIF_MAIL_PORT: ${SMTP__PORT}
+      DIUN_NOTIF_MAIL_SSL: ${SMTP__USE_SSL}
+      DIUN_NOTIF_MAIL_USERNAME: ${SMTP__USERNAME}
+      DIUN_NOTIF_MAIL_PASSWORDFILE: /run/secrets/smtp_password
+      DIUN_NOTIF_MAIL_FROM: ${DIUN__MAIL_FROM}
+      DIUN_NOTIF_MAIL_TO: ${EMAIL_ADMIN}
+    networks:
+    - external          # registries
+    - socket_proxy_ro
+    labels:
+    - "traefik.enable=false"
+    - "deunhealth.restart.on.unhealthy=true"
+    volumes:
+    - ${VOLDIR}/diun:/data

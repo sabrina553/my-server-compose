@@ -1,9 +1,9 @@
-## Two proxies so that nothing internet-facing can write to the Docker API.
-## Write access (POST + CONTAINERS) is equivalent to root on the host: it can
-## start a privileged container that mounts /.
+## Two proxies so that nothing can write to the Docker API.
+## General write access (POST + CONTAINERS) is equivalent to root on the host:
+## it can start a privileged container that mounts /. Neither proxy allows it.
 ##
-##   socket-proxy-ro  GET only. Traefik, Dozzle.         network: socket_proxy_ro
-##   socket-proxy     read/write. Watchtower, deunhealth. network: socket_proxy
+##   socket-proxy-ro  GET only. Traefik, Dozzle, Diun.  network: socket_proxy_ro
+##   socket-proxy     GET + restart only. deunhealth.   network: socket_proxy
 ##
 ## Keep internet-facing containers (and anything sharing their network
 ## namespace, e.g. everything on network_mode: service:vpn) OFF socket_proxy.
@@ -83,17 +83,17 @@ services:
       TZ: "${TZ}"
       LOG_LEVEL: "warning" # debug, info, notice, warning, err, crit, alert, emerg
       DISABLE_IPV6: "0"
-      # Watchtower needs POST to pull images and recreate containers.
-      # deunhealth only needs ALLOW_RESTARTS.
-      POST: "1"
-      ALLOW_START: "1"
-      ALLOW_STOP: "1"
+      # deunhealth: read container health, restart unhealthy ones. ALLOW_RESTARTS
+      # permits only POST /containers/<id>/restart; everything else stays GET-only.
+      POST: "0"
+      ALLOW_START: "0"
+      ALLOW_STOP: "0"
       ALLOW_RESTARTS: "1"
       CONTAINERS: "1"
       EVENTS: "1"
-      IMAGES: "1"
+      IMAGES: "0"
       INFO: "1"
-      NETWORKS: "1"
+      NETWORKS: "0"
       PING: "1"
       VERSION: "1"
       AUTH: "0"

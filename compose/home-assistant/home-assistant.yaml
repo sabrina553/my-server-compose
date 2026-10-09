@@ -25,7 +25,8 @@ services:
     labels:
     - "traefik.enable=true"
     - "traefik.http.routers.homeassistant.rule=Host(`ha.$DOMAINNAME`)"
-    - "traefik.http.routers.homeassistant.middlewares=authelia@docker"
+    # No authelia@docker: forward-auth breaks the Companion app. HA is protected
+    # by its own login + Authelia SSO (hass-openid, two_factor OIDC client).
     - "traefik.http.services.homeassistant.loadbalancer.server.port=8123"
     - "deunhealth.restart.on.unhealthy=true"
     volumes:
