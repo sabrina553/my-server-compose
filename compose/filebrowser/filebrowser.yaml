@@ -1,6 +1,11 @@
+## FileBrowser Quantum  https://github.com/gtsteffaniak/filebrowser
+## File manager at <subdomain>.<domain>, behind Authelia (2FA). Logs users in
+## from Authelia's Remote-User header (auth.methods.proxy in its config.yaml),
+## so it sits on filebrowser_proxy with Traefik alone and has no internet
+## access. Its OIDC settings stay wired up as a fallback (disabled in config.yaml).
 services:
   filebrowser:
-    container_name: filebrowser
+    container_name: ${FILEBROWSER__NAME}
     image: ${FILEBROWSER__IMAGE}:${FILEBROWSER__VERSION}
     restart: unless-stopped
     # FileBrowser can't read secret files, so load them into its env vars at start.
@@ -15,6 +20,7 @@ services:
       exec "$$@"
     - --
     - ./filebrowser
+
     security_opt:
     - no-new-privileges:true
     cap_drop:
@@ -22,6 +28,7 @@ services:
     #read_only: true
     tmpfs:
     - /tmp:rw,noexec,nosuid
+
     depends_on:
       traefik:
         condition: service_started
@@ -34,27 +41,31 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
+
     secrets:
     - filebrowser_oidc_client_id
     - filebrowser_oidc_client_secret
     environment:
-    - TZ=${TZ}
-    - PUID=${PUID}
-    - PGID=${PGID}
-    - FILEBROWSER_DATABASE=${FILEBROWSER__DATABASE}
-    # Only Traefik shares this network: FileBrowser logs users in from
-    # Authelia's Remote-User header (auth.methods.proxy in its config.yaml),
-    # so nothing else may be able to reach it. It needs no internet access.
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      FILEBROWSER_DATABASE: ${FILEBROWSER__DATABASE}
+
+    # Only Traefik shares this network: FileBrowser trusts the Remote-User
+    # header, so nothing else may be able to reach it. No internet needed.
     networks:
     - filebrowser_proxy
+
     labels:
     - "traefik.enable=true"
-    - "traefik.http.routers.filebrowser.rule=Host(`files.${DOMAINNAME}`)"
-    - "traefik.http.routers.filebrowser.middlewares=authelia@docker"
     - "traefik.docker.network=filebrowser_proxy"
-    - "traefik.http.services.filebrowser.loadbalancer.server.port=80"
+    - "traefik.http.routers.${FILEBROWSER__NAME}.rule=Host(`${FILEBROWSER__SUBDOMAIN}.${DOMAINNAME}`)"
+    - "traefik.http.routers.${FILEBROWSER__NAME}.middlewares=authelia@docker"
+    - "traefik.http.services.${FILEBROWSER__NAME}.loadbalancer.server.port=80"
     # Diun: only report -stable releases
     - 'diun.include_tags=^\d+\.\d+\.\d+-stable$$'
+
     volumes:
-    - ${DATADIR}/filebrowser:/srv:rw # Do not use a root "/" directory or include the "/var" folder
-    - ${VOLDIR}/filebrowser:${FILEBROWSER__DATABASE_PATH}:rw # Do not use a root "/" directory or include the "/var" folder
+    # Neither may be "/" or include /var.
+    - ${DATADIR}/filebrowser:/srv:rw
+    - ${VOLDIR}/${FILEBROWSER__NAME}:${FILEBROWSER__DATABASE_PATH}:rw
