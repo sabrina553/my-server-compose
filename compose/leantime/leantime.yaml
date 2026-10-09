@@ -62,11 +62,13 @@ services:
     environment:
     - PUID=${PUID}
     - PGID=${PGID}
-    - LOG_LEVEL=DEBUG
+    - LOG_LEVEL=${LOG_LEVEL}
     - LEAN_PORT=${LEAN__PORT}
     - LEAN_APP_URL=${LEAN__APP_URL}
     - LEAN_APP_DIR=${LEAN__APP_DIR}
-    - LEAN_DEBUG=${LEAN__DEBUG}
+    # Debug mode shows stack traces and internals in the browser; keep it off.
+    # For more detail, raise LOG_LEVEL in .env instead.
+    - LEAN_DEBUG=0
     - VOLUME_DIRECTORY=${LEAN__VOLUME_DIRECTORY}
     # Database. The app only uses LEAN_DB_*; the MySQL root password stays in
     # the leantime_db container. LEAN_DB_PASSWORD is set by the entrypoint above.
