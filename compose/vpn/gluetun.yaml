@@ -46,7 +46,10 @@ services:
       FIREWALL_VPN_INPUT_PORTS: ${TORRENTING_PORT}
       FIREWALL_OUTBOUND_SUBNETS: ${VPN__EXTERNAL_SUBNETS}
       HTTPPROXY: "on"
-      PUBLICIP_FILE: /gluetun/ip
+      # PUBLICIP_FILE left at its default (/tmp/gluetun/ip, tmpfs). Nothing
+      # reads it. Writing it logs "permission denied" on every start, harmless:
+      # Gluetun creates the folder without the execute bit (mode 644), which
+      # root can't enter without DAC_OVERRIDE. Not worth adding that cap.
 
     networks:
     - external

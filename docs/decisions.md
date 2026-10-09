@@ -99,6 +99,9 @@ access is effectively root on the host.
   namespace does reach the GET-only one (for Mousetrap's port monitor;
   changed 2026-10-09), which lets everything else in it (qBittorrent) read
   container config too. That's acceptable only because secrets never sit in plain env.
+- The GET-only proxy allows `IMAGES` (changed 2026-10-10): Diun inspects each
+  container's image, and without it watched nothing. Read-only, and the
+  images are public; pulling, building and deleting are still refused.
 
 **No host-published ports except Traefik's 80/443.** (2026-10-09) Docker's
 iptables rules bypass the host firewall. Torrent traffic arrives through the
