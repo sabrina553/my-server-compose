@@ -9,8 +9,9 @@ services:
     - /bin/sh
     - -c
     - >-
+      FILEBROWSER_OIDC_CLIENT_ID=$$(cat /run/secrets/filebrowser_oidc_client_id) &&
       FILEBROWSER_OIDC_CLIENT_SECRET=$$(cat /run/secrets/filebrowser_oidc_client_secret) &&
-      export FILEBROWSER_OIDC_CLIENT_SECRET &&
+      export FILEBROWSER_OIDC_CLIENT_ID FILEBROWSER_OIDC_CLIENT_SECRET &&
       exec "$$@"
     - --
     - ./filebrowser
@@ -41,7 +42,6 @@ services:
     - PUID=${PUID}
     - PGID=${PGID}
     - FILEBROWSER_DATABASE=${FILEBROWSER__DATABASE}
-    - FILEBROWSER_OIDC_CLIENT_ID=${FILEBROWSER__OIDC_CLIENT_ID}
     networks:
     - external
     labels:

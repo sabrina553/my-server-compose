@@ -52,9 +52,10 @@ services:
     - >-
       LEAN_DB_PASSWORD=$$(cat /run/secrets/leantime_mysql_password) &&
       LEAN_SESSION_PASSWORD=$$(cat /run/secrets/leantime_session_password) &&
+      LEAN_OIDC_CLIENT_ID=$$(cat /run/secrets/leantime_oidc_clientid) &&
       LEAN_OIDC_CLIENT_SECRET=$$(cat /run/secrets/leantime_oidc_secret) &&
       LEAN_EMAIL_SMTP_PASSWORD=$$(cat /run/secrets/smtp_password) &&
-      export LEAN_DB_PASSWORD LEAN_SESSION_PASSWORD LEAN_OIDC_CLIENT_SECRET LEAN_EMAIL_SMTP_PASSWORD &&
+      export LEAN_OIDC_CLIENT_ID LEAN_DB_PASSWORD LEAN_SESSION_PASSWORD LEAN_OIDC_CLIENT_SECRET LEAN_EMAIL_SMTP_PASSWORD &&
       exec "$$@"
     - --
     - /sbin/tini
@@ -64,6 +65,7 @@ services:
     - leantime_mysql_password
     - leantime_session_password
     - leantime_oidc_secret
+    - leantime_oidc_clientid
     - smtp_password
     security_opt:
     - no-new-privileges:true
@@ -121,7 +123,6 @@ services:
     - LEAN_LDAP_DEFAULT_ROLE_KEY=20;
     ## OpenID Connect
     - LEAN_OIDC_ENABLE=true
-    - LEAN_OIDC_CLIENT_ID=${LEAN__OIDC_CLIENT_ID}
     - LEAN_OIDC_PROVIDER_URL=${LEAN__OIDC_PROVIDER_URL}
     - LEAN_OIDC_CREATE_USER=${LEAN__OIDC_CREATE_USER}
     - LEAN_OIDC_DEFAULT_ROLE=${LEAN__OIDC_DEFAULT_ROLE}
