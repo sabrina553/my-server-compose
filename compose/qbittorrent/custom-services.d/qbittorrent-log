@@ -1,0 +1,6 @@
+#!/usr/bin/with-contenv bash
+# shellcheck shell=bash
+# qBittorrent only logs to its own file, so Docker (and Dozzle) see almost
+# nothing. This linuxserver custom service copies new lines to stdout.
+# Runs as abc: the log file is mode 600, and root here has no DAC capabilities.
+exec s6-setuidgid abc tail -n 0 -F /config/qBittorrent/logs/qbittorrent.log

@@ -56,6 +56,9 @@ services:
     - ${VOLDIR}/${QBITTORRENT__NAME}:/config:rw
     - ${DATADIR}/torrents/downloads:/downloads:rw
     - ${VOLDIR}/${VPN__NAME}:/gluetun-ip:ro
+    # Copies qBittorrent's log file to stdout for Docker/Dozzle (see the script).
+    # linuxserver requires these to be owned by root and not world-writable.
+    - ./custom-services.d:/custom-services.d:ro
 
     # Unhealthy when the VPN tunnel is gone from the shared network namespace,
     # e.g. after Gluetun was recreated but this container wasn't. A restart
