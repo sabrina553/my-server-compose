@@ -42,12 +42,28 @@ services:
     volumes:
     - $VOLDIR/qbittorrent:/config:rw
     - $DATADIR/torrents/downloads:/downloads:rw
+    - $VOLDIR/${VPN__NAME}:/gluetun-ip:ro
     # healthcheck:
     #   test: ["CMD", "curl", "--connect-timeout", "5", "--silent", "--show-error", "--fail", "http://localhost:8080/"]
     #   interval: 30s
     #   timeout: 15s
     #   start_period: 30s
     #   retries: 3
+
+    # Fails (goes unhealthy) if either the WebUI stops responding, or gluetun's
+    # persisted public IP has changed since the last check. deunhealth then
+    # restarts this container, forcing it to rebind to the current tunnel.
+    # healthcheck:
+    #   test:
+    #   - "CMD-SHELL"
+    #   - >
+    #     curl -f -s -o /dev/null http://localhost:8080/api/v2/app/version && CUR=$$(cat /gluetun-ip/ip 2>/dev/null) && [ -f /config/.last_vpn_ip ] || echo "$$CUR" > /config/.last_vpn_ip; LAST=$$(cat /config/.last_vpn_ip 2>/dev/null); if [ "$$CUR" != "$$LAST" ]; then echo "$$CUR" > /config/.last_vpn_ip; exit 1; fi
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 60s
+
+
 
     healthcheck:
       test: [ "CMD", "curl", "-f", "-s", "-o", "/dev/null", "http://localhost:8080/api/v2/app/version" ]

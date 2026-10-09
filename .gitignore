@@ -1,5 +1,3 @@
 .env
 *.json
 secrets/*
-
-compose/authelia/configuration.yml

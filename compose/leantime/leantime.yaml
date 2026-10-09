@@ -97,7 +97,7 @@ services:
     labels:
     - "traefik.enable=true"
     - "traefik.http.routers.${LEAN__NAME}-https.rule=Host(`lean.${DOMAINNAME}`)"
-    - "traefik.http.routers.${LEAN__NAME}.middlewares=authelia@docker"
+    - "traefik.http.routers.${LEAN__NAME}-https.middlewares=authelia@docker"
     - "traefik.http.services.${LEAN__NAME}.loadbalancer.server.port=${LEAN__PORT}"
     - "deunhealth.restart.on.unhealthy=true"
     volumes:
