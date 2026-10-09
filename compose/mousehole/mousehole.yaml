@@ -1,3 +1,7 @@
+## Mousehole  https://github.com/t-mart/mousehole
+## Keeps a seedbox IP registered with a private tracker. Runs in the VPN's
+## network namespace; web UI at <subdomain>.int.<domain> behind Authelia, plus
+## its own password. (Disabled in compose.yaml.)
 services:
   mousehole:
     container_name: ${MOUSEHOLE__NAME}
@@ -5,7 +9,8 @@ services:
     restart: unless-stopped
     # Mousehole can't read secret files, so load them into its env vars at start.
     # command is the image's CMD (overriding entrypoint discards it); re-check
-    # after major upgrades: docker image inspect --format '{{json .Config.Cmd}}' <image>
+    # after major upgrades:
+    #   docker image inspect --format '{{json .Config.Entrypoint}} {{json .Config.Cmd}}' <image>
     entrypoint:
     - /bin/sh
     - -c
@@ -16,8 +21,7 @@ services:
     - --
     - /usr/local/bin/docker-entrypoint.sh
     command: ["bun", "run", "src/index.tsx"]
-    secrets:
-    - mousehole_auth_password
+
     security_opt:
     - no-new-privileges:true
     cap_drop:
@@ -25,6 +29,7 @@ services:
     read_only: true
     tmpfs:
     - /tmp:rw,noexec,nosuid
+
     depends_on:
       traefik:
         condition: service_started
@@ -37,12 +42,27 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
+
+    secrets:
+    - mousehole_auth_password
     environment:
-    - TZ=${TZ}
-    - MOUSEHOLE_ALLOWED_HOSTS=${MOUSEHOLE__ALLOWED_HOST}
-    - MOUSEHOLE_ALLOWED_ORIGINS=${MOUSEHOLE__ALLOWED_ORIGINS}
-    - MOUSEHOLE_HTTPS_ONLY_COOKIES=${MOUSEHOLE__HTTPS_ONLY_COOKIES}
+      TZ: ${TZ}
+      MOUSEHOLE_ALLOWED_HOSTS: ${MOUSEHOLE__ALLOWED_HOST}
+      MOUSEHOLE_ALLOWED_ORIGINS: ${MOUSEHOLE__ALLOWED_ORIGINS}
+      MOUSEHOLE_HTTPS_ONLY_COOKIES: ${MOUSEHOLE__HTTPS_ONLY_COOKIES}
+
     network_mode: "service:vpn"
+
+    labels:
+    - "traefik.enable=true"
+    - "traefik.http.routers.${MOUSEHOLE__NAME}.rule=Host(`${MOUSEHOLE__SUBDOMAIN}.int.${DOMAINNAME}`)"
+    - "traefik.http.routers.${MOUSEHOLE__NAME}.middlewares=authelia@docker"
+    - "traefik.http.services.${MOUSEHOLE__NAME}.loadbalancer.server.port=5010"
+    - "deunhealth.restart.on.unhealthy=true"
+
+    volumes:
+    - ${VOLDIR}/${MOUSEHOLE__NAME}:/var/lib/mousehole:rw
+
     # Unhealthy when the VPN tunnel is gone from the shared network namespace,
     # e.g. after Gluetun was recreated but this container wasn't. A restart
     # can't fix that (it rejoins the old namespace); recreate it:
@@ -51,13 +71,5 @@ services:
       test: ["CMD-SHELL", "test -e /sys/class/net/tun0"]
       interval: 30s
       timeout: 5s
-      start_period: 30s
       retries: 3
-    labels:
-    - "traefik.enable=true"
-    - "traefik.http.routers.${MOUSEHOLE__NAME}.rule=Host(`${MOUSEHOLE__NAME}.int.${DOMAINNAME}`)"
-    - "traefik.http.routers.${MOUSEHOLE__NAME}.middlewares=authelia@docker"
-    - "traefik.http.services.${MOUSEHOLE__NAME}.loadbalancer.server.port=5010"
-    - "deunhealth.restart.on.unhealthy=true"
-    volumes:
-    - ${VOLDIR}/${MOUSEHOLE__NAME}:/var/lib/mousehole:rw
+      start_period: 30s

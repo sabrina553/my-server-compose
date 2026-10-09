@@ -1,8 +1,14 @@
+## Audiobookshelf  https://github.com/advplyr/audiobookshelf
+## Audiobook and podcast server at <subdomain>.<domain>, behind Authelia.
+## (Disabled in compose.yaml.) Before re-enabling: pin a version in
+## .env.example, and note that its apps can't do forward-auth (like Immich, it
+## would need its own login plus an Authelia OIDC client instead).
 services:
   audiobookshelf:
-    container_name: audiobookshelf
+    container_name: ${AUDIOBOOKSHELF__NAME}
     image: ${AUDIOBOOKSHELF__IMAGE}:${AUDIOBOOKSHELF__VERSION}
     restart: unless-stopped
+
     security_opt:
     - no-new-privileges:true
     cap_drop:
@@ -10,6 +16,7 @@ services:
     read_only: true
     tmpfs:
     - /tmp:rw,noexec,nosuid
+
     depends_on:
       traefik:
         condition: service_started
@@ -19,20 +26,24 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
+
     environment:
-      TZ: "${TZ}"
-      PUID: "${PUID}"
-      PGID: "${PGID}"
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
       UMASK: "000"
+
     networks:
     - external
+
     labels:
     - "traefik.enable=true"
-    - "traefik.http.routers.audiobookshelf.rule=Host(`audiobookshelf.${DOMAINNAME}`)"
-    - "traefik.http.routers.audiobookshelf.middlewares=authelia@docker"
-    - "traefik.http.services.audiobookshelf.loadbalancer.server.port=80"
+    - "traefik.http.routers.${AUDIOBOOKSHELF__NAME}.rule=Host(`${AUDIOBOOKSHELF__SUBDOMAIN}.${DOMAINNAME}`)"
+    - "traefik.http.routers.${AUDIOBOOKSHELF__NAME}.middlewares=authelia@docker"
+    - "traefik.http.services.${AUDIOBOOKSHELF__NAME}.loadbalancer.server.port=80"
     - "deunhealth.restart.on.unhealthy=true"
+
     volumes:
     - ${DATADIR}/torrents:/audiobooks
-    - ${VOLDIR}/abs/config:/config
-    - ${VOLDIR}/abs/meta:/metadata
+    - ${AUDIOBOOKSHELF__VOLDIR}/config:/config
+    - ${AUDIOBOOKSHELF__VOLDIR}/meta:/metadata

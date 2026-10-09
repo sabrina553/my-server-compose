@@ -75,7 +75,9 @@ services:
       # Read by the template with {{ env "..." }}. Deliberately NOT prefixed
       # AUTHELIA_: Authelia treats those as config keys and rejects unknown ones.
       DOMAINNAME: ${DOMAINNAME}
+      SUBDOMAIN_AUDIOBOOKSHELF: ${AUDIOBOOKSHELF__SUBDOMAIN}
       SUBDOMAIN_AUTHELIA: ${AUTHELIA__SUBDOMAIN}
+      SUBDOMAIN_BOOKKEEP: ${BOOKKEEP__SUBDOMAIN}
       SUBDOMAIN_CHAPTARR: ${CHAPTARR__SUBDOMAIN}
       SUBDOMAIN_COUCHDB: ${COUCHDB__SUBDOMAIN}
       SUBDOMAIN_FILEBROWSER: ${FILEBROWSER__SUBDOMAIN}
