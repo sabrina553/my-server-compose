@@ -77,6 +77,39 @@ networks:
     ipam:
       config:
         - subnet: 172.21.9.0/24
+  # Prowlarr and Chaptarr skip their own login (Auth Method: External) and rely
+  # on Authelia. Their UIs listen only on their fixed address here, and this
+  # network holds just them and Traefik. Not internal: they need the internet.
+  arr:
+    name: arr
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.10.0/24
+  # Outgoing links only (the *arr UIs aren't bound on these):
+  chaptarr_downloads: # chaptarr -> qBittorrent (vpn:8080)
+    name: chaptarr_downloads
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.21.11.0/24
+  prowlarr_downloads: # prowlarr -> qBittorrent (vpn:8080). Separate from
+    # chaptarr_downloads on purpose: if the two *arrs shared a second network,
+    # Docker DNS could resolve one to the address where its UI isn't bound.
+    name: prowlarr_downloads
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.21.13.0/24
+  prowlarr_flaresolverr: # prowlarr -> flaresolverr:8191
+    name: prowlarr_flaresolverr
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.21.12.0/24
   # For Traefik to reach routed services that have no internet access
   # (CouchDB, pgAdmin, Dozzle). Those carry traefik.docker.network=proxy_internal.
   proxy_internal:

@@ -86,6 +86,10 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
   `grimmory_backend`, `authelia_backend` (Authelia's Valkey session store).
 - `filebrowser_proxy`: Traefik and FileBrowser only (FileBrowser trusts the
   `Remote-User` header).
+- `arr` (172.21.10.0/24, has internet): Traefik, Prowlarr `.10`, Chaptarr `.11`.
+  Both run with no login of their own and bind their UI to that address only.
+  `chaptarr_downloads`, `prowlarr_downloads` (each with `vpn`) and
+  `prowlarr_flaresolverr` are their outbound links; the two *arrs share only `arr`.
 - `proxy_internal` is for routed services with no internet access; they need
   the label `traefik.docker.network=proxy_internal`.
 - Fixed IPs on `external`: cloudflared `.250`, Traefik `.249` (backends trust

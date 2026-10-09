@@ -46,11 +46,20 @@ services:
       Chaptarr__Postgres__Host: ${POSTGRESQL__HOST}
       Chaptarr__Postgres__User: ${CHAPTARR__DB_USER}
       Chaptarr__Postgres__Port: ${CHAPTARR__DB_PORT}
+      # No login of its own (Authelia in front). Safe only because the UI listens
+      # on its `arr` address alone; it is not reachable via db_postgres or
+      # chaptarr_downloads, which it only uses outbound.
+      Chaptarr__Auth__Method: External
+      Chaptarr__Auth__Required: Enabled
+      Chaptarr__Server__BindAddress: 172.21.10.11
     networks:
-    - external
-    - db_postgres
+      arr:
+        ipv4_address: 172.21.10.11
+      db_postgres:
+      chaptarr_downloads:
     labels:
     - "traefik.enable=true"
+    - "traefik.docker.network=arr"
     - "traefik.http.routers.chaptarr.rule=Host(`${CHAPTARR__NAME}.${DOMAINNAME}`)"
     - "traefik.http.routers.chaptarr.middlewares=authelia@docker"
     - "traefik.http.services.chaptarr.loadbalancer.server.port=8789"
