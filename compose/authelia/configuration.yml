@@ -161,7 +161,7 @@ identity_providers:
         client_id: {{ secret "/run/secrets/filebrowser_oidc_client_id" | trim | squote }}
         client_secret: {{ secret "/run/secrets/authelia_oidc_filebrowser" | trim | squote }}
         authorization_policy: 'two_factor'
-        require_pkce: true    # set back to false if login fails with a PKCE error
+        require_pkce: true
         pkce_challenge_method: 'S256'
         redirect_uris:
           - 'https://files.{{ env "DOMAINNAME" }}/api/auth/oidc/callback'
@@ -172,7 +172,7 @@ identity_providers:
         client_id: {{ secret "/run/secrets/freshrss_oidc_clientid" | trim | squote }}
         client_secret: {{ secret "/run/secrets/authelia_oidc_freshrss" | trim | squote }}
         authorization_policy: 'one_factor'
-        require_pkce: true    # set back to false if login fails with a PKCE error
+        require_pkce: true
         pkce_challenge_method: 'S256'
         redirect_uris:
           - 'https://rss.{{ env "DOMAINNAME" }}:443/i/oidc/'
@@ -214,7 +214,7 @@ identity_providers:
         client_id: {{ secret "/run/secrets/immich_oidc_clientid" | trim | squote }}
         client_secret: {{ secret "/run/secrets/authelia_oidc_immich" | trim | squote }}
         authorization_policy: 'two_factor'
-        require_pkce: true    # set back to false if login fails with a PKCE error
+        require_pkce: true
         pkce_challenge_method: 'S256'
         redirect_uris:
           - 'https://photos.{{ env "DOMAINNAME" }}/auth/login'
@@ -228,8 +228,7 @@ identity_providers:
         client_secret: {{ secret "/run/secrets/authelia_oidc_leantime" | trim | squote }}
         claims_policy: 'leantime'
         authorization_policy: 'two_factor'
-        require_pkce: true    # set back to false if login fails with a PKCE error
-        pkce_challenge_method: 'S256'
+        require_pkce: false   # Leantime's OIDC client doesn't send PKCE (tested 2026-10-09)
         redirect_uris:
           - 'https://lean.{{ env "DOMAINNAME" }}/oidc/callback'
         scopes: ['openid', 'groups', 'email', 'profile']
@@ -239,7 +238,7 @@ identity_providers:
         client_id: {{ secret "/run/secrets/linkwarden_oidc_clientid" | trim | squote }}
         client_secret: {{ secret "/run/secrets/authelia_oidc_linkwarden" | trim | squote }}
         authorization_policy: 'two_factor'
-        require_pkce: true    # set back to false if login fails with a PKCE error
+        require_pkce: true
         pkce_challenge_method: 'S256'
         redirect_uris:
           - 'https://bookmark.{{ env "DOMAINNAME" }}/api/v1/auth/callback/authelia'
