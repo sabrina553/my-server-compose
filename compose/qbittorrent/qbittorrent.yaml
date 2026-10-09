@@ -32,7 +32,9 @@ services:
     - PGID=${PGID}
     - WEBUI_PORT=${WEBUI_PORT}
     - TORRENTING_PORT=${TORRENTING_PORT}
-    network_mode: "container:vpn"
+    # service: (not container:) so Compose recreates qBittorrent whenever the vpn
+    # container is recreated; with container: it stays attached to the old one.
+    network_mode: "service:vpn"
     labels:
     - "traefik.enable=true"
     - "traefik.http.routers.qbittorrent.rule=Host(`q.int.$DOMAINNAME`)"

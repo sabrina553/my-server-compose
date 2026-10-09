@@ -33,7 +33,9 @@ services:
     - no-new-privileges:true
     cap_drop:
     - ALL
-    cap_add:
+    cap_add:   # linuxserver init creates /run/prowlarr-temp and chowns it to abc
+    - CHOWN
+    - FOWNER
     - SETGID
     - SETUID
     tmpfs:
