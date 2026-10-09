@@ -1,12 +1,12 @@
 services:
   linkwarden:
     container_name: linkwarden
-    image: ghcr.io/linkwarden/linkwarden:latest # comment to build from source
+    image: ${LINKWARDEN__IMAGE}:${LINKWARDEN__VERSION}
     restart: always
     # Linkwarden can't read secret files, so load them into its env vars at start.
     # command is the image's CMD (overriding entrypoint discards it); re-check
-    # after upgrades, as this tracks :latest:
-    #   docker image inspect --format '{{json .Config.Cmd}}' ghcr.io/linkwarden/linkwarden:latest
+    # after upgrades:
+    #   docker image inspect --format '{{json .Config.Cmd}}' <image>
     entrypoint:
     - /bin/sh
     - -c

@@ -24,6 +24,8 @@ services:
     labels:
     - "traefik.enable=false"
     - "deunhealth.restart.on.unhealthy=true"
+    # Diun: only report -bookworm 8.x releases
+    - 'diun.include_tags=^8\.\d+\.\d+-bookworm$$'
 
     volumes:
     - ${VOLDIR}/redis:/data

@@ -63,6 +63,8 @@ services:
     - "traefik.http.routers.lldap-https.middlewares=authelia@docker"
     - "traefik.http.services.lldap.loadbalancer.server.port=17170"
     - "deunhealth.restart.on.unhealthy=true"
+    # Diun: only report -alpine releases
+    - 'diun.include_tags=^v\d+\.\d+\.\d+-alpine$$'
     volumes:
     - ${VOLDIR}/lldap:/data
     # ports:

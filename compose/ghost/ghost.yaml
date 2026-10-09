@@ -64,6 +64,8 @@ services:
     # Authelia session cookie. Ghost admin (/ghost) is protected by Ghost's own login.
     - "traefik.http.services.${GHOST__NAME}.loadbalancer.server.port=2368"
     - "deunhealth.restart.on.unhealthy=true"
+    # Diun: only report -alpine releases
+    - 'diun.include_tags=^\d+\.\d+\.\d+-alpine$$'
     volumes:
     - ${GHOST__UPLOAD_LOCATION}:/var/lib/ghost/content
 
@@ -109,3 +111,6 @@ services:
       retries: 120
     networks:
     - ghost_backend
+    labels:
+    # Diun: stay on MySQL 8.0.x
+    - 'diun.include_tags=^8\.0\.\d+$$'

@@ -33,6 +33,8 @@ services:
     - "deunhealth.restart.on.unhealthy=true"
     - "com.centurylinklabs.watchtower.monitor-only=true"
     - "traefik.enable=false"
+    # Diun: stay on Postgres 18 builds
+    - 'diun.include_tags=^pg18-v\d+\.\d+\.\d+$$'
     volumes:
     - ${VOLDIR}/postgres:/var/lib/postgresql
     healthcheck:

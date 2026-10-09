@@ -55,6 +55,8 @@ services:
     - "traefik.http.routers.chaptarr.middlewares=authelia@docker"
     - "traefik.http.services.chaptarr.loadbalancer.server.port=8789"
     - "deunhealth.restart.on.unhealthy=true"
+    # Diun: only :latest is published, so report when it changes
+    - "diun.watch_repo=false"
     volumes:
     - ${VOLDIR}/${CHAPTARR__NAME}:/config:rw
     - ${DATADIR}/torrents/books:/ebooks:rw
