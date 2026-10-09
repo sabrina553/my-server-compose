@@ -20,6 +20,7 @@ services:
     - PROXY_URL="${VPN__PROXY_URL}"
     networks:
     - external
+    - prowlarr_flaresolverr
     labels:
     - "deunhealth.restart.on.unhealthy=true"
     volumes:
@@ -49,10 +50,20 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
+    # No login of its own (Authelia in front). Safe only because the UI listens
+    # on its `arr` address alone, which nothing but Traefik and Chaptarr share.
+    environment:
+    - PROWLARR__AUTH__METHOD=External
+    - PROWLARR__AUTH__REQUIRED=Enabled
+    - PROWLARR__SERVER__BINDADDRESS=172.21.10.10
     networks:
-    - external
+      arr:
+        ipv4_address: 172.21.10.10
+      prowlarr_downloads:
+      prowlarr_flaresolverr:
     labels:
     - "traefik.enable=true"
+    - "traefik.docker.network=arr"
     - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.int.${DOMAINNAME}`)"
     - "traefik.http.routers.prowlarr.middlewares=authelia@docker"
     - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
