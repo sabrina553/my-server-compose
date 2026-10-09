@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     # Grimmory can't read secret files, so load them into its env vars at start.
     # command is the image's CMD (overriding entrypoint discards it); re-check
-    # after upgrades, as this tracks :latest:
+    # after upgrades:
     #   docker image inspect --format '{{json .Config.Cmd}}' <image>
     entrypoint:
       - /bin/sh

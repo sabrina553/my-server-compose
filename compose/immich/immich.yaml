@@ -75,5 +75,7 @@ services:
     - immich_backend
     labels:
     - "deunhealth.restart.on.unhealthy=true"
+    # Diun: only report -openvino releases
+    - 'diun.include_tags=^v\d+\.\d+\.\d+-openvino$$'
     volumes:
     - ${VOLDIR}/immich/model-cache:/cache:rw

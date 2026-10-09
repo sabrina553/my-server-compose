@@ -1,6 +1,6 @@
 services:
   leantime_db:
-    image: mysql:8.4
+    image: ${LEAN__DB_IMAGE}:${LEAN__DB_VERSION}
     container_name: leantime-mysql
     volumes:
     - ${LEAN__VOLUME_DIRECTORY}/db_data:/var/lib/mysql
@@ -32,6 +32,9 @@ services:
     - MYSQL_PASSWORD_FILE=/run/secrets/leantime_mysql_password
     networks:
     - leantime_backend
+    labels:
+    # Diun: stay on MySQL 8.4.x (LTS)
+    - 'diun.include_tags=^8\.4\.\d+$$'
     command: --character-set-server=UTF8MB4 --collation-server=UTF8MB4_unicode_ci
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
