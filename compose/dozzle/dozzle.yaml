@@ -27,10 +27,11 @@ services:
       #DOZZLE_HOSTNAME: "${DOMAINNAME}"
       #DOZZLE_AUTH_PROVIDER: forward-proxy
     networks:
-    - internal
+    - proxy_internal
     - socket_proxy_ro
     labels:
     - "traefik.enable=true"
+    - "traefik.docker.network=proxy_internal"
     - "traefik.http.routers.dozzle.rule=Host(`dozzle.int.${DOMAINNAME}`)"
     - "traefik.http.routers.dozzle.middlewares=authelia@docker"
     - "traefik.http.services.dozzle.loadbalancer.server.port=8080"

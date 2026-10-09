@@ -25,7 +25,6 @@ services:
       DOCKER_HOST: ${DOCKER_HOST}
       LOG_LEVEL: ${LOG_LEVEL}
     networks:
-    - internal
     - socket_proxy
     labels:
     - "deunhealth.restart.on.unhealthy=false"

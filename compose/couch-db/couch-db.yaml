@@ -29,9 +29,10 @@ services:
       PUID: ${PUID}
       PGID: ${PGID}
     networks:
-    - internal
+    - proxy_internal
     labels:
     - "traefik.enable=true"
+    - "traefik.docker.network=proxy_internal"
     - "traefik.http.routers.couchserver.rule=Host(`couch.$DOMAINNAME`)"
     # No authelia@docker on the API: sync clients (e.g. Obsidian LiveSync) can't do
     # forward-auth. The API relies on CouchDB's own auth, so the admin must have a

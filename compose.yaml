@@ -23,15 +23,53 @@ networks:
         - subnet: 172.20.0.0/16
     enable_ipv4: true
     enable_ipv6: true
-  internal: # No internet access
-    name: "internal"
+  # Backend networks: no internet access, and each one holds only a backend and
+  # the services that actually use it, so a compromised app can't reach every
+  # database. Traefik routes over `external` by default (see traefik.yaml).
+  db_postgres:
+    name: db_postgres
     driver: bridge
     internal: true
     ipam:
       config:
-        - subnet: 172.19.0.0/16
-    enable_ipv4: true
-    enable_ipv6: false
+        - subnet: 172.21.2.0/24
+  immich_backend: # immich-server, redis, machine learning
+    name: immich_backend
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.21.3.0/24
+  ghost_backend:
+    name: ghost_backend
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.21.4.0/24
+  leantime_backend:
+    name: leantime_backend
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.21.5.0/24
+  grimmory_backend:
+    name: grimmory_backend
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.21.6.0/24
+  # For Traefik to reach routed services that have no internet access
+  # (CouchDB, pgAdmin, Dozzle). Those carry traefik.docker.network=proxy_internal.
+  proxy_internal:
+    name: proxy_internal
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.21.7.0/24
 
 ###########################SECRETS###########################
 secrets:

@@ -65,7 +65,7 @@ services:
     - SSO_CLIENT_CACHE_EXPIRATION=${VAULTWARDEN__SSO_CLIENT_CACHE_EXPIRATION}
     networks:
     - external
-    - internal
+    - db_postgres
     labels:
     - "traefik.enable=true"
     - "traefik.http.routers.${VAULTWARDEN__NAME}-https.rule=Host(`vw.${DOMAINNAME}`)"

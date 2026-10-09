@@ -39,7 +39,8 @@ services:
     - DB_PASSWORD_FILE=${IMMICH__DB_PASSWORD_FILE}
     networks:
     - external
-    - internal
+    - db_postgres
+    - immich_backend
     labels:
     - "traefik.enable=true"
     - "traefik.http.routers.immich.rule=Host(`photos.$DOMAINNAME`)"
@@ -71,7 +72,7 @@ services:
         max-size: "1m"
         max-file: "3"
     networks:
-    - internal
+    - immich_backend
     labels:
     - "deunhealth.restart.on.unhealthy=true"
     volumes:

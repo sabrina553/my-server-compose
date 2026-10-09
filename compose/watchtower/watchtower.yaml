@@ -12,7 +12,6 @@ services:
     - /tmp:rw,noexec,nosuid
     networks:
     - external
-    - internal
     - socket_proxy
     depends_on:
       socket-proxy:
