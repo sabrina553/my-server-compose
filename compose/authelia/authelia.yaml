@@ -1,8 +1,14 @@
+## Authelia  https://github.com/authelia/authelia
+## Login, 2FA and OIDC provider for the whole stack. Users come from LLDAP,
+## state lives in Postgres, sessions in its own Valkey (authelia-redis).
+## Defines the authelia@docker forward-auth middleware every router uses.
+## configuration.yml (mounted read-only) is a Go template: see its header.
 services:
   authelia:
-    container_name: "authelia"
+    container_name: ${AUTHELIA__NAME}
     image: ${AUTHELIA__IMAGE}:${AUTHELIA__VERSION}
-    restart: "unless-stopped"
+    restart: unless-stopped
+
     security_opt:
     - no-new-privileges:true
     cap_drop:
@@ -14,6 +20,7 @@ services:
     #read_only: true
     tmpfs:
     - /tmp:rw,noexec,nosuid
+
     depends_on:
       postgres:
         condition: service_started
@@ -29,6 +36,7 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
+
     secrets:
     - authelia_jwt
     - authelia_secret_key
@@ -62,11 +70,12 @@ services:
     environment:
       # configuration.yml is a Go template; see the header of that file.
       X_AUTHELIA_CONFIG_FILTERS: template
-      DOMAINNAME: ${DOMAINNAME}
-      AUTHELIA_LOG_LEVEL: ${LOG_LEVEL}
       TZ: ${TZ}
-      #PUID: ${PUID}
-      #PGID: ${PGID}
+      AUTHELIA_LOG_LEVEL: ${LOG_LEVEL}
+      # Read by the template with {{ env "..." }}. Deliberately NOT prefixed
+      # AUTHELIA_: Authelia treats those as config keys and rejects unknown ones.
+      DOMAINNAME: ${DOMAINNAME}
+      SUBDOMAIN_AUTHELIA: ${AUTHELIA__SUBDOMAIN}
 
       AUTHELIA_SESSION_SECRET_FILE: ${AUTHELIA__SESSION_SECRET}
       # Sessions live in Valkey so they survive Authelia restarts.
@@ -103,12 +112,16 @@ services:
     - authelia_backend
     - db_postgres
     - external
+
     labels:
     - "traefik.enable=true"
-    - "traefik.http.routers.authelia.rule=Host(`authelia.${DOMAINNAME}`)"
-    - "traefik.http.routers.authelia.entrypoints=websecure"
-    - "traefik.http.services.authelia.loadbalancer.server.port=9091"
-    - "traefik.http.routers.authelia.tls=true"
+    - "traefik.http.routers.${AUTHELIA__NAME}.rule=Host(`${AUTHELIA__SUBDOMAIN}.${DOMAINNAME}`)"
+    - "traefik.http.routers.${AUTHELIA__NAME}.entrypoints=websecure"
+    - "traefik.http.routers.${AUTHELIA__NAME}.tls=true"
+    - "traefik.http.services.${AUTHELIA__NAME}.loadbalancer.server.port=9091"
+    # The forward-auth middleware, referenced as authelia@docker by every
+    # protected router. Its name is fixed on purpose. The address uses the
+    # service key, so it doesn't depend on AUTHELIA__NAME.
     - "traefik.http.middlewares.authelia.forwardAuth.address=http://authelia:9091/api/authz/forward-auth"
     - "traefik.http.middlewares.authelia.forwardAuth.trustForwardHeader=true"
     - "traefik.http.middlewares.authelia.forwardAuth.maxResponseBodySize=8192"

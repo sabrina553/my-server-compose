@@ -124,7 +124,7 @@ session:
   remember_me: '1 month'
   cookies:
     - domain: '{{ env "DOMAINNAME" }}'
-      authelia_url: 'https://authelia.{{ env "DOMAINNAME" }}'
+      authelia_url: 'https://{{ env "SUBDOMAIN_AUTHELIA" }}.{{ env "DOMAINNAME" }}'
 
 ##
 ## OpenID Connect provider
@@ -144,7 +144,7 @@ identity_providers:
         - 'revocation'
         - 'introspection'
       allowed_origins:
-        - 'https://authelia.{{ env "DOMAINNAME" }}'
+        - 'https://{{ env "SUBDOMAIN_AUTHELIA" }}.{{ env "DOMAINNAME" }}'
       allowed_origins_from_client_redirect_uris: false
 
     claims_policies:
