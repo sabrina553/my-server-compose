@@ -21,6 +21,9 @@ services:
       lldap:
         condition: service_started
         restart: false
+      authelia-redis:
+        condition: service_healthy
+        restart: false
     logging:
       driver: "json-file"
       options:
@@ -34,6 +37,7 @@ services:
     - authelia_hmac_secret
     - authelia_jwks
     - authelia_ldap_password
+    - authelia_redis_password
     - smtp_password
     # OIDC client IDs (shared with each app)
     - filebrowser_oidc_client_id
@@ -65,6 +69,10 @@ services:
       #PGID: ${PGID}
 
       AUTHELIA_SESSION_SECRET_FILE: ${AUTHELIA__SESSION_SECRET}
+      # Sessions live in Valkey so they survive Authelia restarts.
+      AUTHELIA_SESSION_REDIS_HOST: ${AUTHELIA__SESSION_REDIS_HOST}
+      AUTHELIA_SESSION_REDIS_PORT: ${AUTHELIA__SESSION_REDIS_PORT}
+      AUTHELIA_SESSION_REDIS_PASSWORD_FILE: ${AUTHELIA__SESSION_REDIS_PASSWORD}
 
       AUTHELIA_STORAGE_POSTGRES_ADDRESS: ${POSTGRESQL__HOST}
       AUTHELIA_STORAGE_POSTGRES_DATABASE: ${AUTHELIA__DB_NAME}
@@ -92,6 +100,7 @@ services:
       AUTHELIA_IDENTITY_PROVIDERS_OIDC_HMAC_SECRET_FILE: ${AUTHELIA__IDENTITY_HMAC_SECRET}
 
     networks:
+    - authelia_backend
     - db_postgres
     - external
     labels:
