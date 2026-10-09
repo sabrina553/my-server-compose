@@ -23,8 +23,12 @@ off where the app allows it.
 send it.** (2026-10-09) FreshRSS checks the sender's address
 (`TRUSTED_PROXY`, Traefik's `172.20.0.249`); qBittorrent skips its login only
 for that address; FileBrowser can't check, so it sits on `filebrowser_proxy`
-with Traefik alone and no internet. Grimmory, pgAdmin and the *arrs can't do
-either, so they keep their own login or OIDC. This also relies on Authelia
+with Traefik alone and no internet. Prowlarr and Chaptarr skip their login
+(Auth Method: External); their UIs bind only to their fixed address on `arr`,
+shared with Traefik alone, and they reach Postgres, qBittorrent and
+FlareSolverr over outbound-only links. pgAdmin (9.18+) checks the sender like
+FreshRSS (`WEBSERVER_TRUSTED_PROXIES`, Traefik's fixed `172.21.7.249` on
+`proxy_internal`). Grimmory can do neither, so it uses OIDC. This also relies on Authelia
 never using `policy: bypass` for these hosts: on a bypass, Traefik passes a
 client-supplied `Remote-User` straight through.
 
