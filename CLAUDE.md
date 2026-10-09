@@ -1,8 +1,16 @@
 # Homelab Docker stack
 
 Self-hosted services behind Cloudflare Tunnel → Traefik → Authelia (+ LLDAP).
-Everything runs from this repo with Docker Compose. Read
-`docs/journal/` (newest first) for history, decisions and open to-dos.
+Everything runs from this repo with Docker Compose. Read `README.md` for the
+overview, `docs/decisions.md` before changing anything structural (don't undo
+a decision without saying so), and `docs/journal/` (newest first) for history
+and open to-dos.
+
+## Where this runs
+
+This is the live server. The repo is checked out at `/opt/docker` on the `dev`
+branch, edited through VS Code Remote-SSH, and changes take effect here
+directly. Commit to `dev` and push. **The GitHub repo is public.**
 
 ## Hard rules
 
@@ -10,10 +18,25 @@ Everything runs from this repo with Docker Compose. Read
   and not through a container. If a secret's value or format matters, give the
   user a command that prints only a length, a match/differ result, or a
   yes/no (see `scripts/env-to-secret.sh` for the style).
+- **Treat `.env` as radioactive.** It's this server's real config. Don't open,
+  cat, grep, diff or edit it, and never print values from it. To change a
+  setting:
+  1. edit `.env.example` (tracked, public; SITE values are `CHANGE_ME`)
+  2. run `scripts/apply-env-example.sh`, which rebuilds `.env` from the
+     template and keeps only this server's SITE values. Its output is key
+     names only.
+  3. `docker compose config -q`, then deploy.
+
+  If the script reports drift (someone edited `.env` by hand), tell the user
+  the key names and let them decide; don't `--force` on your own.
 - **Never print secret values** from anywhere else either (container env,
   rendered config, logs). Refer to variables by name.
-- `.env` holds no secrets. Personal and site-specific values live in its
-  `###SITE###` block. Don't copy those into tracked files or docs.
+- **Nothing personal in tracked files.** No domains, hostnames, usernames,
+  e-mail addresses, IPs outside Docker's 172.x ranges, providers or paths
+  from the SITE block; use the variable names. The pre-commit hook
+  (`scripts/hooks/pre-commit`, enabled with
+  `git config core.hooksPath scripts/hooks`) blocks staged SITE values,
+  `.env*` and `secrets/`. Don't bypass it with `--no-verify`.
 - Confirm before anything destructive or hard to undo: deleting volumes or
   data, changing database passwords, `docker compose down`, editing the
   CouchDB config volume.
@@ -24,10 +47,11 @@ Everything runs from this repo with Docker Compose. Read
 
 - `compose.yaml`: networks, secrets declarations, and `include:` of
   `compose/<service>/<service>.yaml` (commented-out includes = disabled).
-- `.env`: gitignored; one `###NAME### https://project-url` section per service,
-  alphabetical. All image versions are pinned here. `.env.example` is
-  generated from it by `scripts/make-env-example.sh` (re-run after editing
-  `.env`; commit `.env.example`).
+- `.env.example`: the tracked template and **source of truth** for settings.
+  One `###NAME### https://project-url` section per service, alphabetical.
+  All image versions are pinned here. `.env` (gitignored) is built from it by
+  `scripts/apply-env-example.sh`. (`scripts/make-env-example.sh` goes the
+  other way; it's only for recovering from a hand-edited `.env`.)
 - `compose/authelia/configuration.yml`: a **Go template** (`{{ }}` is
   evaluated even in comments). Access rules, and OIDC clients with PBKDF2
   digests from `scripts/authelia-hash-oidc-secrets.sh`.
@@ -80,8 +104,8 @@ Everything runs from this repo with Docker Compose. Read
 - OIDC clients require PKCE S256, except Leantime (it doesn't send PKCE).
 
 **Updates**
-- Diun emails new versions. Bump the version in `.env`, then
-  `docker compose up -d <svc>`.
+- Diun emails new versions. Bump the version in `.env.example`, run
+  `scripts/apply-env-example.sh`, then `docker compose up -d <svc>`.
 - Suffixed tag schemes need a `diun.include_tags` label. Use **single
   quotes**, because `\d` in double-quoted YAML is a parse error, and write `$`
   as `$$`.
