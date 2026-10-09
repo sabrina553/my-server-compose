@@ -34,7 +34,9 @@ services:
     environment:
     - TZ=${TZ}
     - DOMAIN=${VAULTWARDEN__DOMAIN}
-    - ADMIN_TOKEN=${VAULTWARDEN__ADMIN_TOKEN}
+    # Must contain an argon2 PHC string, not a plaintext token. Generate with:
+    #   docker run --rm -it vaultwarden/server /vaultwarden hash --preset owasp
+    - ADMIN_TOKEN_FILE=/run/secrets/vaultwarden_admin_token
     - WEBSOCKET_ENABLED=${VAULTWARDEN__WEBSOCKET_ENABLED}
     - SIGNUPS_ALLOWED=${VAULTWARDEN__SIGNUPS_ALLOWED}
     - SMTP_HOST=${SMTP__HOST}
@@ -70,6 +72,12 @@ services:
     - "traefik.http.routers.${VAULTWARDEN__NAME}-https.rule=Host(`vw.${DOMAINNAME}`)"
     # No authelia@docker here on purpose: forward-auth breaks the Bitwarden apps/extensions.
     # Vaultwarden is protected by its own login + Authelia SSO (two_factor OIDC client).
+    - "traefik.http.routers.${VAULTWARDEN__NAME}-https.service=${VAULTWARDEN__NAME}"
+    # The admin panel is never used by the apps, so it goes behind Authelia as well
+    # as the admin token. The longer rule wins over the router above.
+    - "traefik.http.routers.${VAULTWARDEN__NAME}-admin.rule=Host(`vw.${DOMAINNAME}`) && PathPrefix(`/admin`)"
+    - "traefik.http.routers.${VAULTWARDEN__NAME}-admin.middlewares=authelia@docker"
+    - "traefik.http.routers.${VAULTWARDEN__NAME}-admin.service=${VAULTWARDEN__NAME}"
     - "traefik.http.services.${VAULTWARDEN__NAME}.loadbalancer.server.port=80"
     - "deunhealth.restart.on.unhealthy=true"
     volumes:
