@@ -62,7 +62,18 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
 - `compose/authelia/configuration.yml`: a **Go template** (`{{ }}` is
   evaluated even in comments). Access rules, and OIDC clients with PBKDF2
   digests from `scripts/authelia-hash-oidc-secrets.sh`.
-- `templates/template.compose.yaml`: the starting point for new services.
+- `templates/template.compose.yaml`: the starting point for new services, and
+  the layout every compose file follows (key order, header comment, map-style
+  `environment`). Its header lists the conventions; the short version:
+  - From `.env.example`: `<APP>__NAME` (container), `<APP>__SUBDOMAIN`,
+    image/version, `<APP>__VOLDIR` when the data folder isn't
+    `${VOLDIR}/${<APP>__NAME}`, ports and app settings.
+  - In the compose file on purpose (it's the security model): hardening,
+    networks and fixed IPs, bind addresses, trusted proxies, the `.int`
+    part of hostnames, `authelia@docker`.
+  - Containers reach each other by service key, never by container name.
+  - Authelia's rules and OIDC redirect URIs use `{{ env "SUBDOMAIN_<APP>" }}`;
+    a new app needs its `SUBDOMAIN_<APP>` added to `authelia.yaml`.
 
 ## Conventions
 
@@ -129,6 +140,11 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
 
 ## Validating changes
 
+- `scripts/compose-diff.sh [--all] [<ref>]` shows what a change does to the
+  rendered config (against HEAD by default; `--all` includes disabled
+  services), redacted. A pure layout change prints "No differences". It
+  renders both sides with today's `.env`, so a renamed variable makes the
+  *old* side look empty; that's an artifact, not a change.
 - `docker compose config -q` must be silent. Note that `docker compose config`
   prints `$` as `$$`; that's display only.
 - To check whether an image tag exists:
