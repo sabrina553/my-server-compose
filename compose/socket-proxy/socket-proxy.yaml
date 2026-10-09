@@ -1,3 +1,4 @@
+## Docker socket proxies  https://github.com/linuxserver/docker-socket-proxy
 ## Two proxies so that nothing can write to the Docker API.
 ## General write access (POST + CONTAINERS) is equivalent to root on the host:
 ## it can start a privileged container that mounts /. Neither proxy allows it.
@@ -14,6 +15,7 @@
 x-socket-proxy-common: &socket-proxy-common
   image: ${SOCKET_PROXY__IMAGE}:${SOCKET_PROXY__VERSION}
   restart: unless-stopped
+
   security_opt:
   - no-new-privileges:true
   cap_drop:
@@ -21,17 +23,21 @@ x-socket-proxy-common: &socket-proxy-common
   read_only: true
   tmpfs:
   - "/run"
+
   logging:
     driver: "json-file"
     options:
       max-size: "1m"
       max-file: "3"
+
   labels:
   - "traefik.enable=false"
   - "deunhealth.restart.on.unhealthy=true"
-  - "com.centurylinklabs.watchtower.monitor-only=true"
+  #- "com.centurylinklabs.watchtower.monitor-only=true"   # Watchtower is retired
+
   volumes:
   - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
   healthcheck:
     interval: "30s"
     timeout: "5s"
@@ -42,7 +48,7 @@ x-socket-proxy-common: &socket-proxy-common
 services:
   socket-proxy-ro:
     <<: *socket-proxy-common
-    container_name: socket-proxy-ro
+    container_name: ${SOCKET_PROXY__RO_NAME}
     environment:
       TZ: "${TZ}"
       LOG_LEVEL: "warning" # debug, info, notice, warning, err, crit, alert, emerg
@@ -79,7 +85,7 @@ services:
 
   socket-proxy:
     <<: *socket-proxy-common
-    container_name: socket-proxy
+    container_name: ${SOCKET_PROXY__NAME}
     environment:
       TZ: "${TZ}"
       LOG_LEVEL: "warning" # debug, info, notice, warning, err, crit, alert, emerg

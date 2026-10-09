@@ -1,9 +1,10 @@
+## Valkey (Authelia sessions)  https://github.com/valkey-io/valkey
 ## Session store for Authelia, so logins survive Authelia restarts.
 ## Its own Valkey (not Immich's): password-protected and reachable only by
 ## Authelia, on the internal-only authelia_backend network.
 services:
   authelia-redis:
-    container_name: authelia-redis
+    container_name: ${AUTHELIA__REDIS_NAME}
     image: ${REDIS__IMAGE}:${REDIS__VERSION}
     restart: unless-stopped
     # Valkey can't read its password from a file, so write it into a config
@@ -25,6 +26,7 @@ services:
     # A first argument ending in .conf makes the entrypoint run valkey-server
     # with it. Append-only file in /data, so sessions survive a Valkey restart too.
     command: ["/tmp/valkey.conf", "--appendonly", "yes"]
+
     security_opt:
     - no-new-privileges:true
     cap_drop:
@@ -36,22 +38,28 @@ services:
     read_only: true
     tmpfs:
     - /tmp:rw,noexec,nosuid
+
     logging:
       driver: "json-file"
       options:
         max-size: "1m"
         max-file: "3"
+
     secrets:
     - authelia_redis_password
+
     networks:
     - authelia_backend
+
     labels:
     - "traefik.enable=false"
     - "deunhealth.restart.on.unhealthy=true"
     # Diun: only report -bookworm 8.x releases
     - 'diun.include_tags=^8\.\d+\.\d+-bookworm$$'
+
     volumes:
-    - ${VOLDIR}/authelia-redis:/data
+    - ${VOLDIR}/${AUTHELIA__REDIS_NAME}:/data
+
     healthcheck:
       # REDISCLI_AUTH keeps the password off the command line.
       test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$(cat /run/secrets/authelia_redis_password)\" valkey-cli ping | grep -q PONG"]

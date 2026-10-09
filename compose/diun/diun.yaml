@@ -1,12 +1,15 @@
+## Diun  https://github.com/crazy-max/diun
+## E-mails when a newer image version exists. It never pulls or changes
+## anything, so it only needs the read-only socket proxy. To update: bump the
+## version in .env.example, run scripts/apply-env-example.sh, then
+## `docker compose up -d <service>`.
 services:
   diun:
-    container_name: diun
+    container_name: ${DIUN__NAME}
     image: ${DIUN__IMAGE}:${DIUN__VERSION}
     restart: unless-stopped
-    # Notifies (by email) when a newer image version exists. It never pulls or
-    # changes anything, so it only needs the read-only socket proxy. To update:
-    # bump the version in .env, then `docker compose up -d <service>`.
     command: serve
+
     security_opt:
     - no-new-privileges:true
     cap_drop:
@@ -14,6 +17,7 @@ services:
     read_only: true
     tmpfs:
     - /tmp:rw,noexec,nosuid
+
     depends_on:
       socket-proxy-ro:
         condition: service_healthy
@@ -23,6 +27,7 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
+
     secrets:
     - smtp_password
     environment:
@@ -54,11 +59,14 @@ services:
       DIUN_NOTIF_MAIL_PASSWORDFILE: /run/secrets/smtp_password
       DIUN_NOTIF_MAIL_FROM: ${DIUN__MAIL_FROM}
       DIUN_NOTIF_MAIL_TO: ${EMAIL_ADMIN}
+
     networks:
     - external          # registries
     - socket_proxy_ro
+
     labels:
     - "traefik.enable=false"
     - "deunhealth.restart.on.unhealthy=true"
+
     volumes:
-    - ${VOLDIR}/diun:/data
+    - ${VOLDIR}/${DIUN__NAME}:/data
