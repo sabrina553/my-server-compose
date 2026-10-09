@@ -9,10 +9,8 @@ services:
     - no-new-privileges:true
     cap_drop:
     - ALL
-    cap_add:
-    # The image's python binary carries this file capability; without it in the
-    # bounding set, exec fails with "Operation not permitted".
-    - NET_BIND_SERVICE
+    # No cap_add: since 9.18 the entrypoint sees no-new-privileges, uses the
+    # plain (un-capped) python and listens on 8080 instead of 80.
     tmpfs:
     - /tmp:rw,noexec,nosuid
     depends_on:
@@ -31,6 +29,9 @@ services:
     - TZ=${TZ}
     - PGADMIN_DEFAULT_EMAIL=${PGADMIN__DEFAULT_EMAIL}
     - PGADMIN_DISABLE_POSTFIX=true
+    - PGADMIN_LISTEN_PORT=8080
+    # Logs in from Authelia's Remote-User header, trusted only from Traefik's
+    # fixed address on proxy_internal: see config_local.py.
     networks:
     - db_postgres
     - proxy_internal
@@ -39,7 +40,8 @@ services:
     - "traefik.docker.network=proxy_internal"
     - "traefik.http.routers.pgadmin.rule=Host(`pg.int.$DOMAINNAME`)"
     - "traefik.http.routers.pgadmin.middlewares=authelia@docker"
-    - "traefik.http.services.pgadmin.loadbalancer.server.port=80"
+    - "traefik.http.services.pgadmin.loadbalancer.server.port=8080"
     - "deunhealth.restart.on.unhealthy=true"
     volumes:
     - ${VOLDIR}/pgadmin:/var/lib/pgadmin
+    - ./config_local.py:/pgadmin4/config_local.py:ro
