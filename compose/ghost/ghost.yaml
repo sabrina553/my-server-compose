@@ -1,0 +1,79 @@
+services:
+  ghost:
+    container_name: ${GHOST__NAME}
+    image: ${GHOST__IMAGE}:${GHOST__VERSION}
+    restart: always
+    security_opt:
+    - no-new-privileges:true
+    - apparmor:unconfined
+    tmpfs:
+    - /tmp:rw,noexec,nosuid
+    depends_on:
+      db:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+    environment:
+      NODE_ENV: production
+      url: https://${GHOST__DOMAIN}
+      database__client: mysql
+      database__connection__host: ${GHOST__DATABASE_NAME}
+      database__connection__user: ${GHOST_DATABASE_USERNAME}
+      database__connection__password: ${GHOST__DATABASE_PASSWORD}
+      database__connection__database: ${GHOST_DATABASE_USERNAME}
+
+      mail__transport: ${GHOST__MAIL_TRANSPORT}
+      mail__options__host: ${SMTP__HOST}
+      mail__options__port: ${SMTP__PORT}
+      mail__options__secure: ${SMTP__USE_SSL}
+      mail__options__auth__user: ${SMTP__USERNAME}
+      mail__options__auth__pass: ${GHOST__MAIL_PASS}
+      mail__from: ${GHOST__MAIL_FROM}
+    networks:
+    - external
+    - internal
+    labels:
+    - "traefik.enable=true"
+    - "traefik.http.routers.${GHOST__NAME}-https.rule=Host(`blog.${DOMAINNAME2}`)"
+    # No authelia@docker: the blog is public and lives on DOMAINNAME2, which has no
+    # Authelia session cookie. Ghost admin (/ghost) is protected by Ghost's own login.
+    - "traefik.http.services.${GHOST__NAME}.loadbalancer.server.port=2368"
+    - "deunhealth.restart.on.unhealthy=true"
+    volumes:
+    - ${GHOST__UPLOAD_LOCATION}:/var/lib/ghost/content
+
+  db:
+    container_name: ${GHOST__DATABASE_NAME}
+    image: ${GHOST__DATABASE_IMAGE}:${GHOST__DATABASE_VERSION}
+    restart: always
+    security_opt:
+    - no-new-privileges:true
+    - apparmor:unconfined
+    tmpfs:
+    - /tmp:rw,noexec,nosuid
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${GHOST__DATABASE_ROOT_PASSWORD}
+      MYSQL_USER: ${GHOST_DATABASE_USERNAME}
+      MYSQL_PASSWORD: ${GHOST__DATABASE_PASSWORD}
+      MYSQL_DATABASE: ${GHOST_DATABASE_USERNAME}
+    volumes:
+    - ${GHOST__MYSQL_DATA_LOCATION}:/var/lib/mysql
+    - ${GHOST__MYSQL_INIT_LOCATION}:/docker-entrypoint-initdb.d
+    healthcheck:
+      # No password: mysqladmin ping exits 0 whenever the server is up, even if
+      # access is denied, so there's no need to put a password on the command line.
+      test: mysqladmin ping -h 127.0.0.1 --silent
+      interval: 1s
+      start_period: 30s
+      start_interval: 10s
+      retries: 120
+    networks:
+    - internal
