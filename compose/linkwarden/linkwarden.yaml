@@ -3,6 +3,13 @@ services:
     container_name: linkwarden
     image: ghcr.io/linkwarden/linkwarden:latest # comment to build from source
     restart: always
+    security_opt:
+    - no-new-privileges:true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
     secrets:
     - smtp_password
     - linkwarden_nextauth_secret
@@ -13,6 +20,11 @@ services:
     - NEXTAUTH_URL=${LINKWARDEN__NEXTAUTH_URL}
     - NEXTAUTH_SECRET=${LINKWARDEN__NEXTAUTH_SECRET}
     - DATABASE_URL=${LINKWARDEN__DATABASE_URL}
+    # SSO only. Set here rather than in .env so they can't silently go missing:
+    # with no Authelia in front of this router, these are what stop strangers
+    # signing up or guessing passwords. The app/extension use API keys instead.
+    - NEXT_PUBLIC_DISABLE_REGISTRATION=true
+    - NEXT_PUBLIC_CREDENTIALS_ENABLED=false
     - NEXT_PUBLIC_AUTHELIA_ENABLED=${LINKWARDEN__NEXT_PUBLIC_AUTHELIA_ENABLED}
     - AUTHELIA_CLIENT_ID=${LINKWARDEN__AUTHELIA_CLIENT_ID}
     - AUTHELIA_CLIENT_SECRET=${LINKWARDEN__AUTHELIA_CLIENT_SECRET}
@@ -25,4 +37,6 @@ services:
     labels:
     - "traefik.enable=true"
     - "traefik.http.routers.linkwarden.rule=Host(`bookmark.$DOMAINNAME`)"
+    # No authelia@docker: forward-auth breaks the mobile app and browser extension.
+    # Login is SSO-only (Authelia two_factor OIDC client), see environment above.
     - "traefik.http.services.linkwarden.loadbalancer.server.port=3000"
