@@ -76,6 +76,7 @@ services:
       # AUTHELIA_: Authelia treats those as config keys and rejects unknown ones.
       DOMAINNAME: ${DOMAINNAME}
       SUBDOMAIN_AUTHELIA: ${AUTHELIA__SUBDOMAIN}
+      SUBDOMAIN_COUCHDB: ${COUCHDB__SUBDOMAIN}
 
       AUTHELIA_SESSION_SECRET_FILE: ${AUTHELIA__SESSION_SECRET}
       # Sessions live in Valkey so they survive Authelia restarts.
