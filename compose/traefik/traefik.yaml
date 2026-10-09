@@ -29,9 +29,12 @@ services:
     - 80:80
     - 443:443
     networks:
-    - external
-    - proxy_internal
-    - socket_proxy_ro
+      external:
+        # Fixed so backends can trust X-Forwarded-* from Traefik only
+        # (FreshRSS TRUSTED_PROXY, Home Assistant trusted_proxies).
+        ipv4_address: 172.20.0.249
+      proxy_internal:
+      socket_proxy_ro:
     command:
     #API + Dash
     #Dashboard only via the traefik.int router below (behind Authelia), not on :8080.
@@ -66,6 +69,8 @@ services:
     #Authelia's forwardAuth sets, so a client could spoof the logged-in user.
     - "--entryPoints.web.http.aliasHeadersStrategy=delete"
     - "--entryPoints.websecure.http.aliasHeadersStrategy=delete"
+    #Security headers on every HTTPS response (middleware defined in labels below).
+    - "--entryPoints.websecure.http.middlewares=secure-headers@docker"
     #providers
     - "--providers.docker=true"
     - "--providers.docker.endpoint=${DOCKER_HOST_RO:-tcp://socket-proxy-ro:2375}"
@@ -86,6 +91,14 @@ services:
     - traefik.http.routers.api.rule=Host(`traefik.int.${DOMAINNAME}`)
     - traefik.http.routers.api.middlewares=authelia@docker
     - traefik.http.routers.api.service=api@internal
+    # Security headers, applied to every router on websecure (see command above).
+    # HSTS is sticky: browsers will refuse plain HTTP on these domains and all
+    # their subdomains for a year after seeing it.
+    - traefik.http.middlewares.secure-headers.headers.stsSeconds=31536000
+    - traefik.http.middlewares.secure-headers.headers.stsIncludeSubdomains=true
+    - traefik.http.middlewares.secure-headers.headers.contentTypeNosniff=true
+    - traefik.http.middlewares.secure-headers.headers.referrerPolicy=strict-origin-when-cross-origin
+    - traefik.http.middlewares.secure-headers.headers.customFrameOptionsValue=SAMEORIGIN
     - traefik.http.services.api.loadbalancer.server.port=8080
     - "deunhealth.restart.on.unhealthy=true"
     volumes:

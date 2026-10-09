@@ -95,11 +95,11 @@ access_control:
         - '^/_session([?].*)?$'
       policy: 'two_factor'
 
-    ## Personal data. (photos. isn't here: Immich has no forward-auth because of
-    ## its mobile app, and relies on its two_factor OIDC client instead.)
+    ## Personal data. (photos. and ha. aren't here: Immich and Home Assistant
+    ## have no forward-auth because of their mobile apps, and rely on their
+    ## two_factor OIDC clients instead.)
     - domain:
         - 'files.{{ env "DOMAINNAME" }}'
-        - 'ha.{{ env "DOMAINNAME" }}'
       policy: 'two_factor'
 
     ## Everything else that is meant to be behind Authelia.

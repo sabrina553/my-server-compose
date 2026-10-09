@@ -234,7 +234,8 @@ include:
     - compose/vpn/gluetun.yaml   
     - compose/dozzle/dozzle.yaml 
     - compose/deunhealth/deunhealth.yaml
-    - compose/watchtower/watchtower.yaml
+    - compose/diun/diun.yaml
+    # - compose/watchtower/watchtower.yaml   # replaced by Diun (notify only)
     - compose/postgresql/postgresql.yaml
     - compose/pg-admin/pg-admin.yaml
     - compose/redis/redis.yaml
