@@ -101,6 +101,15 @@ access_control:
         - '^/admin([/?].*)?$'
       policy: 'two_factor'
 
+    ## CouchDB's Fauxton admin UI and password login (POST /_session). Only these
+    ## go through the authelia@docker middleware (see couch-db.yaml); sync clients
+    ## use JWT bearer tokens checked by CouchDB itself.
+    - domain: 'couch.{{ env "DOMAINNAME" }}'
+      resources:
+        - '^/_utils([/?].*)?$'
+        - '^/_session([?].*)?$'
+      policy: 'two_factor'
+
     ## Personal data.
     - domain:
         - 'files.{{ env "DOMAINNAME" }}'
