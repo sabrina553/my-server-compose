@@ -80,6 +80,14 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
 **Secrets**
 - Every secret is a file in `secrets/<app>/…`, declared in `compose.yaml`.
   Files are mode 444, folders 700.
+- Naming: Docker secret `<app>_<item>` is always the file
+  `secrets/<app>/<item>` (e.g. `immich_db_password` =
+  `secrets/immich/db_password`). `<app>` is the app's short name
+  (`homeassistant`, `vpn`, `traefik`…; `smtp` for the shared mail account).
+  Item words: `db_password`, `db_root_password`, `db_url`,
+  `oidc_client_id`, `oidc_client_secret`, and in Authelia
+  `oidc_<app>_digest`; otherwise say what it is (`session_secret`,
+  `storage_encryption_key`, `jwt_secret`).
 - Use the app's native `*_FILE` variable when it has one (linuxserver images:
   `FILE__VAR`).
 - Otherwise use the **wrapper entrypoint** pattern (see `ghost.yaml` or
