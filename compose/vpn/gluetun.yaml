@@ -41,16 +41,16 @@ services:
     - FIREWALL_OUTBOUND_SUBNETS="${VPN__EXTERNAL_SUBNETS}"
     - HTTPPROXY="on"
     - PUBLICIP_FILE=/gluetun/ip
-    ports:
-    - 8080:8080 # qbittorrent webui      
-    - 38534:38534 # qbittorrent
-    - 8888:8888 # HTTP proxy
-    - 5010:5010 # Mousehole's port on the VPN container
-    - 39842:39842 # Mousetrap 
+    # No published ports on purpose. Anything published here bypasses Traefik and
+    # Authelia, and Docker's iptables rules bypass the host firewall.
+    #  - Web UIs (qbittorrent, mousehole, mousetrap) go through Traefik.
+    #  - The HTTP proxy is reached by other containers at http://vpn:8888.
+    #  - Torrent peers come in through the VPN tunnel (FIREWALL_VPN_INPUT_PORTS).
+    # If you need direct access while Traefik is down, bind to localhost only and
+    # use an SSH tunnel, e.g.:  - 127.0.0.1:8080:8080
     networks:
     - external
     - internal
-    - socket_proxy
     labels:
     - "deunhealth.restart.on.unhealthy=false"
     - "com.centurylinklabs.watchtower.monitor-only=true"

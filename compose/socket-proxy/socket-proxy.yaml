@@ -1,63 +1,116 @@
+## Two proxies so that nothing internet-facing can write to the Docker API.
+## Write access (POST + CONTAINERS) is equivalent to root on the host: it can
+## start a privileged container that mounts /.
+##
+##   socket-proxy-ro  GET only. Traefik, Dozzle.         network: socket_proxy_ro
+##   socket-proxy     read/write. Watchtower, deunhealth. network: socket_proxy
+##
+## Keep internet-facing containers (and anything sharing their network
+## namespace, e.g. everything on network_mode: service:vpn) OFF socket_proxy.
+## Note that even read access exposes every container's environment variables
+## via inspect, so keep secrets in *_FILE / Docker secrets, not plain env.
+
+x-socket-proxy-common: &socket-proxy-common
+  image: ${SOCKET_PROXY__IMAGE}:${SOCKET_PROXY__VERSION}
+  restart: unless-stopped
+  security_opt:
+  - no-new-privileges:true
+  - apparmor:unconfined
+  cap_drop:
+  - ALL
+  read_only: true
+  tmpfs:
+  - "/run"
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "1m"
+      max-file: "3"
+  labels:
+  - "traefik.enable=false"
+  - "deunhealth.restart.on.unhealthy=true"
+  - "com.centurylinklabs.watchtower.monitor-only=true"
+  volumes:
+  - "/var/run/docker.sock:/var/run/docker.sock:ro"
+  healthcheck:
+    interval: "30s"
+    timeout: "5s"
+    retries: 3
+    start_period: "10s"
+    test: "wget --no-verbose --tries=1 --spider http://localhost:2375/_ping || exit 1"
+
 services:
-  socket-proxy:
-    container_name: socket-proxy
-    image: ${SOCKET_PROXY__IMAGE}:${SOCKET_PROXY__VERSION}
-    restart: unless-stopped
-    security_opt:
-    - no-new-privileges:true
-    - apparmor:unconfined
-    cap_drop:
-    - ALL
-    read_only: true
-    tmpfs:
-    - "/run"
-    #  - /run:rw,noexec,nosuid
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "1m"
-        max-file: "3"
+  socket-proxy-ro:
+    <<: *socket-proxy-common
+    container_name: socket-proxy-ro
     environment:
       TZ: "${TZ}"
       LOG_LEVEL: "warning" # debug, info, notice, warning, err, crit, alert, emerg
       DISABLE_IPV6: "0"
-      ALLOW_START: "1"
-      ALLOW_STOP: "1"
-      ALLOW_RESTARTS: "1"
+      # Read-only: no POST, and no start/stop/restart either.
+      POST: "0"
+      ALLOW_START: "0"
+      ALLOW_STOP: "0"
+      ALLOW_RESTARTS: "0"
+      CONTAINERS: "1"
+      EVENTS: "1"
+      INFO: "1"
+      NETWORKS: "1"
+      PING: "1"
+      VERSION: "1"
       AUTH: "0"
       BUILD: "0"
       COMMIT: "0"
       CONFIGS: "0"
-      CONTAINERS: "1"
       DISTRIBUTION: "0"
-      EVENTS: "1"
       EXEC: "0"
-      IMAGES: "1"
-      INFO: "1"
-      NETWORKS: "1"
+      IMAGES: "0"
       NODES: "0"
-      PING: "1"
       PLUGINS: "0"
-      POST: "1"
       SECRETS: "0"
-      SERVICES: "1"
+      SERVICES: "0"
       SESSION: "0"
       SWARM: "0"
       SYSTEM: "0"
       TASKS: "0"
+      VOLUMES: "0"
+    networks:
+    - socket_proxy_ro
+
+  socket-proxy:
+    <<: *socket-proxy-common
+    container_name: socket-proxy
+    environment:
+      TZ: "${TZ}"
+      LOG_LEVEL: "warning" # debug, info, notice, warning, err, crit, alert, emerg
+      DISABLE_IPV6: "0"
+      # Watchtower needs POST to pull images and recreate containers.
+      # deunhealth only needs ALLOW_RESTARTS.
+      POST: "1"
+      ALLOW_START: "1"
+      ALLOW_STOP: "1"
+      ALLOW_RESTARTS: "1"
+      CONTAINERS: "1"
+      EVENTS: "1"
+      IMAGES: "1"
+      INFO: "1"
+      NETWORKS: "1"
+      PING: "1"
       VERSION: "1"
-      VOLUMES: "1"
+      AUTH: "0"
+      BUILD: "0"
+      COMMIT: "0"
+      CONFIGS: "0"
+      DISTRIBUTION: "0"
+      EXEC: "0"
+      NODES: "0"
+      PLUGINS: "0"
+      SECRETS: "0"
+      SERVICES: "0"
+      SESSION: "0"
+      SWARM: "0"
+      SYSTEM: "0"
+      TASKS: "0"
+      VOLUMES: "0"
     networks:
     - socket_proxy
-    labels:
-    - "traefik.enable=false"
-    - "deunhealth.restart.on.unhealthy=true"
-    - "com.centurylinklabs.watchtower.monitor-only=true"
-    volumes:
-    - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    healthcheck:
-      interval: "30s"
-      timeout: "5s"
-      retries: 3
-      start_period: "10s"
-      test: "wget --no-verbose --tries=1 --spider http://localhost:2375/_ping || exit 1"

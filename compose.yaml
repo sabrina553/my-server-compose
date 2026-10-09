@@ -8,6 +8,13 @@ networks:
     ipam:
       config:
         - subnet: 172.21.0.0/24
+  socket_proxy_ro:
+    name: socket_proxy_ro
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.21.1.0/24
   external:
     name: "external"
     driver: bridge
