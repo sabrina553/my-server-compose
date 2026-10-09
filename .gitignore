@@ -1,3 +1,8 @@
+# Environment: keep every .env variant out of git (backups like
+# .env.bak-2026-10-09 included), except the redacted template.
 .env
+.env.*
+!.env.example
+
 *.json
 secrets/*

@@ -50,7 +50,7 @@ services:
     - "traefik.http.routers.filebrowser.middlewares=authelia@docker"
     - "traefik.http.services.filebrowser.loadbalancer.server.port=80"
     # Diun: only report -stable releases
-    - 'diun.include_tags=^v\d+\.\d+\.\d+-stable$$'
+    - 'diun.include_tags=^\d+\.\d+\.\d+-stable$$'
     volumes:
     - ${DATADIR}/filebrowser:/srv:rw # Do not use a root "/" directory or include the "/var" folder
     - ${VOLDIR}/filebrowser:${FILEBROWSER__DATABASE_PATH}:rw # Do not use a root "/" directory or include the "/var" folder
