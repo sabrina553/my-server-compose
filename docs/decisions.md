@@ -72,7 +72,8 @@ Services with no internet access use `proxy_internal` and say so with a label.
 **Nothing has general write access to the Docker API.** (2026-10-09) Write
 access is effectively root on the host.
 - Traefik, Dozzle and Diun use a GET-only proxy.
-- deunhealth's proxy adds container restarts only.
+- deunhealth's proxy adds container restart, stop and kill (the image's
+  `ALLOW_RESTARTS` covers all three). At worst that stops containers.
 - Nothing on the VPN's network can reach either proxy.
 
 **No host-published ports except Traefik's 80/443.** (2026-10-09) Docker's
