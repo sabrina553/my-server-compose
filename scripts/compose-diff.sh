@@ -3,6 +3,10 @@
 #
 #   scripts/compose-diff.sh            working tree vs HEAD
 #   scripts/compose-diff.sh <ref>      working tree vs <ref> (commit, branch, tag)
+#   scripts/compose-diff.sh --all [<ref>]
+#        also render the disabled services: on copies of both sides, the
+#        commented-out `# - compose/...` includes in compose.yaml are enabled
+#        (the repo itself is never changed)
 #
 # Both sides are rendered with `docker compose config` against this server's
 # real .env, normalised (sorted JSON, repo paths made identical) and compared.
@@ -16,6 +20,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 repo=$PWD
+all=0
+[[ ${1:-} == --all ]] && { all=1; shift; }
 ref=${1:-HEAD}
 
 git rev-parse --verify -q "$ref^{commit}" >/dev/null || { echo "Unknown ref: $ref" >&2; exit 2; }
@@ -24,6 +30,17 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 mkdir "$tmp/base"
 git archive "$ref" | tar -x -C "$tmp/base"
+new=$repo
+if (( all )); then
+  # Copy the working tree (tracked + untracked, minus ignored files such as
+  # .env and secrets/) and enable every commented-out include on both sides.
+  new=$tmp/new
+  mkdir "$new"
+  git ls-files -z --cached --others --exclude-standard | tar --null -T - -cf - | tar -x -C "$new"
+  for side in "$tmp/base" "$new"; do
+    sed -i -E 's|^([[:space:]]*)#[[:space:]]*- (compose/)|\1- \2|' "$side/compose.yaml"
+  done
+fi
 
 render() { # <project dir> <output file>
   (cd "$1" && docker compose --env-file "$repo/.env" --project-name docker \
@@ -35,16 +52,17 @@ render() { # <project dir> <output file>
   }
 }
 render "$tmp/base" "$tmp/base.json" "$ref"
-render "$repo" "$tmp/new.json" "working tree"
+render "$new" "$tmp/new.json" "working tree"
 
-python3 -I - "$tmp/base.json" "$tmp/new.json" "$tmp/base" "$repo" "$ref" > "$tmp/diff" <<'EOF'
+python3 -I - "$tmp/base.json" "$tmp/new.json" "$tmp/base" "$repo" "$ref" "$new" > "$tmp/diff" <<'EOF'
 import difflib, json, sys
-base_f, new_f, base_dir, repo, ref = sys.argv[1:]
+base_f, new_f, base_dir, repo, ref, new_dir = sys.argv[1:]
 
 def load(path):
     # Relative paths resolve to the side's own directory; absolute ones (from
     # .env, e.g. $DOCKERDIR) to the real repo. Make both look the same.
-    text = open(path).read().replace(base_dir, "<repo>").replace(repo, "<repo>")
+    text = (open(path).read().replace(base_dir, "<repo>")
+            .replace(new_dir, "<repo>").replace(repo, "<repo>"))
     return json.dumps(json.loads(text), indent=2, sort_keys=True).splitlines()
 
 a, b = load(base_f), load(new_f)
