@@ -161,6 +161,8 @@ identity_providers:
         client_id: {{ secret "/run/secrets/filebrowser_oidc_client_id" | trim | squote }}
         client_secret: {{ secret "/run/secrets/authelia_oidc_filebrowser" | trim | squote }}
         authorization_policy: 'two_factor'
+        consent_mode: 'pre-configured'
+        pre_configured_consent_duration: '1 year'
         require_pkce: false   # FileBrowser Quantum's server-side OIDC doesn't send PKCE (checked 1.5.8, 2026-10-09)
         redirect_uris:
           - 'https://files.{{ env "DOMAINNAME" }}/api/auth/oidc/callback'
@@ -171,6 +173,8 @@ identity_providers:
         client_id: {{ secret "/run/secrets/freshrss_oidc_clientid" | trim | squote }}
         client_secret: {{ secret "/run/secrets/authelia_oidc_freshrss" | trim | squote }}
         authorization_policy: 'one_factor'
+        consent_mode: 'pre-configured'
+        pre_configured_consent_duration: '1 year'
         require_pkce: true
         pkce_challenge_method: 'S256'
         redirect_uris:
@@ -184,7 +188,7 @@ identity_providers:
         claims_policy: 'grimmory'
         authorization_policy: 'one_factor'
         consent_mode: 'pre-configured'
-        pre_configured_consent_duration: '1 week'
+        pre_configured_consent_duration: '1 year'
         require_pkce: true
         pkce_challenge_method: 'S256'
         redirect_uris:
@@ -201,6 +205,8 @@ identity_providers:
         client_id: {{ secret "/run/secrets/homeassis_oidc_clientid" | trim | squote }}
         client_secret: {{ secret "/run/secrets/authelia_oidc_homeassistant" | trim | squote }}
         authorization_policy: 'two_factor'
+        consent_mode: 'pre-configured'
+        pre_configured_consent_duration: '1 year'
         require_pkce: true
         pkce_challenge_method: 'S256'
         redirect_uris:
@@ -213,6 +219,8 @@ identity_providers:
         client_id: {{ secret "/run/secrets/immich_oidc_clientid" | trim | squote }}
         client_secret: {{ secret "/run/secrets/authelia_oidc_immich" | trim | squote }}
         authorization_policy: 'two_factor'
+        consent_mode: 'pre-configured'
+        pre_configured_consent_duration: '1 year'
         require_pkce: true
         pkce_challenge_method: 'S256'
         redirect_uris:
@@ -227,6 +235,8 @@ identity_providers:
         client_secret: {{ secret "/run/secrets/authelia_oidc_leantime" | trim | squote }}
         claims_policy: 'leantime'
         authorization_policy: 'two_factor'
+        consent_mode: 'pre-configured'
+        pre_configured_consent_duration: '1 year'
         require_pkce: false   # Leantime's OIDC client doesn't send PKCE (tested 2026-10-09)
         redirect_uris:
           - 'https://lean.{{ env "DOMAINNAME" }}/oidc/callback'
@@ -237,6 +247,8 @@ identity_providers:
         client_id: {{ secret "/run/secrets/linkwarden_oidc_clientid" | trim | squote }}
         client_secret: {{ secret "/run/secrets/authelia_oidc_linkwarden" | trim | squote }}
         authorization_policy: 'two_factor'
+        consent_mode: 'pre-configured'
+        pre_configured_consent_duration: '1 year'
         require_pkce: true
         pkce_challenge_method: 'S256'
         redirect_uris:
@@ -248,6 +260,8 @@ identity_providers:
         client_id: {{ secret "/run/secrets/mealie_oidc_clientid" | trim | squote }}
         client_secret: {{ secret "/run/secrets/authelia_oidc_mealie" | trim | squote }}
         authorization_policy: 'one_factor'
+        consent_mode: 'pre-configured'
+        pre_configured_consent_duration: '1 year'
         require_pkce: true
         pkce_challenge_method: 'S256'
         redirect_uris:
@@ -259,6 +273,8 @@ identity_providers:
         client_id: {{ secret "/run/secrets/vaultwarden_oidc_clientid" | trim | squote }}
         client_secret: {{ secret "/run/secrets/authelia_oidc_vaultwarden" | trim | squote }}
         authorization_policy: 'two_factor'
+        consent_mode: 'pre-configured'
+        pre_configured_consent_duration: '1 year'
         require_pkce: true
         pkce_challenge_method: 'S256'
         redirect_uris:
