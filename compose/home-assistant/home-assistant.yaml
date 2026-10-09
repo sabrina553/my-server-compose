@@ -1,16 +1,25 @@
+## Home Assistant  https://github.com/home-assistant/core
+## Home automation at <subdomain>.<domain>. No forward-auth (it breaks the
+## Companion app): its own login plus Authelia SSO (hass-openid, two_factor
+## OIDC client); the password form is blocked (block_login). Trusts
+## X-Forwarded-For only from Traefik (trusted_proxies in its configuration.yaml).
 services:
   homeassistant:
-    container_name: homeassistant
+    container_name: ${HOMEASSISTANT__NAME}
     image: ${HOMEASSISTANT__IMAGE}:${HOMEASSISTANT__VERSION}
     restart: unless-stopped
+
     security_opt:
     - no-new-privileges:true
+    # The one deliberate exception to the AppArmor rule: host D-Bus/Bluetooth
+    # access (see docs/decisions.md).
     - apparmor:unconfined
     cap_drop:
     - ALL
     #read_only: true
     tmpfs:
     - /tmp:rw,noexec,nosuid
+
     depends_on:
       traefik:
         condition: service_started
@@ -20,16 +29,18 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
+
     networks:
     - external
+
     labels:
     - "traefik.enable=true"
-    - "traefik.http.routers.homeassistant.rule=Host(`ha.$DOMAINNAME`)"
-    # No authelia@docker: forward-auth breaks the Companion app. HA is protected
-    # by its own login + Authelia SSO (hass-openid, two_factor OIDC client).
-    - "traefik.http.services.homeassistant.loadbalancer.server.port=8123"
+    # No authelia@docker: forward-auth breaks the Companion app (see the header).
+    - "traefik.http.routers.${HOMEASSISTANT__NAME}.rule=Host(`${HOMEASSISTANT__SUBDOMAIN}.${DOMAINNAME}`)"
+    - "traefik.http.services.${HOMEASSISTANT__NAME}.loadbalancer.server.port=8123"
     - "deunhealth.restart.on.unhealthy=true"
+
     volumes:
-    - ${VOLDIR}/home-assistant:/config:rw
+    - ${HOMEASSISTANT__VOLDIR}:/config:rw
     - /etc/localtime:/etc/localtime:ro
     - /run/dbus:/run/dbus:ro

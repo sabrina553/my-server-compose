@@ -1,10 +1,15 @@
+## Leantime  https://github.com/Leantime/leantime
+## Project management at <subdomain>.<domain>, behind Authelia, with SSO-only
+## login (OIDC; the password form is hidden). Its own MySQL on the internal
+## leantime_backend network. Leantime's OIDC client can't do PKCE (see
+## docs/decisions.md).
 services:
   leantime_db:
+    container_name: ${LEAN__DB_CONTAINER}
     image: ${LEAN__DB_IMAGE}:${LEAN__DB_VERSION}
-    container_name: leantime-mysql
-    volumes:
-    - ${LEAN__VOLUME_DIRECTORY}/db_data:/var/lib/mysql
     restart: unless-stopped
+    command: --character-set-server=UTF8MB4 --collation-server=UTF8MB4_unicode_ci
+
     security_opt:
     - no-new-privileges:true
     cap_drop:
@@ -15,34 +20,40 @@ services:
     - FOWNER
     - SETGID
     - SETUID
+
     logging:
       driver: "json-file"
       options:
         max-size: "1m"
         max-file: "3"
+
     secrets:
     - leantime_mysql_root_password
     - leantime_mysql_password
     environment:
-    - PUID=${PUID}
-    - PGID=${PGID}
-    - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/leantime_mysql_root_password
-    - MYSQL_DATABASE=${LEAN__MYSQL_DATABASE}
-    - MYSQL_USER=${LEAN__MYSQL_USER}
-    - MYSQL_PASSWORD_FILE=/run/secrets/leantime_mysql_password
+      PUID: ${PUID}
+      PGID: ${PGID}
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/leantime_mysql_root_password
+      MYSQL_DATABASE: ${LEAN__MYSQL_DATABASE}
+      MYSQL_USER: ${LEAN__MYSQL_USER}
+      MYSQL_PASSWORD_FILE: /run/secrets/leantime_mysql_password
+
     networks:
     - leantime_backend
+
     labels:
     # Diun: stay on MySQL 8.4.x (LTS)
     - 'diun.include_tags=^8\.4\.\d+$$'
-    command: --character-set-server=UTF8MB4 --collation-server=UTF8MB4_unicode_ci
+
+    volumes:
+    - ${LEAN__VOLUME_DIRECTORY}/db_data:/var/lib/mysql
+
     healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  #https://github.com/Leantime/leantime/tree/master
   leantime:
     container_name: ${LEAN__NAME}
     image: ${LEAN__IMAGE}:${LEAN__VERSION}
@@ -64,12 +75,7 @@ services:
     - /sbin/tini
     - --
     - /start.sh
-    secrets:
-    - leantime_mysql_password
-    - leantime_session_password
-    - leantime_oidc_secret
-    - leantime_oidc_clientid
-    - smtp_password
+
     security_opt:
     - no-new-privileges:true
     # Leantime's documented capability set.
@@ -80,74 +86,86 @@ services:
     - CHOWN
     - SETGID
     - SETUID
+
+    depends_on:
+      leantime_db:
+        condition: service_healthy
     logging:
       driver: "json-file"
       options:
         max-size: "1m"
         max-file: "3"
+
+    secrets:
+    - leantime_mysql_password
+    - leantime_session_password
+    - leantime_oidc_secret
+    - leantime_oidc_clientid
+    - smtp_password
     environment:
-    - PUID=${PUID}
-    - PGID=${PGID}
-    - LOG_LEVEL=${LOG_LEVEL}
-    - LEAN_PORT=${LEAN__PORT}
-    - LEAN_APP_URL=${LEAN__APP_URL}
-    - LEAN_APP_DIR=${LEAN__APP_DIR}
-    # Debug mode shows stack traces and internals in the browser; keep it off.
-    # For more detail, raise LOG_LEVEL in .env instead.
-    - LEAN_DEBUG=0
-    - VOLUME_DIRECTORY=${LEAN__VOLUME_DIRECTORY}
-    # Database. The app only uses LEAN_DB_*; the MySQL root password stays in
-    # the leantime_db container. LEAN_DB_PASSWORD is set by the entrypoint above.
-    - LEAN_DB_HOST=${LEAN__DB_HOST}
-    - LEAN_DB_USER=${LEAN__DB_USER}
-    - LEAN_DB_DATABASE=${LEAN__DB_DATABASE}
-    - LEAN_DB_PORT=${LEAN__DB_PORT}
-    # Session Management (LEAN_SESSION_PASSWORD is set by the entrypoint above)
-    - LEAN_SESSION_EXPIRATION=${LEAN__SESSION_EXPIRATION}
-    - LEAN_SESSION_SECURE=${LEAN__SESSION_SECURE}
-    - LEAN_SITENAME=${LEAN__SITENAME}
-    - LEAN_LANGUAGE=${LEAN__LANGUAGE}
-    - LEAN_DEFAULT_TIMEZONE=${LEAN__DEFAULT_TIMEZONE}
-    - LEAN_LOG_PATH=${LEAN__LOG_PATH}
-    - LEAN_DISABLE_LOGIN_FORM=${LEAN__DISABLE_LOGIN_FORM}
-    # Local File Uploads
-    - LEAN_USER_FILE_PATH=${LEAN__USER_FILE_PATH}
-    - LEAN_DB_BACKUP_PATH=${LEAN__DB_BACKUP_PATH}
-    # Email
-    - LEAN_EMAIL_RETURN=${LEAN__NAME}@${DOMAINNAME}
-    - LEAN_EMAIL_USE_SMTP=true
-    - LEAN_EMAIL_SMTP_HOSTS=${SMTP__HOST}
-    - LEAN_EMAIL_SMTP_AUTH=true
-    - LEAN_EMAIL_SMTP_USERNAME=${SMTP__USERNAME}
-    - LEAN_EMAIL_SMTP_AUTO_TLS=true
-    - LEAN_EMAIL_SMTP_SECURE=TLS
-    - LEAN_EMAIL_SMTP_SSLNOVERIFY=false
-    - LEAN_EMAIL_SMTP_PORT=${SMTP__PORT}
-    - LEAN_LDAP_DEFAULT_ROLE_KEY=20;
-    ## OpenID Connect
-    - LEAN_OIDC_ENABLE=true
-    - LEAN_OIDC_PROVIDER_URL=${LEAN__OIDC_PROVIDER_URL}
-    - LEAN_OIDC_CREATE_USER=${LEAN__OIDC_CREATE_USER}
-    - LEAN_OIDC_DEFAULT_ROLE=${LEAN__OIDC_DEFAULT_ROLE}
-    - LEAN_USE_REDIS=${LEAN__USE_REDIS}
-    ## Rate limiting
-    - LEAN_RATELIMIT_GENERAL=${LEAN__RATELIMIT_GENERAL}
-    - LEAN_RATELIMIT_API=${LEAN__RATELIMIT_API}
-    - LEAN_RATELIMIT_AUTH=${LEAN__RATELIMIT_AUTH}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      LOG_LEVEL: ${LOG_LEVEL}
+      LEAN_PORT: ${LEAN__PORT}
+      LEAN_APP_URL: ${LEAN__APP_URL}
+      LEAN_APP_DIR: ${LEAN__APP_DIR}
+      # Debug mode shows stack traces and internals in the browser; keep it off.
+      # For more detail, raise LOG_LEVEL in .env instead.
+      LEAN_DEBUG: "0"
+      VOLUME_DIRECTORY: ${LEAN__VOLUME_DIRECTORY}
+      # Database. The app only uses LEAN_DB_*; the MySQL root password stays in
+      # the leantime_db container. LEAN_DB_PASSWORD is set by the entrypoint above.
+      LEAN_DB_HOST: ${LEAN__DB_HOST}
+      LEAN_DB_USER: ${LEAN__DB_USER}
+      LEAN_DB_DATABASE: ${LEAN__DB_DATABASE}
+      LEAN_DB_PORT: ${LEAN__DB_PORT}
+      # Sessions (LEAN_SESSION_PASSWORD is set by the entrypoint above)
+      LEAN_SESSION_EXPIRATION: ${LEAN__SESSION_EXPIRATION}
+      LEAN_SESSION_SECURE: ${LEAN__SESSION_SECURE}
+      LEAN_SITENAME: ${LEAN__SITENAME}
+      LEAN_LANGUAGE: ${LEAN__LANGUAGE}
+      LEAN_DEFAULT_TIMEZONE: ${LEAN__DEFAULT_TIMEZONE}
+      LEAN_LOG_PATH: ${LEAN__LOG_PATH}
+      LEAN_DISABLE_LOGIN_FORM: ${LEAN__DISABLE_LOGIN_FORM}
+      # Local file uploads
+      LEAN_USER_FILE_PATH: ${LEAN__USER_FILE_PATH}
+      LEAN_DB_BACKUP_PATH: ${LEAN__DB_BACKUP_PATH}
+      # Email (LEAN_EMAIL_SMTP_PASSWORD is set by the entrypoint above)
+      LEAN_EMAIL_RETURN: ${LEAN__EMAIL_RETURN}
+      LEAN_EMAIL_USE_SMTP: ${LEAN__EMAIL_USE_SMTP}
+      LEAN_EMAIL_SMTP_HOSTS: ${SMTP__HOST}
+      LEAN_EMAIL_SMTP_PORT: ${SMTP__PORT}
+      LEAN_EMAIL_SMTP_AUTH: ${LEAN__EMAIL_SMTP_AUTH}
+      LEAN_EMAIL_SMTP_USERNAME: ${SMTP__USERNAME}
+      LEAN_EMAIL_SMTP_AUTO_TLS: ${LEAN__EMAIL_SMTP_AUTO_TLS}
+      LEAN_EMAIL_SMTP_SECURE: ${LEAN__EMAIL_SMTP_SECURE}
+      # Never skip certificate checks for the mail server.
+      LEAN_EMAIL_SMTP_SSLNOVERIFY: "false"
+      LEAN_LDAP_DEFAULT_ROLE_KEY: ${LEAN__LDAP_DEFAULT_ROLE_KEY}
+      # OpenID Connect
+      LEAN_OIDC_ENABLE: ${LEAN__OIDC_ENABLE}
+      LEAN_OIDC_PROVIDER_URL: ${LEAN__OIDC_PROVIDER_URL}
+      LEAN_OIDC_CREATE_USER: ${LEAN__OIDC_CREATE_USER}
+      LEAN_OIDC_DEFAULT_ROLE: ${LEAN__OIDC_DEFAULT_ROLE}
+      LEAN_USE_REDIS: ${LEAN__USE_REDIS}
+      # Rate limiting
+      LEAN_RATELIMIT_GENERAL: ${LEAN__RATELIMIT_GENERAL}
+      LEAN_RATELIMIT_API: ${LEAN__RATELIMIT_API}
+      LEAN_RATELIMIT_AUTH: ${LEAN__RATELIMIT_AUTH}
+
     networks:
     - leantime_backend
     - external
+
     labels:
     - "traefik.enable=true"
-    - "traefik.http.routers.${LEAN__NAME}-https.rule=Host(`lean.${DOMAINNAME}`)"
-    - "traefik.http.routers.${LEAN__NAME}-https.middlewares=authelia@docker"
+    - "traefik.http.routers.${LEAN__NAME}.rule=Host(`${LEAN__SUBDOMAIN}.${DOMAINNAME}`)"
+    - "traefik.http.routers.${LEAN__NAME}.middlewares=authelia@docker"
     - "traefik.http.services.${LEAN__NAME}.loadbalancer.server.port=${LEAN__PORT}"
     - "deunhealth.restart.on.unhealthy=true"
+
     volumes:
-    - ${LEAN__VOLUME_DIRECTORY}/public_userfiles:/var/www/html/public/userfiles # Volume to store public files, logo etc
-    - ${LEAN__VOLUME_DIRECTORY}/userfiles:/var/www/html/userfiles # Original volume name for compatibility
-    - ${LEAN__VOLUME_DIRECTORY}/plugins:/var/www/html/app/Plugins # Plugin storage
-    - ${LEAN__VOLUME_DIRECTORY}/logs:/var/www/html/storage/logs # Log storage
-    depends_on:
-      leantime_db:
-        condition: service_healthy
+    - ${LEAN__VOLUME_DIRECTORY}/public_userfiles:/var/www/html/public/userfiles   # public files, logo etc.
+    - ${LEAN__VOLUME_DIRECTORY}/userfiles:/var/www/html/userfiles                 # original volume name, for compatibility
+    - ${LEAN__VOLUME_DIRECTORY}/plugins:/var/www/html/app/Plugins                 # plugins
+    - ${LEAN__VOLUME_DIRECTORY}/logs:/var/www/html/storage/logs                   # logs
