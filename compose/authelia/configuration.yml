@@ -94,6 +94,13 @@ access_control:
     - domain: '*.int.{{ env "DOMAINNAME" }}'
       policy: 'two_factor'
 
+    ## Vaultwarden admin panel. Only /admin goes through the authelia@docker
+    ## middleware (see vaultwarden.yaml); the rest of vw. uses Vaultwarden's own login.
+    - domain: 'vw.{{ env "DOMAINNAME" }}'
+      resources:
+        - '^/admin([/?].*)?$'
+      policy: 'two_factor'
+
     ## Personal data.
     - domain:
         - 'files.{{ env "DOMAINNAME" }}'
