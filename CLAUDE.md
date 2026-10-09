@@ -93,7 +93,8 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
 
 **Docker API**
 - `socket-proxy-ro` (GET only): Traefik, Dozzle, Diun.
-- `socket-proxy` (GET + restarts only): deunhealth.
+- `socket-proxy` (GET + container restart/stop/kill; `ALLOW_RESTARTS` has no
+  restart-only mode): deunhealth.
 - Nothing gets general write access.
 
 **Authelia**

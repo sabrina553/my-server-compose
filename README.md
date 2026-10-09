@@ -25,7 +25,7 @@ Internet ──► Cloudflare Tunnel (cloudflared)
 
 | Area | Services |
 |---|---|
-| **Core** | Traefik (reverse proxy), cloudflared (tunnel), Authelia (SSO, 2FA, OIDC provider), LLDAP (users), two Docker socket proxies (read-only / restart-only), deunhealth (restarts unhealthy containers), Diun (update notifications), Dozzle (logs) |
+| **Core** | Traefik (reverse proxy), cloudflared (tunnel), Authelia (SSO, 2FA, OIDC provider), LLDAP (users), two Docker socket proxies (read-only / restart-stop-kill), deunhealth (restarts unhealthy containers), Diun (update notifications), Dozzle (logs) |
 | **Data** | Postgres (shared, one database and user per app), Valkey/Redis (Immich), pgAdmin |
 | **Books and downloads** | Grimmory (library), Chaptarr (ebook/audiobook manager), Prowlarr + FlareSolverr (indexers), qBittorrent and Mousehole, all inside a Gluetun WireGuard VPN container |
 | **Personal data** | Immich (photos), Vaultwarden (passwords), FileBrowser (files), CouchDB (Obsidian LiveSync), Home Assistant |
