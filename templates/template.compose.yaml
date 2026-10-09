@@ -7,7 +7,18 @@ services:
     #extends:
     #command: 
     #deploy:
-    #security_opt:
+    # Baseline hardening. Don't add apparmor:unconfined; it disables Docker's
+    # default AppArmor profile. Add back only the capabilities the image needs:
+    #   starts as root, chowns, then drops to a user -> CHOWN DAC_READ_SEARCH FOWNER SETGID SETUID
+    #   runs as non-root throughout                  -> usually none
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    #cap_add:
+    #read_only: true   # try it; many images need extra tmpfs mounts first
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
     depends_on:
       traefik:
         condition: service_started

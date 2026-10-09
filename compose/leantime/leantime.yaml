@@ -5,6 +5,21 @@ services:
     volumes:
     - ${LEAN__VOLUME_DIRECTORY}/db_data:/var/lib/mysql
     restart: unless-stopped
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    cap_add:   # entrypoint chowns the datadir to mysql, then drops to it
+    - CHOWN
+    - DAC_READ_SEARCH
+    - FOWNER
+    - SETGID
+    - SETUID
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
     secrets:
     - leantime_mysql_root_password
     - leantime_mysql_password
@@ -50,15 +65,21 @@ services:
     - leantime_session_password
     - leantime_oidc_secret
     - smtp_password
-    # Add security options
     security_opt:
     - no-new-privileges:true
-    # Add capabilities
+    # Leantime's documented capability set.
+    cap_drop:
+    - ALL
     cap_add:
-    # - CAP_NET_BIND_SERVICE
-    - CAP_CHOWN
-    - CAP_SETGID
-    - CAP_SETUID
+    - NET_BIND_SERVICE
+    - CHOWN
+    - SETGID
+    - SETUID
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
     environment:
     - PUID=${PUID}
     - PGID=${PGID}

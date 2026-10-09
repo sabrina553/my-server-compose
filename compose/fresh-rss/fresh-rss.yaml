@@ -24,13 +24,17 @@ services:
     - '([ -z "$$CRON_MIN" ] || cron) && . /etc/apache2/envvars && exec apache2 -D FOREGROUND $$([ -n "$$OIDC_ENABLED" ] && [ "$$OIDC_ENABLED" -ne 0 ] && echo "-D OIDC_ENABLED")'
     security_opt:
     - no-new-privileges:true
-    - apparmor:unconfined
     cap_drop:
     - ALL
     cap_add:
-    #- chown
-    - SETGID
+    - SETGID   # apache/cron drop to www-data
     - SETUID
+    # The entrypoint fixes ownership/permissions of ./data on every start
+    # (chown -R / chmod -R). Without these, root can't read www-data's private
+    # user dirs or change files it doesn't own, and logs "Permission denied".
+    - CHOWN
+    - DAC_READ_SEARCH
+    - FOWNER
     #read_only: true
     tmpfs:
     - /tmp:rw,noexec,nosuid

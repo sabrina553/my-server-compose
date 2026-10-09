@@ -5,14 +5,14 @@ services:
     restart: unless-stopped
     security_opt:
     - no-new-privileges:true
-    - apparmor:unconfined
-    #cap_drop:
-    #  - ALL
-    #cap_add: ??????????????
-    #  - chown
-    #  - SETGID
-    #  - SETUID
-    #read_only: true
+    cap_drop:
+    - ALL
+    cap_add:   # entrypoint chowns /data to UID/GID, then drops to it
+    - CHOWN
+    - DAC_READ_SEARCH
+    - FOWNER
+    - SETGID
+    - SETUID
     tmpfs:
     - /tmp:rw,noexec,nosuid
     depends_on:

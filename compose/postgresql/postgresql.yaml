@@ -3,6 +3,16 @@ services:
     container_name: postgres
     image: ${POSTGRES_IMAGE}:${POSTGRES_VERSION}
     restart: unless-stopped
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    cap_add:   # entrypoint chowns PGDATA to postgres, then drops to it
+    - CHOWN
+    - DAC_READ_SEARCH
+    - FOWNER
+    - SETGID
+    - SETUID
     logging:
       driver: "json-file"
       options:
