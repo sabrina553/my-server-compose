@@ -91,7 +91,10 @@ access is effectively root on the host.
 - Traefik, Dozzle and Diun use a GET-only proxy.
 - deunhealth's proxy adds container restart, stop and kill (the image's
   `ALLOW_RESTARTS` covers all three). At worst that stops containers.
-- Nothing on the VPN's network can reach either proxy.
+- Nothing on the VPN's network can reach deunhealth's proxy. The VPN's
+  namespace does reach the GET-only one (for Mousetrap's port monitor;
+  changed 2026-10-09), which lets everything else in it (qBittorrent) read
+  container config too. That's acceptable only because secrets never sit in plain env.
 
 **No host-published ports except Traefik's 80/443.** (2026-10-09) Docker's
 iptables rules bypass the host firewall. Torrent traffic arrives through the
