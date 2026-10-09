@@ -5,13 +5,16 @@ services:
     volumes:
     - ${LEAN__VOLUME_DIRECTORY}/db_data:/var/lib/mysql
     restart: unless-stopped
+    secrets:
+    - leantime_mysql_root_password
+    - leantime_mysql_password
     environment:
     - PUID=${PUID}
     - PGID=${PGID}
-    - MYSQL_ROOT_PASSWORD=${LEAN__MYSQL_ROOT_PASSWORD}
+    - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/leantime_mysql_root_password
     - MYSQL_DATABASE=${LEAN__MYSQL_DATABASE}
     - MYSQL_USER=${LEAN__MYSQL_USER}
-    - MYSQL_PASSWORD=${LEAN__MYSQL_PASSWORD}
+    - MYSQL_PASSWORD_FILE=/run/secrets/leantime_mysql_password
     networks:
     - internal
     command: --character-set-server=UTF8MB4 --collation-server=UTF8MB4_unicode_ci
