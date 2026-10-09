@@ -53,12 +53,6 @@ password_policy:
     enabled: true
     min_score: 3
 
-definitions:
-  network:
-    docker:
-      - '172.19.0.0/16'   # internal
-      - '172.20.0.0/16'   # external
-
 ##
 ## Access control
 ##
@@ -74,20 +68,11 @@ access_control:
   default_policy: 'deny'
 
   rules:
-    ## *arr API calls between containers. The apps authenticate these with
-    ## their own API keys. Only /api paths, only from the Docker networks.
-    ## Better still: point the apps at each other by container name
-    ## (http://qbittorrent:8080) so they never go through Traefik at all.
-    - domain:
-        - 'chaptarr.{{ env "DOMAINNAME" }}'
-        - 'prowlarr.int.{{ env "DOMAINNAME" }}'
-        - 'q.int.{{ env "DOMAINNAME" }}'
-      resources:
-        - '^/api([/?].*)?$'
-        - '^/[0-9]+/api([/?].*)?$'   # Prowlarr per-indexer proxy endpoints
-      networks:
-        - 'docker'
-      policy: 'bypass'
+    ## No network-based bypass rules. Containers talk to each other by
+    ## container name (http://prowlarr:9696, http://chaptarr:8789,
+    ## http://vpn:8080 for qBittorrent) so they never go through Traefik.
+    ## A bypass by source IP is unsafe here: Docker's gateway address and
+    ## cloudflared's own address are inside the Docker subnets.
 
     ## Admin / infrastructure UIs (dozzle, traefik, pgadmin, lldap, prowlarr,
     ## qbittorrent, mousehole, mousetrap, crosswatch, irc).
