@@ -109,7 +109,7 @@ access_control:
     - domain:
         - 'audiobookshelf.{{ env "DOMAINNAME" }}'
         - 'bookkeep.{{ env "DOMAINNAME" }}'
-        - 'chaptarr.{{ env "DOMAINNAME" }}'
+        - '{{ env "SUBDOMAIN_CHAPTARR" }}.{{ env "DOMAINNAME" }}'
         - 'grimmory.{{ env "DOMAINNAME" }}'
         - 'lean.{{ env "DOMAINNAME" }}'
         - 'mealie.{{ env "DOMAINNAME" }}'

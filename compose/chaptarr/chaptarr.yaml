@@ -1,3 +1,8 @@
+## Chaptarr  https://hub.docker.com/r/chaptarr/chaptarr
+## Ebook/audiobook manager (a Readarr successor), at <subdomain>.<domain>
+## behind Authelia. No login of its own: its UI listens only on its `arr`
+## address, shared with Traefik and Prowlarr alone. Database in the shared
+## Postgres; downloads via qBittorrent (http://vpn:<webui port>).
 services:
   chaptarr:
     container_name: ${CHAPTARR__NAME}
@@ -5,7 +10,8 @@ services:
     restart: unless-stopped
     # Chaptarr can't read secret files, so load them into its env vars at start.
     # command is the image's CMD (overriding entrypoint discards it); re-check
-    # after major upgrades: docker image inspect --format '{{json .Config.Cmd}}' <image>
+    # after major upgrades:
+    #   docker image inspect --format '{{json .Config.Entrypoint}} {{json .Config.Cmd}}' <image>
     entrypoint:
     - /bin/sh
     - -c
@@ -16,8 +22,7 @@ services:
     - --
     - /entrypoint.sh
     command: ["dotnet", "/app/Chaptarr.dll", "-nobrowser", "-data=/config"]
-    secrets:
-    - chaptarr_db_password
+
     security_opt:
     - no-new-privileges:true
     cap_drop:
@@ -30,6 +35,7 @@ services:
     - SETUID
     tmpfs:
     - /tmp:rw,noexec,nosuid
+
     depends_on:
       traefik:
         condition: service_started
@@ -39,6 +45,9 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
+
+    secrets:
+    - chaptarr_db_password
     environment:
       TZ: ${TZ}
       PUID: ${PUID}
@@ -52,20 +61,23 @@ services:
       Chaptarr__Auth__Method: External
       Chaptarr__Auth__Required: Enabled
       Chaptarr__Server__BindAddress: 172.21.10.11
+
     networks:
       arr:
         ipv4_address: 172.21.10.11
       db_postgres:
-      chaptarr_downloads:
+      chaptarr_downloads:   # -> qBittorrent (vpn)
+
     labels:
     - "traefik.enable=true"
     - "traefik.docker.network=arr"
-    - "traefik.http.routers.chaptarr.rule=Host(`${CHAPTARR__NAME}.${DOMAINNAME}`)"
-    - "traefik.http.routers.chaptarr.middlewares=authelia@docker"
-    - "traefik.http.services.chaptarr.loadbalancer.server.port=8789"
+    - "traefik.http.routers.${CHAPTARR__NAME}.rule=Host(`${CHAPTARR__SUBDOMAIN}.${DOMAINNAME}`)"
+    - "traefik.http.routers.${CHAPTARR__NAME}.middlewares=authelia@docker"
+    - "traefik.http.services.${CHAPTARR__NAME}.loadbalancer.server.port=8789"
     - "deunhealth.restart.on.unhealthy=true"
     # Diun: only :latest is published, so report when it changes
     - "diun.watch_repo=false"
+
     volumes:
     - ${VOLDIR}/${CHAPTARR__NAME}:/config:rw
     - ${DATADIR}/torrents/books:/ebooks:rw

@@ -1,35 +1,48 @@
+## Prowlarr  https://github.com/linuxserver/docker-prowlarr
+## FlareSolverr  https://github.com/FlareSolverr/FlareSolverr
+## Prowlarr manages indexers for Chaptarr; FlareSolverr solves Cloudflare
+## challenges for it, going out through the VPN's HTTP proxy. Prowlarr has no
+## login of its own: its UI listens only on its `arr` address, shared with
+## Traefik (behind Authelia, <subdomain>.int.<domain>) and Chaptarr alone.
 services:
   flaresolverr:
-    container_name: flaresolverr
+    container_name: ${FLARESOLVERR__NAME}
     image: ${FLARESOLVERR__IMAGE}:${FLARESOLVERR__VERSION}
     restart: unless-stopped
+
     security_opt:
     - no-new-privileges:true
     cap_drop:
     - ALL
-    # read_only: true
+    #read_only: true
     tmpfs:
     - /tmp:rw,noexec,nosuid
+
     logging:
       driver: "json-file"
       options:
         max-size: "1m"
         max-file: "3"
+
     environment:
-    - TZ=${TZ}
-    - PROXY_URL="${VPN__PROXY_URL}"
+      TZ: ${TZ}
+      PROXY_URL: ${VPN__PROXY_URL}
+
     networks:
     - external
     - prowlarr_flaresolverr
+
     labels:
     - "deunhealth.restart.on.unhealthy=true"
+
     volumes:
-    - ${VOLDIR}/prowlarr/flaresolverr:/config
+    - ${FLARESOLVERR__VOLDIR}:/config
 
   prowlarr:
-    container_name: prowlarr
+    container_name: ${PROWLARR__NAME}
     image: ${PROWLARR__IMAGE}:${PROWLARR__VERSION}
     restart: unless-stopped
+
     security_opt:
     - no-new-privileges:true
     cap_drop:
@@ -41,6 +54,7 @@ services:
     - SETUID
     tmpfs:
     - /tmp:rw,noexec,nosuid
+
     depends_on:
       traefik:
         condition: service_started
@@ -50,23 +64,27 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
-    # No login of its own (Authelia in front). Safe only because the UI listens
-    # on its `arr` address alone, which nothing but Traefik and Chaptarr share.
+
     environment:
-    - PROWLARR__AUTH__METHOD=External
-    - PROWLARR__AUTH__REQUIRED=Enabled
-    - PROWLARR__SERVER__BINDADDRESS=172.21.10.10
+      # No login of its own (Authelia in front). Safe only because the UI listens
+      # on its `arr` address alone, which nothing but Traefik and Chaptarr share.
+      PROWLARR__AUTH__METHOD: External
+      PROWLARR__AUTH__REQUIRED: Enabled
+      PROWLARR__SERVER__BINDADDRESS: 172.21.10.10
+
     networks:
       arr:
         ipv4_address: 172.21.10.10
-      prowlarr_downloads:
-      prowlarr_flaresolverr:
+      prowlarr_downloads:      # -> qBittorrent (vpn)
+      prowlarr_flaresolverr:   # -> FlareSolverr
+
     labels:
     - "traefik.enable=true"
     - "traefik.docker.network=arr"
-    - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.int.${DOMAINNAME}`)"
-    - "traefik.http.routers.prowlarr.middlewares=authelia@docker"
-    - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
+    - "traefik.http.routers.${PROWLARR__NAME}.rule=Host(`${PROWLARR__SUBDOMAIN}.int.${DOMAINNAME}`)"
+    - "traefik.http.routers.${PROWLARR__NAME}.middlewares=authelia@docker"
+    - "traefik.http.services.${PROWLARR__NAME}.loadbalancer.server.port=9696"
     - "deunhealth.restart.on.unhealthy=true"
+
     volumes:
-    - ${VOLDIR}/prowlarr/:/config:rw
+    - ${VOLDIR}/${PROWLARR__NAME}/:/config:rw

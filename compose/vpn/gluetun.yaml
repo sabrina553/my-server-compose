@@ -1,8 +1,14 @@
+## Gluetun  https://github.com/qdm12/gluetun
+## WireGuard VPN client. qBittorrent, Mousehole and Mousetrap share its network
+## namespace (network_mode: service:vpn), so all their traffic leaves through
+## the tunnel. Also an HTTP proxy for FlareSolverr (http://vpn:8888).
+## If Gluetun is recreated, recreate those containers too (see CLAUDE.md).
 services:
   vpn:
     container_name: ${VPN__NAME}
     image: ${VPN__IMAGE}:${VPN__VERSION}
     restart: unless-stopped
+
     security_opt:
     - no-new-privileges:true
     cap_drop:
@@ -13,33 +19,38 @@ services:
     - CHOWN
     tmpfs:
     - /tmp:rw,noexec,nosuid,uid=${PUID},gid=${PGID}
+
     logging:
       driver: "json-file"
       options:
         max-size: "1m"
         max-file: "3"
-    cpu_shares: 2048 # Ensure this always gets what is needed
-    sysctls:
-    - net.ipv6.conf.all.disable_ipv6=1
+
     secrets:
     - wireguard_private_key
     - wireguard_preshared_key
     - wireguard_addresses
     environment:
-    - PUID=${PUID}
-    - PGID=${PGID}
-    - TZ=${TZ}
-    - LOG_LEVEL=${LOG_LEVEL}
-    - WIREGUARD_PRIVATE_KEY_FILE=${WIREGUARD_PRIVATE_KEY_FILE}
-    - WIREGUARD_PRESHARED_KEY_FILE=${WIREGUARD_PRESHARED_KEY_FILE}
-    - WIREGUARD_ADDRESSES_FILE=${WIREGUARD_ADDRESSES_FILE}
-    - VPN_SERVICE_PROVIDER="${VPN__SERVICE_PROVIDER}"
-    - VPN_TYPE="${VPN__TYPE}"
-    - SERVER_COUNTRIES="${VPN__SERVER_COUNTRIES}"
-    - FIREWALL_VPN_INPUT_PORTS="${TORRENTING_PORT}"
-    - FIREWALL_OUTBOUND_SUBNETS="${VPN__EXTERNAL_SUBNETS}"
-    - HTTPPROXY="on"
-    - PUBLICIP_FILE=/gluetun/ip
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+      LOG_LEVEL: ${LOG_LEVEL}
+      WIREGUARD_PRIVATE_KEY_FILE: ${VPN__WIREGUARD_PRIVATE_KEY_FILE}
+      WIREGUARD_PRESHARED_KEY_FILE: ${VPN__WIREGUARD_PRESHARED_KEY_FILE}
+      WIREGUARD_ADDRESSES_FILE: ${VPN__WIREGUARD_ADDRESSES_FILE}
+      VPN_SERVICE_PROVIDER: ${VPN__SERVICE_PROVIDER}
+      VPN_TYPE: ${VPN__TYPE}
+      SERVER_COUNTRIES: ${VPN__SERVER_COUNTRIES}
+      FIREWALL_VPN_INPUT_PORTS: ${TORRENTING_PORT}
+      FIREWALL_OUTBOUND_SUBNETS: ${VPN__EXTERNAL_SUBNETS}
+      HTTPPROXY: "on"
+      PUBLICIP_FILE: /gluetun/ip
+
+    networks:
+    - external
+    - chaptarr_downloads   # Chaptarr -> qBittorrent
+    - prowlarr_downloads   # Prowlarr -> qBittorrent
+    - socket_proxy_ro      # Mousetrap -> read-only Docker API (GET only)
     # No published ports on purpose. Anything published here bypasses Traefik and
     # Authelia, and Docker's iptables rules bypass the host firewall.
     #  - Web UIs (qbittorrent, mousehole, mousetrap) go through Traefik.
@@ -47,17 +58,17 @@ services:
     #  - Torrent peers come in through the VPN tunnel (FIREWALL_VPN_INPUT_PORTS).
     # If you need direct access while Traefik is down, bind to localhost only and
     # use an SSH tunnel, e.g.:  - 127.0.0.1:8080:8080
-    networks:
-    - external
-    - chaptarr_downloads   # Chaptarr -> qBittorrent
-    - prowlarr_downloads   # Prowlarr -> qBittorrent
-    - socket_proxy_ro      # Mousetrap -> read-only Docker API (GET only)
+    devices:
+    - "/dev/net/tun:/dev/net/tun"
+    sysctls:
+    - net.ipv6.conf.all.disable_ipv6=1
+    cpu_shares: 2048   # ensure the tunnel always gets what it needs
+
     labels:
-    - "deunhealth.restart.on.unhealthy=false"
-    - "com.centurylinklabs.watchtower.monitor-only=true"
     - "traefik.enable=false"
+    - "deunhealth.restart.on.unhealthy=false"
+    #- "com.centurylinklabs.watchtower.monitor-only=true"   # Watchtower is retired
+
     volumes:
     - "/etc/localtime:/etc/localtime:ro"
     - "${VOLDIR}/${VPN__NAME}:/gluetun:rw"
-    devices:
-    - "/dev/net/tun:/dev/net/tun"
