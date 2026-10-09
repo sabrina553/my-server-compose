@@ -102,7 +102,8 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
 - Apps with mobile apps or extensions (Vaultwarden, Linkwarden, Immich, Home
   Assistant) do **not** use forward-auth. They use their own login plus a
   two_factor OIDC client.
-- OIDC clients require PKCE S256, except Leantime (it doesn't send PKCE).
+- OIDC clients require PKCE S256, except Leantime and FileBrowser (neither
+  sends PKCE).
 
 **Updates**
 - Diun emails new versions. Bump the version in `.env.example`, run
