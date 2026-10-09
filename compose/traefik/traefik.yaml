@@ -12,7 +12,7 @@ services:
     tmpfs:
     - /tmp:rw,noexec,nosuid
     depends_on:
-      socket-proxy:
+      socket-proxy-ro:
         condition: service_healthy
         restart: false
     logging:
@@ -32,7 +32,7 @@ services:
     networks:
     - external
     - internal
-    - socket_proxy
+    - socket_proxy_ro
     command:
     #API + Dash
     #Dashboard only via the traefik.int router below (behind Authelia), not on :8080.
@@ -62,9 +62,14 @@ services:
     #instead of cloudflared's Docker IP. Everyone else's X-Forwarded-For is discarded.
     - "--entryPoints.web.forwardedHeaders.trustedIPs=172.20.0.250"
     - "--entryPoints.websecure.forwardedHeaders.trustedIPs=172.20.0.250"
+    #Strip headers that alias another (Remote_User / Remote.User for Remote-User).
+    #PHP backends (FreshRSS, Leantime) read them as the Remote-User header that
+    #Authelia's forwardAuth sets, so a client could spoof the logged-in user.
+    - "--entryPoints.web.http.aliasHeadersStrategy=delete"
+    - "--entryPoints.websecure.http.aliasHeadersStrategy=delete"
     #providers
     - "--providers.docker=true"
-    - "--providers.docker.endpoint=${DOCKER_HOST}"
+    - "--providers.docker.endpoint=${DOCKER_HOST_RO:-tcp://socket-proxy-ro:2375}"
     - "--providers.docker.exposedbydefault=false"
     #certs 
     - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
