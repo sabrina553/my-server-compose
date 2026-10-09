@@ -62,7 +62,8 @@ services:
       EXTENDED_LOGGING: ${VAULTWARDEN__EXTENDED_LOGGING}
       USE_SYSLOG: ${VAULTWARDEN__USE_SYSLOG}
       LOG_LEVEL: ${LOG_LEVEL}
-      LOG_FILE: ${VAULTWARDEN__LOG_FILE}
+      # No LOG_FILE: logs go to stdout only, where Docker rotates them (the file
+      # it used to write was never rotated).
       DATABASE_URL_FILE: ${VAULTWARDEN__DATABASE_URL_FILE}
       SSO_ENABLED: ${VAULTWARDEN__SSO_ENABLED}
       SSO_AUTHORITY: ${VAULTWARDEN__SSO_AUTHORITY}
