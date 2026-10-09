@@ -67,6 +67,12 @@ backend and the apps that use it. A compromised app reaches only its own
 database: Redis (no password) is reachable by Immich only, each MySQL or
 MariaDB by its one app, and Postgres by its nine users.
 
+**Authelia's sessions live in their own Valkey.** (2026-10-09) In memory,
+every Authelia restart logged everyone out. `authelia-redis` is password-
+protected, persists to disk (AOF) and sits on its own internal network with
+Authelia only. Immich's Redis isn't reused: it has no password, and sharing it
+would bridge two backends.
+
 **Traefik routes over `external` by default.** (2026-10-09) It has a fixed
 address there (`172.20.0.249`) so backends can trust exactly one proxy.
 Services with no internet access use `proxy_internal` and say so with a label.
