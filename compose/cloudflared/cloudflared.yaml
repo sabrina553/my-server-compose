@@ -16,13 +16,19 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
-    command: tunnel run
+    command: tunnel --no-autoupdate --protocol http2 run
     secrets:
     - cf_tunnel_token
     networks:
-    - external
+      external:
+        # Fixed so Traefik can trust X-Forwarded-For from this container only
+        # (see forwardedHeaders.trustedIPs in traefik.yaml).
+        ipv4_address: 172.20.0.250
     environment:
     - TUNNEL_TOKEN_FILE=${CLOUDFLARED__TUNNEL_TOKEN_FILE}
     labels:
     - "traefik.enable=false"
     - "deunhealth.restart.on.unhealthy=true"
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1

@@ -13,7 +13,7 @@ services:
     - NET_RAW
     - CHOWN
     tmpfs:
-    - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid,uid=${PUID},gid=${PGID}
     logging:
       driver: "json-file"
       options:
@@ -21,12 +21,14 @@ services:
         max-file: "3"
     cpu_shares: 2048 # Ensure this always gets what is needed
     sysctls:
-    - net.ipv6.conf.all.disable_ipv6=0
+    - net.ipv6.conf.all.disable_ipv6=1
     secrets:
     - wireguard_private_key
     - wireguard_preshared_key
     - wireguard_addresses
     environment:
+    - PUID=${PUID}
+    - PGID=${PGID}
     - TZ=${TZ}
     - LOG_LEVEL=${LOG_LEVEL}
     - WIREGUARD_PRIVATE_KEY_FILE=${WIREGUARD_PRIVATE_KEY_FILE}
@@ -38,6 +40,7 @@ services:
     - FIREWALL_VPN_INPUT_PORTS="${TORRENTING_PORT}"
     - FIREWALL_OUTBOUND_SUBNETS="${VPN__EXTERNAL_SUBNETS}"
     - HTTPPROXY="on"
+    - PUBLICIP_FILE=/gluetun/ip
     ports:
     - 8080:8080 # qbittorrent webui      
     - 38534:38534 # qbittorrent

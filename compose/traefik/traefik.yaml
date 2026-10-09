@@ -35,7 +35,8 @@ services:
     - socket_proxy
     command:
     #API + Dash
-    - "--api.insecure=true"
+    #Dashboard only via the traefik.int router below (behind Authelia), not on :8080.
+    - "--api.insecure=false"
     - "--api.dashboard=true"
     #Observability 
     - "--log.level=INFO"
@@ -54,15 +55,13 @@ services:
     #EntryPoints :domain
     - "--entryPoints.websecure.http.tls.domains[0].main=${DOMAINNAME}"
     - "--entryPoints.websecure.http.tls.domains[0].sans=*.${DOMAINNAME}"
-    # - "--entryPoints.web.forwardedHeaders.insecure=false"
-    # - "--entryPoints.web.proxyProtocol.insecure=false"
-    # - "--entryPoints.websecure.forwardedHeaders.insecure=false"
-    # - "--entryPoints.websecure.proxyProtocol.insecure=false"
-    ## Please see the Forwarded Header Trust section of the Authelia Traefik Integration documentation.
-    #- "--entryPoints.web.forwardedHeaders.trustedIPs=172.19.0.0/16,172.20.0.0/16"
-    #- "--entryPoints.web.proxyProtocol.trustedIPs=172.19.0.0/16,172.20.0.0/16"
-    #- "--entryPoints.websecure.forwardedHeaders.trustedIPs=172.19.0.0/16,172.20.0.0/16"
-    #- "--entryPoints.websecure.proxyProtocol.trustedIPs=172.19.0.0/16,172.20.0.0/16"
+    - "--entryPoints.websecure.http.tls.domains[1].main=${DOMAINNAME2}"
+    - "--entryPoints.websecure.http.tls.domains[1].sans=*.${DOMAINNAME2}"
+    #Forwarded headers: trust X-Forwarded-For ONLY from cloudflared (fixed IP in
+    #cloudflared.yaml), so Authelia sees the real visitor IP for tunnel traffic
+    #instead of cloudflared's Docker IP. Everyone else's X-Forwarded-For is discarded.
+    - "--entryPoints.web.forwardedHeaders.trustedIPs=172.20.0.250"
+    - "--entryPoints.websecure.forwardedHeaders.trustedIPs=172.20.0.250"
     #providers
     - "--providers.docker=true"
     - "--providers.docker.endpoint=${DOCKER_HOST}"

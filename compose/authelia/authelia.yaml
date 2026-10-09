@@ -5,7 +5,6 @@ services:
     restart: "unless-stopped"
     security_opt:
     - no-new-privileges:true
-    - apparmor:unconfined
     cap_drop:
     - ALL
     cap_add:
@@ -34,9 +33,32 @@ services:
     - authelia_encryption
     - authelia_hmac_secret
     - authelia_jwks
-    - lldap_user_pass
+    - authelia_ldap_password
     - smtp_password
+    # OIDC client IDs (shared with each app)
+    - filebrowser_oidc_client_id
+    - freshrss_oidc_clientid
+    - grimmory_oidc_clientid
+    - homeassis_oidc_clientid
+    - immich_oidc_clientid
+    - leantime_oidc_clientid
+    - linkwarden_oidc_clientid
+    - mealie_oidc_clientid
+    - vaultwarden_oidc_clientid
+    # OIDC client secret digests (Authelia only)
+    - authelia_oidc_filebrowser
+    - authelia_oidc_freshrss
+    - authelia_oidc_grimmory
+    - authelia_oidc_homeassistant
+    - authelia_oidc_immich
+    - authelia_oidc_leantime
+    - authelia_oidc_linkwarden
+    - authelia_oidc_mealie
+    - authelia_oidc_vaultwarden
     environment:
+      # configuration.yml is a Go template; see the header of that file.
+      X_AUTHELIA_CONFIG_FILTERS: template
+      DOMAINNAME: ${DOMAINNAME}
       AUTHELIA_LOG_LEVEL: ${LOG_LEVEL}
       TZ: ${TZ}
       #PUID: ${PUID}
@@ -58,16 +80,16 @@ services:
 
       AUTHELIA_AUTHENTICATION_BACKEND_LDAP_ADDRESS: ${LLDAP__LDAP_URL}
       AUTHELIA_AUTHENTICATION_BACKEND_LDAP_BASE_DN: ${LLDAP__LDAP_BASE_DN}
-      AUTHELIA_AUTHENTICATION_BACKEND_LDAP_PASSWORD_FILE: ${LLDAP__LDAP_USER_PASS}
+      AUTHELIA_AUTHENTICATION_BACKEND_LDAP_PASSWORD_FILE: ${AUTHELIA__AUTHENTICATION_BACKEND_LDAP_PASSWORD_FILE}
       AUTHELIA_AUTHENTICATION_BACKEND_LDAP_IMPLEMENTATION: ${AUTHELIA__AUTHENTICATION_BACKEND_LDAP_IMPLEMENTATION}
       AUTHELIA_AUTHENTICATION_BACKEND_LDAP_USER: ${AUTHELIA__AUTHENTICATION_BACKEND_LDAP_USER}
 
-      AUTHELIA_ACCESS_CONTROL_DEFAULT_POLICY: ${AUTHELIA__ACCESS_CONTROL_DEFAULT_POLICY}
+      # access_control.default_policy is set in configuration.yml (deny).
+      # Don't set AUTHELIA_ACCESS_CONTROL_DEFAULT_POLICY here: env vars
+      # override the file and would silently weaken it.
 
       AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET_FILE: ${AUTHELIA__JWT_SECRET}
       AUTHELIA_IDENTITY_PROVIDERS_OIDC_HMAC_SECRET_FILE: ${AUTHELIA__IDENTITY_HMAC_SECRET}
-
-      AUTHELIA_THEME: auto
 
     networks:
     - internal
@@ -83,9 +105,6 @@ services:
     - "traefik.http.middlewares.authelia.forwardAuth.maxResponseBodySize=8192"
     - "traefik.http.middlewares.authelia.forwardAuth.authResponseHeaders=Remote-User,Remote-Groups,Remote-Email,Remote-Name"
 
-    ## The following commented line is for configuring the Authelia URL in the proxy. We strongly suggest this is
-    ## configured in the Session Cookies section of the Authelia configuration.
-    # traefik.http.middlewares.authelia.forwardAuth.address: 'http://authelia:9091/api/authz/forward-auth?authelia_url=https%3A%2F%2Fauthelia.${DOMAINNAME}%2F'
-
     volumes:
-    - ".:/config:rw"
+    # Read-only: Authelia stores state in Postgres and never needs to write here.
+    - ".:/config:ro"
