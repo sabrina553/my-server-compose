@@ -95,10 +95,10 @@ access_control:
         - '^/_session([?].*)?$'
       policy: 'two_factor'
 
-    ## Personal data.
+    ## Personal data. (photos. isn't here: Immich has no forward-auth because of
+    ## its mobile app, and relies on its two_factor OIDC client instead.)
     - domain:
         - 'files.{{ env "DOMAINNAME" }}'
-        - 'photos.{{ env "DOMAINNAME" }}'
         - 'ha.{{ env "DOMAINNAME" }}'
       policy: 'two_factor'
 

@@ -43,7 +43,9 @@ services:
     labels:
     - "traefik.enable=true"
     - "traefik.http.routers.immich.rule=Host(`photos.$DOMAINNAME`)"
-    - "traefik.http.routers.immich.middlewares=authelia@docker"
+    # No authelia@docker: forward-auth breaks the mobile app's API calls.
+    # Immich is protected by its own login + Authelia SSO (two_factor OIDC
+    # client); turn off password login in Immich so SSO is the only way in.
     - "traefik.http.services.immich.loadbalancer.server.port=2283"
     - "deunhealth.restart.on.unhealthy=true"
     volumes:
