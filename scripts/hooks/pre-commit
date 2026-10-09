@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Pre-commit guard for a PUBLIC repo. Enable once per clone:
+#   git config core.hooksPath scripts/hooks
+#
+# Refuses the commit if it would add:
+#   - any .env file other than .env.example (including .env.bak-*),
+#   - anything under secrets/,
+#   - any of this machine's ###SITE### values from .env (domains, paths,
+#     usernames, providers...) anywhere in the staged changes.
+# Prints file and key names only, never values.
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+fail=0
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+
+bad=$(grep -E '(^|/)\.env($|\.)' <<<"$staged" | grep -vE '(^|/)\.env\.example$' || true)
+if [[ -n $bad ]]; then
+  echo "pre-commit: refusing to commit env files:" >&2
+  sed 's/^/  /' <<<"$bad" >&2
+  fail=1
+fi
+
+sec=$(grep -E '^secrets/' <<<"$staged" || true)
+if [[ -n $sec ]]; then
+  echo "pre-commit: refusing to commit files under secrets/:" >&2
+  sed 's/^/  /' <<<"$sec" >&2
+  fail=1
+fi
+
+if [[ -f .env ]]; then
+  added=$(git diff --cached -U0 --no-color | grep -E '^\+' | grep -vE '^\+\+\+ ' || true)
+  hits=""
+  while IFS= read -r line; do
+    key=${line%%=*}
+    val=${line#*=}
+    val=${val#\"}; val=${val%\"}; val=${val#\'}; val=${val%\'}
+    # Skip short/placeholder values and ones built from other variables
+    # (those are caught via the variables they're built from).
+    [[ ${#val} -ge 4 && $val != CHANGE_ME && $val != *'${'* ]] || continue
+    if grep -qF -- "$val" <<<"$added"; then
+      hits+=" $key"
+    fi
+  done < <(awk '/^###SITE###/{s=1;next} s&&/^###/{s=0} s&&/^[A-Za-z_][A-Za-z0-9_]*=/' .env)
+  if [[ -n $hits ]]; then
+    echo "pre-commit: staged changes contain this machine's SITE values:$hits" >&2
+    echo "  (find them with: git diff --cached | grep -nF \"\$value\")" >&2
+    fail=1
+  fi
+fi
+
+if (( fail )); then
+  echo "Commit aborted. Unstage or fix the above (git restore --staged <file>)." >&2
+  exit 1
+fi

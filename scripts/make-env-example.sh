@@ -2,6 +2,10 @@
 # Regenerate .env.example from .env, replacing every value in the ###SITE###
 # block with a placeholder. .env stays gitignored; .env.example is safe to commit.
 #
+# NOTE: the normal direction is the reverse: edit .env.example, then run
+# scripts/apply-env-example.sh. Use this only to recover from a .env that was
+# edited by hand, and review `git diff .env.example` before committing.
+#
 #   ./scripts/make-env-example.sh            (run from the docker/ directory)
 #
 # Only the SITE block is rewritten, so keep anything personal or site-specific
