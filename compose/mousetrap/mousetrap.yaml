@@ -1,8 +1,13 @@
+## MouseTrap  https://github.com/sirjmann92/mousetrap
+## Seedbox/tracker helper with a port monitor. Runs in the VPN's network
+## namespace; web UI at <subdomain>.int.<domain> behind Authelia. Reads the
+## Docker API through the read-only socket proxy (see socket-proxy.yaml).
 services:
   mousetrap:
     container_name: ${MOUSETRAP__NAME}
     image: ${MOUSETRAP__IMAGE}:${MOUSETRAP__VERSION}
     restart: unless-stopped
+
     security_opt:
     - no-new-privileges:true
     # Root-then-drop: start.sh rewrites appuser to PUID/PGID, chowns /config,
@@ -18,6 +23,7 @@ services:
     - SETUID
     tmpfs:
     - /tmp:rw,noexec,nosuid
+
     depends_on:
       socket-proxy-ro:
         condition: service_started
@@ -33,30 +39,35 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
+
     environment:
-    - TZ=${TZ}
-    - PUID=${PUID}
-    - PGID=${PGID}
-    # Must be upper case: it goes into a Python logging config verbatim, and
-    # "info" (the shared LOG_LEVEL) crashes uvicorn at start-up.
-    - LOGLEVEL=${MOUSETRAP__LOGLEVEL}
-    # Port monitor: read-only, so it can list and check containers but not
-    # restart them, and can't exec (set a manual public IP on each stack).
-    - DOCKER_HOST=${DOCKER_HOST_RO}
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      # Must be upper case: it goes into a Python logging config verbatim, and
+      # "info" (the shared LOG_LEVEL) crashes uvicorn at start-up.
+      LOGLEVEL: ${MOUSETRAP__LOGLEVEL}
+      # Port monitor: read-only, so it can list and check containers but not
+      # restart them, and can't exec (set a manual public IP on each stack).
+      DOCKER_HOST: ${DOCKER_HOST_RO}
+
     network_mode: "service:vpn"
+
+    labels:
+    - "traefik.enable=true"
+    - "traefik.http.routers.${MOUSETRAP__NAME}.rule=Host(`${MOUSETRAP__SUBDOMAIN}.int.${DOMAINNAME}`)"
+    - "traefik.http.routers.${MOUSETRAP__NAME}.middlewares=authelia@docker"
+    - "traefik.http.services.${MOUSETRAP__NAME}.loadbalancer.server.port=39842"
+    - "deunhealth.restart.on.unhealthy=true"
+
+    volumes:
+    - ${VOLDIR}/${MOUSETRAP__NAME}:/config:rw
+
     # Unhealthy when the VPN tunnel is gone from the shared network namespace
     # (Gluetun recreated, this container only restarted). Fix: recreate it.
     healthcheck:
       test: ["CMD-SHELL", "test -e /sys/class/net/tun0"]
       interval: 30s
       timeout: 5s
-      start_period: 30s
       retries: 3
-    labels:
-    - "traefik.enable=true"
-    - "traefik.http.routers.${MOUSETRAP__NAME}.rule=Host(`${MOUSETRAP__NAME}.int.${DOMAINNAME}`)"
-    - "traefik.http.routers.${MOUSETRAP__NAME}.middlewares=authelia@docker"
-    - "traefik.http.services.${MOUSETRAP__NAME}.loadbalancer.server.port=39842"
-    - "deunhealth.restart.on.unhealthy=true"
-    volumes:
-    - ${VOLDIR}/${MOUSETRAP__NAME}:/config:rw
+      start_period: 30s

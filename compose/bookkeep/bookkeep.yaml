@@ -1,8 +1,18 @@
+## Bookkeep  https://github.com/bookkeepapp/bookkeep
+## Reading tracker at <subdomain>.<domain>, behind Authelia. (Disabled in
+## compose.yaml.) Before re-enabling:
+##  - its secret key, Hardcover API token and database URL must become files in
+##    secrets/bookkeep/, loaded with a wrapper entrypoint (see the template);
+##    never put them back in .env
+##  - drop or re-password the old `bookkeep` Postgres user
+##  - give it a Redis it can reach (Immich's is on immich_backend only)
+##  - pin a version in .env.example
 services:
   bookkeep:
-    container_name: bookkeep
-    image: akiraslingshot/bookkeep
+    container_name: ${BOOKKEEP__NAME}
+    image: ${BOOKKEEP__IMAGE}:${BOOKKEEP__VERSION}
     restart: unless-stopped
+
     security_opt:
     - no-new-privileges:true
     cap_drop:
@@ -10,6 +20,7 @@ services:
     read_only: true
     tmpfs:
     - /tmp:rw,noexec,nosuid
+
     depends_on:
       traefik:
         condition: service_started
@@ -19,25 +30,26 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
+
+    environment:
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      REDIS_URL: ${BOOKKEEP__REDIS_URL}
+      # From secrets/ via a wrapper entrypoint (see the header):
+      #   HARDCOVER_API_TOKEN, BOOKKEEP_SECRET_KEY, DATABASE_URL
+
     networks:
     - external
     - db_postgres
-    # Bookkeep also uses Redis (REDIS__URL). Redis is on immich_backend; give
-    # Bookkeep its own Redis or a shared redis network before re-enabling it.
-    environment:
-      TZ: "${TZ}"
-      PUID: "${PUID}"
-      PGID: "${PGID}"
-      HARDCOVER_API_TOKEN: "${BOOKKEEP__HARDCOVER_API_TOKEN}"
-      BOOKKEEP_SECRET_KEY: "${BOOKKEEP__SECRET_KEY}"
-      DATABASE_URL: "${BOOKKEEP__DATABASE_URL}"
-      REDIS_URL: "${REDIS__URL}"
+
     labels:
     - "traefik.enable=true"
-    - "traefik.http.routers.bookkeep-https.rule=Host(`bookkeep.$DOMAINNAME`)"
-    - "traefik.http.routers.bookkeep-https.middlewares=authelia@docker"
-    - "traefik.http.services.bookkeep.loadbalancer.server.port=8000"
+    - "traefik.http.routers.${BOOKKEEP__NAME}.rule=Host(`${BOOKKEEP__SUBDOMAIN}.${DOMAINNAME}`)"
+    - "traefik.http.routers.${BOOKKEEP__NAME}.middlewares=authelia@docker"
+    - "traefik.http.services.${BOOKKEEP__NAME}.loadbalancer.server.port=8000"
     - "deunhealth.restart.on.unhealthy=true"
+
     volumes:
     - ${DATADIR}/torrents/books:/ebooks
     - ${DATADIR}/torrents/downloads:/downloads

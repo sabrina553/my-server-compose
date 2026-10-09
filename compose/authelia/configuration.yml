@@ -107,8 +107,8 @@ access_control:
 
     ## Everything else that is meant to be behind Authelia.
     - domain:
-        - 'audiobookshelf.{{ env "DOMAINNAME" }}'
-        - 'bookkeep.{{ env "DOMAINNAME" }}'
+        - '{{ env "SUBDOMAIN_AUDIOBOOKSHELF" }}.{{ env "DOMAINNAME" }}'
+        - '{{ env "SUBDOMAIN_BOOKKEEP" }}.{{ env "DOMAINNAME" }}'
         - '{{ env "SUBDOMAIN_CHAPTARR" }}.{{ env "DOMAINNAME" }}'
         - '{{ env "SUBDOMAIN_GRIMMORY" }}.{{ env "DOMAINNAME" }}'
         - '{{ env "SUBDOMAIN_LEANTIME" }}.{{ env "DOMAINNAME" }}'
