@@ -3,6 +3,20 @@ services:
     container_name: ${GHOST__NAME}
     image: ${GHOST__IMAGE}:${GHOST__VERSION}
     restart: always
+    # Ghost can't read secret files, so load them into its env vars at start.
+    # command is the image's CMD (overriding entrypoint discards it); re-check
+    # after major upgrades: docker image inspect --format '{{json .Config.Cmd}}' <image>
+    entrypoint:
+    - /bin/sh
+    - -c
+    - >-
+      database__connection__password=$$(cat /run/secrets/ghost_db_password) &&
+      mail__options__auth__pass=$$(cat /run/secrets/smtp_password) &&
+      export database__connection__password mail__options__auth__pass &&
+      exec "$$@"
+    - --
+    - docker-entrypoint.sh
+    command: ["node", "current/index.js"]
     security_opt:
     - no-new-privileges:true
     - apparmor:unconfined
@@ -16,13 +30,15 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
+    secrets:
+    - ghost_db_password
+    - smtp_password
     environment:
       NODE_ENV: production
       url: https://${GHOST__DOMAIN}
       database__client: mysql
       database__connection__host: ${GHOST__DATABASE_NAME}
       database__connection__user: ${GHOST_DATABASE_USERNAME}
-      database__connection__password: ${GHOST__DATABASE_PASSWORD}
       database__connection__database: ${GHOST_DATABASE_USERNAME}
 
       mail__transport: ${GHOST__MAIL_TRANSPORT}
@@ -30,7 +46,6 @@ services:
       mail__options__port: ${SMTP__PORT}
       mail__options__secure: ${SMTP__USE_SSL}
       mail__options__auth__user: ${SMTP__USERNAME}
-      mail__options__auth__pass: ${GHOST__MAIL_PASS}
       mail__from: ${GHOST__MAIL_FROM}
     networks:
     - external

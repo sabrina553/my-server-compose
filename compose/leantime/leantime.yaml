@@ -29,6 +29,27 @@ services:
     container_name: ${LEAN__NAME}
     image: ${LEAN__IMAGE}:${LEAN__VERSION}
     restart: unless-stopped
+    # Leantime can't read secret files, so load them into its env vars at start.
+    # The image has no CMD, so only its ENTRYPOINT is repeated here.
+    entrypoint:
+    - /bin/sh
+    - -c
+    - >-
+      LEAN_DB_PASSWORD=$$(cat /run/secrets/leantime_mysql_password) &&
+      LEAN_SESSION_PASSWORD=$$(cat /run/secrets/leantime_session_password) &&
+      LEAN_OIDC_CLIENT_SECRET=$$(cat /run/secrets/leantime_oidc_secret) &&
+      LEAN_EMAIL_SMTP_PASSWORD=$$(cat /run/secrets/smtp_password) &&
+      export LEAN_DB_PASSWORD LEAN_SESSION_PASSWORD LEAN_OIDC_CLIENT_SECRET LEAN_EMAIL_SMTP_PASSWORD &&
+      exec "$$@"
+    - --
+    - /sbin/tini
+    - --
+    - /start.sh
+    secrets:
+    - leantime_mysql_password
+    - leantime_session_password
+    - leantime_oidc_secret
+    - smtp_password
     # Add security options
     security_opt:
     - no-new-privileges:true
@@ -47,19 +68,13 @@ services:
     - LEAN_APP_DIR=${LEAN__APP_DIR}
     - LEAN_DEBUG=${LEAN__DEBUG}
     - VOLUME_DIRECTORY=${LEAN__VOLUME_DIRECTORY}
-    # Database - MySQL container
-    - LEAN_MYSQL_ROOT_PASSWORD=${LEAN__MYSQL_ROOT_PASSWORD}
-    - LEAN_MYSQL_DATABASE=${LEAN__MYSQL_DATABASE}
-    - LEAN_MYSQL_USER=${LEAN__MYSQL_USER}
-    - LEAN_MYSQL_PASSWORD=${LEAN__MYSQL_PASSWORD}
-    # Database - leantime container
+    # Database. The app only uses LEAN_DB_*; the MySQL root password stays in
+    # the leantime_db container. LEAN_DB_PASSWORD is set by the entrypoint above.
     - LEAN_DB_HOST=${LEAN__DB_HOST}
     - LEAN_DB_USER=${LEAN__DB_USER}
-    - LEAN_DB_PASSWORD=${LEAN__DB_PASSWORD}
     - LEAN_DB_DATABASE=${LEAN__DB_DATABASE}
     - LEAN_DB_PORT=${LEAN__DB_PORT}
-    # Session Management
-    - LEAN_SESSION_PASSWORD=${LEAN__SESSION_PASSWORD}
+    # Session Management (LEAN_SESSION_PASSWORD is set by the entrypoint above)
     - LEAN_SESSION_EXPIRATION=${LEAN__SESSION_EXPIRATION}
     - LEAN_SESSION_SECURE=${LEAN__SESSION_SECURE}
     - LEAN_SITENAME=${LEAN__SITENAME}
@@ -76,7 +91,6 @@ services:
     - LEAN_EMAIL_SMTP_HOSTS=${SMTP__HOST}
     - LEAN_EMAIL_SMTP_AUTH=true
     - LEAN_EMAIL_SMTP_USERNAME=${SMTP__USERNAME}
-    - LEAN_EMAIL_SMTP_PASSWORD=${SMTP__PASSWORD}
     - LEAN_EMAIL_SMTP_AUTO_TLS=true
     - LEAN_EMAIL_SMTP_SECURE=TLS
     - LEAN_EMAIL_SMTP_SSLNOVERIFY=false
@@ -85,7 +99,6 @@ services:
     ## OpenID Connect
     - LEAN_OIDC_ENABLE=true
     - LEAN_OIDC_CLIENT_ID=${LEAN__OIDC_CLIENT_ID}
-    - LEAN_OIDC_CLIENT_SECRET=${LEAN__OIDC_CLIENT_SECRET}
     - LEAN_OIDC_PROVIDER_URL=${LEAN__OIDC_PROVIDER_URL}
     - LEAN_OIDC_CREATE_USER=${LEAN__OIDC_CREATE_USER}
     - LEAN_OIDC_DEFAULT_ROLE=${LEAN__OIDC_DEFAULT_ROLE}

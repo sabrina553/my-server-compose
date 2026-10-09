@@ -3,6 +3,25 @@ services:
     container_name: linkwarden
     image: ghcr.io/linkwarden/linkwarden:latest # comment to build from source
     restart: always
+    # Linkwarden can't read secret files, so load them into its env vars at start.
+    # command is the image's CMD (overriding entrypoint discards it); re-check
+    # after upgrades, as this tracks :latest:
+    #   docker image inspect --format '{{json .Config.Cmd}}' ghcr.io/linkwarden/linkwarden:latest
+    entrypoint:
+    - /bin/sh
+    - -c
+    - >-
+      NEXTAUTH_SECRET=$$(cat /run/secrets/linkwarden_nextauth_secret) &&
+      AUTHELIA_CLIENT_SECRET=$$(cat /run/secrets/linkwarden_oidc_secret) &&
+      DATABASE_URL=$$(cat /run/secrets/linkwarden_database_url) &&
+      export NEXTAUTH_SECRET AUTHELIA_CLIENT_SECRET DATABASE_URL &&
+      exec "$$@"
+    - --
+    - docker-entrypoint.sh
+    command:
+    - sh
+    - -c
+    - 'export PATH=/data/node_modules/.bin:$$PATH && prisma migrate deploy --schema=/data/packages/prisma/schema.prisma && exec concurrently -k -n web,worker "cd /data/apps/web && exec next start" "cd /data/apps/worker && exec tsx worker.ts"'
     security_opt:
     - no-new-privileges:true
     logging:
@@ -11,15 +30,11 @@ services:
         max-size: "1m"
         max-file: "3"
     secrets:
-    - smtp_password
     - linkwarden_nextauth_secret
-    - linkwarden_oidc_clientid
     - linkwarden_oidc_secret
-    - linkwarden_pg_password
+    - linkwarden_database_url
     environment:
     - NEXTAUTH_URL=${LINKWARDEN__NEXTAUTH_URL}
-    - NEXTAUTH_SECRET=${LINKWARDEN__NEXTAUTH_SECRET}
-    - DATABASE_URL=${LINKWARDEN__DATABASE_URL}
     # SSO only. Set here rather than in .env so they can't silently go missing:
     # with no Authelia in front of this router, these are what stop strangers
     # signing up or guessing passwords. The app/extension use API keys instead.
@@ -27,7 +42,6 @@ services:
     - NEXT_PUBLIC_CREDENTIALS_ENABLED=false
     - NEXT_PUBLIC_AUTHELIA_ENABLED=${LINKWARDEN__NEXT_PUBLIC_AUTHELIA_ENABLED}
     - AUTHELIA_CLIENT_ID=${LINKWARDEN__AUTHELIA_CLIENT_ID}
-    - AUTHELIA_CLIENT_SECRET=${LINKWARDEN__AUTHELIA_CLIENT_SECRET}
     - AUTHELIA_WELLKNOWN_URL=${LINKWARDEN__AUTHELIA_WELLKNOWN_URL}
     volumes:
     - ${VOLDIR}/linkwarden:/data/data

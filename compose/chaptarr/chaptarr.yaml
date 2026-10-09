@@ -3,6 +3,21 @@ services:
     container_name: ${CHAPTARR__NAME}
     image: ${CHAPTARR__IMAGE}:${CHAPTARR__VERSION}
     restart: unless-stopped
+    # Chaptarr can't read secret files, so load them into its env vars at start.
+    # command is the image's CMD (overriding entrypoint discards it); re-check
+    # after major upgrades: docker image inspect --format '{{json .Config.Cmd}}' <image>
+    entrypoint:
+    - /bin/sh
+    - -c
+    - >-
+      Chaptarr__Postgres__Password=$$(cat /run/secrets/chaptarr_db_password) &&
+      export Chaptarr__Postgres__Password &&
+      exec "$$@"
+    - --
+    - /entrypoint.sh
+    command: ["dotnet", "/app/Chaptarr.dll", "-nobrowser", "-data=/config"]
+    secrets:
+    - chaptarr_db_password
     # security_opt:
     #   - no-new-privileges:true
     #   - apparmor:unconfined
@@ -29,7 +44,6 @@ services:
       PGID: ${PGID}
       Chaptarr__Postgres__Host: ${POSTGRESQL__HOST}
       Chaptarr__Postgres__User: ${CHAPTARR__DB_USER}
-      Chaptarr__Postgres__Password: ${CHAPTARR__DB_PASSWORD}
       Chaptarr__Postgres__Port: ${CHAPTARR__DB_PORT}
     networks:
     - external

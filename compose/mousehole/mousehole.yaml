@@ -3,6 +3,21 @@ services:
     container_name: ${MOUSEHOLE__NAME}
     image: ${MOUSEHOLE__IMAGE}:${MOUSEHOLE__VERSION}
     restart: unless-stopped
+    # Mousehole can't read secret files, so load them into its env vars at start.
+    # command is the image's CMD (overriding entrypoint discards it); re-check
+    # after major upgrades: docker image inspect --format '{{json .Config.Cmd}}' <image>
+    entrypoint:
+    - /bin/sh
+    - -c
+    - >-
+      MOUSEHOLE_AUTH_PASSWORD=$$(cat /run/secrets/mousehole_auth_password) &&
+      export MOUSEHOLE_AUTH_PASSWORD &&
+      exec "$$@"
+    - --
+    - /usr/local/bin/docker-entrypoint.sh
+    command: ["bun", "run", "src/index.tsx"]
+    secrets:
+    - mousehole_auth_password
     security_opt:
     - no-new-privileges:true
     - apparmor:unconfined
@@ -25,7 +40,6 @@ services:
         max-file: "3"
     environment:
     - TZ=${TZ}
-    - MOUSEHOLE_AUTH_PASSWORD=${MOUSEHOLE__AUTH_PASSWORD}
     - MOUSEHOLE_ALLOWED_HOSTS=${MOUSEHOLE__ALLOWED_HOST}
     - MOUSEHOLE_ALLOWED_ORIGINS=${MOUSEHOLE__ALLOWED_ORIGINS}
     - MOUSEHOLE_HTTPS_ONLY_COOKIES=${MOUSEHOLE__HTTPS_ONLY_COOKIES}
