@@ -1,8 +1,14 @@
+## pgAdmin  https://github.com/pgadmin-org/pgadmin4
+## Web admin for the shared Postgres, at <subdomain>.int.<domain>. No login
+## page: pgAdmin trusts Authelia's Remote-User header, but only from Traefik's
+## fixed address on proxy_internal (config_local.py, mounted read-only).
+## No internet access.
 services:
   pgadmin:
-    container_name: postgres-web
+    container_name: ${PGADMIN__NAME}
     image: ${PGADMIN__IMAGE}:${PGADMIN__VERSION}
     restart: unless-stopped
+
     # pgAdmin runs as uid 5050. Its entrypoint only needs sudo to start postfix
     # (mail), which is disabled below, so no-new-privileges is safe.
     security_opt:
@@ -13,6 +19,7 @@ services:
     # plain (un-capped) python and listens on 8080 instead of 80.
     tmpfs:
     - /tmp:rw,noexec,nosuid
+
     depends_on:
       postgres:
         condition: service_started
@@ -25,23 +32,25 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
+
     environment:
-    - TZ=${TZ}
-    - PGADMIN_DEFAULT_EMAIL=${PGADMIN__DEFAULT_EMAIL}
-    - PGADMIN_DISABLE_POSTFIX=true
-    - PGADMIN_LISTEN_PORT=8080
-    # Logs in from Authelia's Remote-User header, trusted only from Traefik's
-    # fixed address on proxy_internal: see config_local.py.
+      TZ: ${TZ}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN__DEFAULT_EMAIL}
+      PGADMIN_DISABLE_POSTFIX: "true"
+      PGADMIN_LISTEN_PORT: ${PGADMIN__PORT}
+
     networks:
     - db_postgres
     - proxy_internal
+
     labels:
     - "traefik.enable=true"
     - "traefik.docker.network=proxy_internal"
-    - "traefik.http.routers.pgadmin.rule=Host(`pg.int.$DOMAINNAME`)"
-    - "traefik.http.routers.pgadmin.middlewares=authelia@docker"
-    - "traefik.http.services.pgadmin.loadbalancer.server.port=8080"
+    - "traefik.http.routers.${PGADMIN__NAME}.rule=Host(`${PGADMIN__SUBDOMAIN}.int.${DOMAINNAME}`)"
+    - "traefik.http.routers.${PGADMIN__NAME}.middlewares=authelia@docker"
+    - "traefik.http.services.${PGADMIN__NAME}.loadbalancer.server.port=${PGADMIN__PORT}"
     - "deunhealth.restart.on.unhealthy=true"
+
     volumes:
-    - ${VOLDIR}/pgadmin:/var/lib/pgadmin
+    - ${PGADMIN__VOLDIR}:/var/lib/pgadmin
     - ./config_local.py:/pgadmin4/config_local.py:ro

@@ -1,8 +1,15 @@
+## CouchDB  https://github.com/apache/couchdb
+## Sync backend for Obsidian LiveSync, at <subdomain>.<domain>. The sync API has
+## no forward-auth (clients can't do it) and accepts only JWT bearer tokens;
+## Basic auth and password login over the API are disabled in CouchDB's config.
+## Fauxton (/_utils) and password login (POST /_session) sit behind Authelia.
+## No internet access (proxy_internal).
 services:
   couchserver:
-    container_name: couchdb
+    container_name: ${COUCHDB__NAME}
     image: ${COUCHDB__IMAGE}:${COUCHDB__VERSION}
     restart: always
+
     security_opt:
     - no-new-privileges:true
     cap_drop:
@@ -15,6 +22,7 @@ services:
     - SETUID
     tmpfs:
     - /tmp:rw,noexec,nosuid
+
     depends_on:
       traefik:
         condition: service_started
@@ -24,33 +32,35 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
+
     environment:
       TZ: ${TZ}
       PUID: ${PUID}
       PGID: ${PGID}
+
     networks:
     - proxy_internal
+
     labels:
     - "traefik.enable=true"
     - "traefik.docker.network=proxy_internal"
-    - "traefik.http.routers.couchserver.rule=Host(`couch.$DOMAINNAME`)"
-    # No authelia@docker on the API: sync clients (e.g. Obsidian LiveSync) can't do
-    # forward-auth. The API relies on CouchDB's own auth, so the admin must have a
-    # strong password and [chttpd] require_valid_user = true in the mounted config.
-    - "traefik.http.routers.couchserver.service=couchserver"
-    # Fauxton (the web admin UI) is browser-only, so it also goes behind Authelia.
+    # The sync API: no authelia@docker (LiveSync can't do forward-auth). CouchDB
+    # itself accepts only JWT here; see the header above.
+    - "traefik.http.routers.${COUCHDB__NAME}.rule=Host(`${COUCHDB__SUBDOMAIN}.${DOMAINNAME}`)"
+    - "traefik.http.routers.${COUCHDB__NAME}.service=${COUCHDB__NAME}"
+    # Fauxton (the web admin UI) is browser-only, so it goes behind Authelia.
     # The longer rule wins over the router above.
-    - "traefik.http.routers.couchserver-utils.rule=Host(`couch.$DOMAINNAME`) && PathPrefix(`/_utils`)"
-    - "traefik.http.routers.couchserver-utils.middlewares=authelia@docker"
-    - "traefik.http.routers.couchserver-utils.service=couchserver"
+    - "traefik.http.routers.${COUCHDB__NAME}-utils.rule=Host(`${COUCHDB__SUBDOMAIN}.${DOMAINNAME}`) && PathPrefix(`/_utils`)"
+    - "traefik.http.routers.${COUCHDB__NAME}-utils.middlewares=authelia@docker"
+    - "traefik.http.routers.${COUCHDB__NAME}-utils.service=${COUCHDB__NAME}"
     # Password login (POST /_session, used by Fauxton) also goes behind Authelia.
-    # Sync clients authenticate with JWT bearer tokens and never POST here; Basic
-    # auth is disabled in CouchDB's config, so this is the only password path left.
-    - "traefik.http.routers.couchserver-session.rule=Host(`couch.$DOMAINNAME`) && Path(`/_session`) && Method(`POST`)"
-    - "traefik.http.routers.couchserver-session.middlewares=authelia@docker"
-    - "traefik.http.routers.couchserver-session.service=couchserver"
-    - "traefik.http.services.couchserver.loadbalancer.server.port=5984"
+    # Sync clients authenticate with JWT bearer tokens and never POST here.
+    - "traefik.http.routers.${COUCHDB__NAME}-session.rule=Host(`${COUCHDB__SUBDOMAIN}.${DOMAINNAME}`) && Path(`/_session`) && Method(`POST`)"
+    - "traefik.http.routers.${COUCHDB__NAME}-session.middlewares=authelia@docker"
+    - "traefik.http.routers.${COUCHDB__NAME}-session.service=${COUCHDB__NAME}"
+    - "traefik.http.services.${COUCHDB__NAME}.loadbalancer.server.port=5984"
     - "deunhealth.restart.on.unhealthy=true"
+
     volumes:
-    - ${VOLDIR}/couch/dbdata:/opt/couchdb/data
-    - ${VOLDIR}/couch/config:/opt/couchdb/etc
+    - ${COUCHDB__VOLDIR}/dbdata:/opt/couchdb/data
+    - ${COUCHDB__VOLDIR}/config:/opt/couchdb/etc
