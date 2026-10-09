@@ -12,9 +12,10 @@ services:
     - -c
     - >-
       NEXTAUTH_SECRET=$$(cat /run/secrets/linkwarden_nextauth_secret) &&
+      AUTHELIA_CLIENT_ID=$$(cat /run/secrets/linkwarden_oidc_clientid) &&
       AUTHELIA_CLIENT_SECRET=$$(cat /run/secrets/linkwarden_oidc_secret) &&
       DATABASE_URL=$$(cat /run/secrets/linkwarden_database_url) &&
-      export NEXTAUTH_SECRET AUTHELIA_CLIENT_SECRET DATABASE_URL &&
+      export AUTHELIA_CLIENT_ID NEXTAUTH_SECRET AUTHELIA_CLIENT_SECRET DATABASE_URL &&
       exec "$$@"
     - --
     - docker-entrypoint.sh
@@ -40,6 +41,7 @@ services:
     secrets:
     - linkwarden_nextauth_secret
     - linkwarden_oidc_secret
+    - linkwarden_oidc_clientid
     - linkwarden_database_url
     environment:
     - NEXTAUTH_URL=${LINKWARDEN__NEXTAUTH_URL}
@@ -49,7 +51,6 @@ services:
     - NEXT_PUBLIC_DISABLE_REGISTRATION=true
     - NEXT_PUBLIC_CREDENTIALS_ENABLED=false
     - NEXT_PUBLIC_AUTHELIA_ENABLED=${LINKWARDEN__NEXT_PUBLIC_AUTHELIA_ENABLED}
-    - AUTHELIA_CLIENT_ID=${LINKWARDEN__AUTHELIA_CLIENT_ID}
     - AUTHELIA_WELLKNOWN_URL=${LINKWARDEN__AUTHELIA_WELLKNOWN_URL}
     volumes:
     - ${VOLDIR}/linkwarden:/data/data
