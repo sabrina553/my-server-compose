@@ -1,0 +1,288 @@
+---
+###############################################################################
+##                          Authelia Configuration                           ##
+###############################################################################
+##
+## This file is rendered as a Go template (X_AUTHELIA_CONFIG_FILTERS=template)
+## BEFORE it is parsed as YAML. That means:
+##   - double-brace template expressions are executed EVERYWHERE, including
+##     inside # comments. Never leave one in a comment.
+##   - Don't let an editor auto-format this file; YAML formatters mangle them.
+##
+## Nothing sensitive or site-specific lives in this file:
+##   - the domain comes from the DOMAINNAME env var
+##   - OIDC client IDs come from each app's own Docker secret
+##   - OIDC client secrets are PBKDF2 digests in secrets/authelia/oidc_<app>_digest
+##   - everything else (session/storage/JWT/HMAC secrets, LDAP, SMTP) is set
+##     via *_FILE env vars in authelia.yaml
+##
+## Docs: https://www.authelia.com/configuration/prologue/introduction/
+
+theme: 'auto'
+default_2fa_method: 'webauthn'
+
+server:
+  address: 'tcp://:9091/'
+
+log:
+  format: 'text'
+
+totp:
+  issuer: '{{ env "DOMAINNAME" }}'
+
+webauthn:
+  display_name: 'SabNet'
+  enable_passkey_login: true
+
+##
+## Brute-force protection: ban after 3 failures within 2 minutes.
+##
+regulation:
+  modes:
+    - 'user'
+    - 'ip'
+  max_retries: 3
+  find_time: '2 minutes'
+  ban_time: '15 minutes'
+
+##
+## Applies to Authelia's own password-reset flow (LLDAP stores the password).
+##
+password_policy:
+  zxcvbn:
+    enabled: true
+    min_score: 3
+
+##
+## Access control
+##
+## Default is DENY: a subdomain behind the authelia@docker middleware that
+## isn't listed below can't be reached. Add a rule when you add a service.
+## Rules are evaluated top to bottom; the first match wins.
+##
+## NOTE: these rules only apply to routers that actually use the
+## authelia@docker middleware. Apps that don't (e.g. Vaultwarden, Linkwarden)
+## rely on their own login + the OIDC client policies further down.
+##
+access_control:
+  default_policy: 'deny'
+
+  rules:
+    ## No network-based bypass rules. Containers talk to each other by
+    ## container name (http://prowlarr:9696, http://chaptarr:8789,
+    ## http://vpn:8080 for qBittorrent) so they never go through Traefik.
+    ## A bypass by source IP is unsafe here: Docker's gateway address and
+    ## cloudflared's own address are inside the Docker subnets.
+
+    ## Admin / infrastructure UIs (dozzle, traefik, pgadmin, lldap, prowlarr,
+    ## qbittorrent, mousehole, mousetrap, crosswatch, irc).
+    - domain: '*.int.{{ env "DOMAINNAME" }}'
+      policy: 'two_factor'
+
+    ## Vaultwarden admin panel. Only /admin goes through the authelia@docker
+    ## middleware (see vaultwarden.yaml); the rest of vw. uses Vaultwarden's own login.
+    - domain: '{{ env "SUBDOMAIN_VAULTWARDEN" }}.{{ env "DOMAINNAME" }}'
+      resources:
+        - '^/admin([/?].*)?$'
+      policy: 'two_factor'
+
+    ## CouchDB's Fauxton admin UI and password login (POST /_session). Only these
+    ## go through the authelia@docker middleware (see couch-db.yaml); sync clients
+    ## use JWT bearer tokens checked by CouchDB itself.
+    - domain: '{{ env "SUBDOMAIN_COUCHDB" }}.{{ env "DOMAINNAME" }}'
+      resources:
+        - '^/_utils([/?].*)?$'
+        - '^/_session([?].*)?$'
+      policy: 'two_factor'
+
+    ## Personal data. (photos. and ha. aren't here: Immich and Home Assistant
+    ## have no forward-auth because of their mobile apps, and rely on their
+    ## two_factor OIDC clients instead.)
+    # FileBrowser and FreshRSS log users in from the Remote-User header. Never
+    # give their hosts a 'bypass' policy: Traefik would then pass a
+    # client-supplied Remote-User straight through.
+    - domain:
+        - '{{ env "SUBDOMAIN_FILEBROWSER" }}.{{ env "DOMAINNAME" }}'
+      policy: 'two_factor'
+
+    ## Everything else that is meant to be behind Authelia.
+    - domain:
+        - '{{ env "SUBDOMAIN_AUDIOBOOKSHELF" }}.{{ env "DOMAINNAME" }}'
+        - '{{ env "SUBDOMAIN_BOOKKEEP" }}.{{ env "DOMAINNAME" }}'
+        - '{{ env "SUBDOMAIN_CHAPTARR" }}.{{ env "DOMAINNAME" }}'
+        - '{{ env "SUBDOMAIN_GRIMMORY" }}.{{ env "DOMAINNAME" }}'
+        - '{{ env "SUBDOMAIN_LEANTIME" }}.{{ env "DOMAINNAME" }}'
+        - '{{ env "SUBDOMAIN_MEALIE" }}.{{ env "DOMAINNAME" }}'
+        - '{{ env "SUBDOMAIN_FRESHRSS" }}.{{ env "DOMAINNAME" }}'
+      policy: 'one_factor'
+
+session:
+  name: 'authelia_session'
+  same_site: 'lax'
+  expiration: '1 hour'
+  inactivity: '5 minutes'
+  remember_me: '1 month'
+  cookies:
+    - domain: '{{ env "DOMAINNAME" }}'
+      authelia_url: 'https://{{ env "SUBDOMAIN_AUTHELIA" }}.{{ env "DOMAINNAME" }}'
+
+##
+## OpenID Connect provider
+##
+identity_providers:
+  oidc:
+    jwks:
+      - key: {{ secret "/run/secrets/authelia_oidc_jwks_key" | mindent 10 "|" | msquote }}
+
+    enable_client_debug_messages: false
+    enforce_pkce: 'public_clients_only'
+
+    cors:
+      endpoints:
+        - 'authorization'
+        - 'token'
+        - 'revocation'
+        - 'introspection'
+      allowed_origins:
+        - 'https://{{ env "SUBDOMAIN_AUTHELIA" }}.{{ env "DOMAINNAME" }}'
+      allowed_origins_from_client_redirect_uris: false
+
+    claims_policies:
+      grimmory:
+        id_token: ['email', 'email_verified', 'name', 'groups', 'preferred_username']
+      leantime:
+        id_token: ['email']
+
+    ## Each client:
+    ##   client_id     <- the app's own secret, e.g. secrets/immich/oidc_client_id
+    ##   client_secret <- PBKDF2 digest, secrets/authelia/oidc_<app>_digest
+    ##                    (generate with scripts/authelia-hash-oidc-secrets.sh)
+    ## Every secret referenced here MUST be listed under `secrets:` in
+    ## authelia.yaml, or Authelia will refuse to start.
+    clients:
+      - client_name: 'FileBrowser Quantum'
+        client_id: {{ secret "/run/secrets/filebrowser_oidc_client_id" | trim | squote }}
+        client_secret: {{ secret "/run/secrets/authelia_oidc_filebrowser_digest" | trim | squote }}
+        authorization_policy: 'two_factor'
+        consent_mode: 'pre-configured'
+        pre_configured_consent_duration: '1 year'
+        require_pkce: false   # FileBrowser Quantum's server-side OIDC doesn't send PKCE (checked 1.5.8, 2026-10-09)
+        redirect_uris:
+          - 'https://{{ env "SUBDOMAIN_FILEBROWSER" }}.{{ env "DOMAINNAME" }}/api/auth/oidc/callback'
+        scopes: ['openid', 'profile', 'groups', 'email']
+        token_endpoint_auth_method: 'client_secret_basic'
+
+      - client_name: 'FreshRSS'
+        client_id: {{ secret "/run/secrets/freshrss_oidc_client_id" | trim | squote }}
+        client_secret: {{ secret "/run/secrets/authelia_oidc_freshrss_digest" | trim | squote }}
+        authorization_policy: 'one_factor'
+        consent_mode: 'pre-configured'
+        pre_configured_consent_duration: '1 year'
+        require_pkce: true
+        pkce_challenge_method: 'S256'
+        redirect_uris:
+          - 'https://{{ env "SUBDOMAIN_FRESHRSS" }}.{{ env "DOMAINNAME" }}:443/i/oidc/'
+        scopes: ['openid', 'groups', 'email', 'profile']
+        token_endpoint_auth_method: 'client_secret_basic'
+
+      - client_name: 'Grimmory'
+        client_id: {{ secret "/run/secrets/grimmory_oidc_client_id" | trim | squote }}
+        client_secret: {{ secret "/run/secrets/authelia_oidc_grimmory_digest" | trim | squote }}
+        claims_policy: 'grimmory'
+        authorization_policy: 'one_factor'
+        consent_mode: 'pre-configured'
+        pre_configured_consent_duration: '1 year'
+        require_pkce: true
+        pkce_challenge_method: 'S256'
+        redirect_uris:
+          - 'https://{{ env "SUBDOMAIN_GRIMMORY" }}.{{ env "DOMAINNAME" }}/oauth2-callback'
+          - 'https://{{ env "SUBDOMAIN_GRIMMORY" }}.{{ env "DOMAINNAME" }}/api/oidc'
+          - 'booklore://oauth2-callback'
+          - 'grimmory://oauth2-callback'
+        scopes: ['openid', 'profile', 'email', 'groups', 'offline_access']
+        response_types: ['code']
+        grant_types: ['authorization_code', 'refresh_token']
+        token_endpoint_auth_method: 'client_secret_post'
+
+      - client_name: 'Home Assistant'
+        client_id: {{ secret "/run/secrets/homeassistant_oidc_client_id" | trim | squote }}
+        client_secret: {{ secret "/run/secrets/authelia_oidc_homeassistant_digest" | trim | squote }}
+        authorization_policy: 'two_factor'
+        consent_mode: 'pre-configured'
+        pre_configured_consent_duration: '1 year'
+        require_pkce: true
+        pkce_challenge_method: 'S256'
+        redirect_uris:
+          - 'https://{{ env "SUBDOMAIN_HOMEASSISTANT" }}.{{ env "DOMAINNAME" }}/auth/openid/callback'   # cavefire/hass-openid
+        scopes: ['openid', 'profile', 'groups']
+        id_token_signed_response_alg: 'RS256'
+        token_endpoint_auth_method: 'client_secret_basic'
+
+      - client_name: 'Immich'
+        client_id: {{ secret "/run/secrets/immich_oidc_client_id" | trim | squote }}
+        client_secret: {{ secret "/run/secrets/authelia_oidc_immich_digest" | trim | squote }}
+        authorization_policy: 'two_factor'
+        consent_mode: 'pre-configured'
+        pre_configured_consent_duration: '1 year'
+        require_pkce: true
+        pkce_challenge_method: 'S256'
+        redirect_uris:
+          - 'https://{{ env "SUBDOMAIN_IMMICH" }}.{{ env "DOMAINNAME" }}/auth/login'
+          - 'https://{{ env "SUBDOMAIN_IMMICH" }}.{{ env "DOMAINNAME" }}/user-settings'
+          - 'app.immich:///oauth-callback'
+        scopes: ['openid', 'profile', 'email']
+        token_endpoint_auth_method: 'client_secret_post'
+
+      - client_name: 'Leantime'
+        client_id: {{ secret "/run/secrets/leantime_oidc_client_id" | trim | squote }}
+        client_secret: {{ secret "/run/secrets/authelia_oidc_leantime_digest" | trim | squote }}
+        claims_policy: 'leantime'
+        authorization_policy: 'two_factor'
+        consent_mode: 'pre-configured'
+        pre_configured_consent_duration: '1 year'
+        require_pkce: false   # Leantime's OIDC client doesn't send PKCE (tested 2026-10-09)
+        redirect_uris:
+          - 'https://{{ env "SUBDOMAIN_LEANTIME" }}.{{ env "DOMAINNAME" }}/oidc/callback'
+        scopes: ['openid', 'groups', 'email', 'profile']
+        token_endpoint_auth_method: 'client_secret_post'
+
+      - client_name: 'Linkwarden'
+        client_id: {{ secret "/run/secrets/linkwarden_oidc_client_id" | trim | squote }}
+        client_secret: {{ secret "/run/secrets/authelia_oidc_linkwarden_digest" | trim | squote }}
+        authorization_policy: 'two_factor'
+        consent_mode: 'pre-configured'
+        pre_configured_consent_duration: '1 year'
+        require_pkce: true
+        pkce_challenge_method: 'S256'
+        redirect_uris:
+          - 'https://{{ env "SUBDOMAIN_LINKWARDEN" }}.{{ env "DOMAINNAME" }}/api/v1/auth/callback/authelia'
+        scopes: ['openid', 'groups', 'email', 'profile']
+        token_endpoint_auth_method: 'client_secret_basic'
+
+      - client_name: 'Mealie'
+        client_id: {{ secret "/run/secrets/mealie_oidc_client_id" | trim | squote }}
+        client_secret: {{ secret "/run/secrets/authelia_oidc_mealie_digest" | trim | squote }}
+        authorization_policy: 'one_factor'
+        consent_mode: 'pre-configured'
+        pre_configured_consent_duration: '1 year'
+        require_pkce: true
+        pkce_challenge_method: 'S256'
+        redirect_uris:
+          - 'https://{{ env "SUBDOMAIN_MEALIE" }}.{{ env "DOMAINNAME" }}/login'
+        scopes: ['openid', 'email', 'profile', 'groups']
+        token_endpoint_auth_method: 'client_secret_basic'
+
+      - client_name: 'Vaultwarden'
+        client_id: {{ secret "/run/secrets/vaultwarden_oidc_client_id" | trim | squote }}
+        client_secret: {{ secret "/run/secrets/authelia_oidc_vaultwarden_digest" | trim | squote }}
+        authorization_policy: 'two_factor'
+        consent_mode: 'pre-configured'
+        pre_configured_consent_duration: '1 year'
+        require_pkce: true
+        pkce_challenge_method: 'S256'
+        redirect_uris:
+          - 'https://{{ env "SUBDOMAIN_VAULTWARDEN" }}.{{ env "DOMAINNAME" }}/identity/connect/oidc-signin'
+        scopes: ['openid', 'offline_access', 'profile', 'email']
+        response_types: ['code']
+        grant_types: ['authorization_code', 'refresh_token']
+        token_endpoint_auth_method: 'client_secret_basic'

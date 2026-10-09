@@ -1,0 +1,76 @@
+## Linkwarden  https://github.com/linkwarden/linkwarden
+## Bookmarks at <subdomain>.<domain>. No forward-auth (it breaks the mobile app
+## and browser extension): SSO-only login through Authelia (two_factor OIDC
+## client), registration and password login off; the app and extension use
+## API keys. Database in the shared Postgres.
+services:
+  linkwarden:
+    container_name: ${LINKWARDEN__NAME}
+    image: ${LINKWARDEN__IMAGE}:${LINKWARDEN__VERSION}
+    restart: always
+    # Linkwarden can't read secret files, so load them into its env vars at start.
+    # command is the image's CMD (overriding entrypoint discards it); re-check
+    # after upgrades:
+    #   docker image inspect --format '{{json .Config.Entrypoint}} {{json .Config.Cmd}}' <image>
+    entrypoint:
+    - /bin/sh
+    - -c
+    - >-
+      NEXTAUTH_SECRET=$$(cat /run/secrets/linkwarden_nextauth_secret) &&
+      AUTHELIA_CLIENT_ID=$$(cat /run/secrets/linkwarden_oidc_client_id) &&
+      AUTHELIA_CLIENT_SECRET=$$(cat /run/secrets/linkwarden_oidc_client_secret) &&
+      DATABASE_URL=$$(cat /run/secrets/linkwarden_db_url) &&
+      export AUTHELIA_CLIENT_ID NEXTAUTH_SECRET AUTHELIA_CLIENT_SECRET DATABASE_URL &&
+      exec "$$@"
+    - --
+    - docker-entrypoint.sh
+    command:
+    - sh
+    - -c
+    - 'export PATH=/data/node_modules/.bin:$$PATH && prisma migrate deploy --schema=/data/packages/prisma/schema.prisma && exec concurrently -k -n web,worker "cd /data/apps/web && exec next start" "cd /data/apps/worker && exec tsx worker.ts"'
+
+    security_opt:
+    - no-new-privileges:true
+    # Runs entirely as root (no privilege drop), so it needs no capabilities to
+    # switch users. Root without DAC_OVERRIDE can still use its own files in
+    # /data/data, which it created.
+    cap_drop:
+    - ALL
+    cap_add:
+    - CHOWN
+    - FOWNER
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+
+    secrets:
+    - linkwarden_nextauth_secret
+    - linkwarden_oidc_client_secret
+    - linkwarden_oidc_client_id
+    - linkwarden_db_url
+    environment:
+      NEXTAUTH_URL: ${LINKWARDEN__NEXTAUTH_URL}
+      # SSO only. Set here rather than in .env so they can't silently go missing:
+      # with no Authelia in front of this router, these are what stop strangers
+      # signing up or guessing passwords. The app/extension use API keys instead.
+      NEXT_PUBLIC_DISABLE_REGISTRATION: "true"
+      NEXT_PUBLIC_CREDENTIALS_ENABLED: "false"
+      NEXT_PUBLIC_AUTHELIA_ENABLED: ${LINKWARDEN__NEXT_PUBLIC_AUTHELIA_ENABLED}
+      AUTHELIA_WELLKNOWN_URL: ${LINKWARDEN__AUTHELIA_WELLKNOWN_URL}
+
+    networks:
+    - db_postgres
+    - external
+
+    labels:
+    - "traefik.enable=true"
+    # No authelia@docker: forward-auth breaks the mobile app and browser extension.
+    # Login is SSO-only (Authelia two_factor OIDC client), see environment above.
+    - "traefik.http.routers.${LINKWARDEN__NAME}.rule=Host(`${LINKWARDEN__SUBDOMAIN}.${DOMAINNAME}`)"
+    - "traefik.http.services.${LINKWARDEN__NAME}.loadbalancer.server.port=3000"
+
+    volumes:
+    - ${VOLDIR}/${LINKWARDEN__NAME}:/data/data

@@ -1,32 +1,40 @@
+## Valkey (Immich)  https://github.com/valkey-io/valkey
+## Immich's job queue. No password, so it sits on immich_backend, reachable by
+## the Immich containers only. (Authelia has its own: compose/authelia-redis.)
 services:
   redis:
-    container_name: redis
+    container_name: ${REDIS__NAME}
     image: ${REDIS__IMAGE}:${REDIS__VERSION}
     restart: always
+
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
     cap_drop:
-      - ALL
-    cap_add:
-      #- chown
-      - SETGID
-      - SETUID
+    - ALL
+    cap_add:   # entrypoint drops to the valkey user
+    - SETGID
+    - SETUID
     #read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
+
     logging:
       driver: "json-file"
       options:
         max-size: "1m"
         max-file: "3"
+
     networks:
-      - internal
+    - immich_backend
+
     labels:
-      - "traefik.enable=false"
-      - "deunhealth.restart.on.unhealthy=true"
-      
+    - "traefik.enable=false"
+    - "deunhealth.restart.on.unhealthy=true"
+    # Diun: only report -bookworm 8.x releases
+    - 'diun.include_tags=^8\.\d+\.\d+-bookworm$$'
+
     volumes:
-      - ${VOLDIR}/redis:/data
+    - ${VOLDIR}/${REDIS__NAME}:/data
+
     healthcheck:
       test: redis-cli ping || exit 1

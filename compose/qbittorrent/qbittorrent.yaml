@@ -1,20 +1,26 @@
+## qBittorrent  https://github.com/linuxserver/docker-qbittorrent
+## Torrent client inside the VPN's network namespace (all traffic through the
+## tunnel). Web UI at <subdomain>.int.<domain>; its login is skipped only for
+## Traefik's address (Web UI > whitelisted subnets: 172.20.0.249/32, set in
+## the app). Chaptarr and Prowlarr reach it at http://vpn:<webui port>.
 services:
   qbittorrent:
-    container_name: qbittorrent
+    container_name: ${QBITTORRENT__NAME}
     image: ${QBITTORRENT__IMAGE}:${QBITTORRENT__VERSION}
     restart: unless-stopped
+
     security_opt:
-      - no-new-privileges:true
-    #   - apparmor:unconfined
+    - no-new-privileges:true
     cap_drop:
-      - ALL
-    cap_add:
-      - CHOWN
-      - SETGID
-      - SETUID
+    - ALL
+    cap_add:   # linuxserver init chowns its folders, then drops to PUID/PGID
+    - CHOWN
+    - SETGID
+    - SETUID
     #read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
+
     depends_on:
       traefik:
         condition: service_started
@@ -27,24 +33,53 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
+
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - WEBUI_PORT=${WEBUI_PORT}
-      - TORRENTING_PORT=${TORRENTING_PORT}
-    network_mode: "container:vpn"
+      PUID: ${PUID}
+      PGID: ${PGID}
+      WEBUI_PORT: ${QBITTORRENT__WEBUI_PORT}
+      TORRENTING_PORT: ${TORRENTING_PORT}
+
+    # service: (not container:) so Compose tracks the dependency. It still only
+    # *restarts* this container when vpn is recreated, which leaves it in the old
+    # namespace; the healthcheck below catches that (see CLAUDE.md gotchas).
+    network_mode: "service:vpn"
+
     labels:
-      - "traefik.enable=true"       
-      - "traefik.http.routers.qbittorrent.rule=Host(`q.int.$DOMAINNAME`)"      
-      - "traefik.http.routers.qbittorrent.middlewares=authelia@docker"
-      - "traefik.http.services.qbittorrent.loadbalancer.server.port=${WEBUI_PORT}"
-      - "deunhealth.restart.on.unhealthy=true"
+    - "traefik.enable=true"
+    - "traefik.http.routers.${QBITTORRENT__NAME}.rule=Host(`${QBITTORRENT__SUBDOMAIN}.int.${DOMAINNAME}`)"
+    - "traefik.http.routers.${QBITTORRENT__NAME}.middlewares=authelia@docker"
+    - "traefik.http.services.${QBITTORRENT__NAME}.loadbalancer.server.port=${QBITTORRENT__WEBUI_PORT}"
+    - "deunhealth.restart.on.unhealthy=true"
+
     volumes:
-      - $VOLDIR/qbittorrent:/config:rw
-      - $DATADIR/torrents/downloads:/downloads:rw
+    - ${VOLDIR}/${QBITTORRENT__NAME}:/config:rw
+    - ${DATADIR}/torrents/downloads:/downloads:rw
+    # Copies qBittorrent's log file to stdout for Docker/Dozzle (see the script).
+    # linuxserver requires these to be owned by root and not world-writable.
+    - ./custom-services.d:/custom-services.d:ro
+
+    # Unhealthy when the VPN tunnel is gone from the shared network namespace,
+    # e.g. after Gluetun was recreated but this container wasn't. A restart
+    # can't fix that (it rejoins the old namespace); recreate it:
+    #   docker compose up -d --force-recreate <this service>
     healthcheck:
-      test: ["CMD", "curl", "--connect-timeout", "5", "--silent", "--show-error", "--fail", "http://localhost:8080/"]
+      test: ["CMD-SHELL", "test -e /sys/class/net/tun0 && curl -fso /dev/null http://localhost:${QBITTORRENT__WEBUI_PORT}/api/v2/app/version"]
       interval: 30s
       timeout: 15s
       start_period: 30s
       retries: 3
+
+    # Older idea, kept for reference: go unhealthy when Gluetun's public IP
+    # changes, so deunhealth restarts this container. (A restart can't move it
+    # to a recreated Gluetun, see above.) Would need Gluetun's PUBLICIP_FILE on a
+    # shared volume again, mounted here at /gluetun-ip.
+    # healthcheck:
+    #   test:
+    #   - "CMD-SHELL"
+    #   - >
+    #     curl -f -s -o /dev/null http://localhost:8080/api/v2/app/version && CUR=$$(cat /gluetun-ip/ip 2>/dev/null) && [ -f /config/.last_vpn_ip ] || echo "$$CUR" > /config/.last_vpn_ip; LAST=$$(cat /config/.last_vpn_ip 2>/dev/null); if [ "$$CUR" != "$$LAST" ]; then echo "$$CUR" > /config/.last_vpn_ip; exit 1; fi
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 60s

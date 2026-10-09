@@ -1,16 +1,23 @@
+## Immich  https://github.com/immich-app/immich
+## Photos at <subdomain>.<domain>. No forward-auth (it breaks the mobile app's
+## API calls): its own login with password login turned off, plus Authelia SSO
+## (two_factor OIDC client). Database in the shared Postgres; Valkey (redis)
+## and machine learning on the internal immich_backend network.
+## Server and machine-learning versions must match (see .env.example).
 services:
   immich-server:
-    container_name: immich_server
+    container_name: ${IMMICH__NAME}
     image: ${IMMICH__IMAGE}:${IMMICH__VERSION}
     restart: always
+
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
     cap_drop:
-      - ALL
+    - ALL
     #read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
+
     depends_on:
       redis:
         condition: service_started
@@ -25,54 +32,65 @@ services:
       driver: "json-file"
       options:
         max-size: "1m"
-        max-file: "3"    
+        max-file: "3"
+
     secrets:
-      - immich_pg_password
+    - immich_db_password
     environment:
-      - TZ="${TZ}"
-      - PUID="${PUID}"
-      - PGID="${PGID}" 
-      - UPLOAD_LOCATION=${IMMICH__UPLOAD_LOCATION}
-      - DB_HOSTNAME=${POSTGRESQL__HOST}
-      - DB_PORT=${POSTGRESQL__PORT}
-      - DB_USERNAME=${IMMICH__DB_USERNAME}
-      - DB_DATABASE_NAME=${IMMICH__DB_DATABASE_NAME}
-      - DB_PASSWORD_FILE=${IMMICH__DB_PASSWORD_FILE}
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      UPLOAD_LOCATION: ${IMMICH__UPLOAD_LOCATION}
+      DB_HOSTNAME: ${POSTGRESQL__HOST}
+      DB_PORT: ${POSTGRESQL__PORT}
+      DB_USERNAME: ${IMMICH__DB_USERNAME}
+      DB_DATABASE_NAME: ${IMMICH__DB_DATABASE_NAME}
+      DB_PASSWORD_FILE: ${IMMICH__DB_PASSWORD_FILE}
+
     networks:
-      - external
-      - internal
-    labels:
-      - "traefik.enable=true"       
-      - "traefik.http.routers.immich.rule=Host(`photos.$DOMAINNAME`)"
-      - "traefik.http.routers.immich.middlewares=authelia@docker"        
-      - "traefik.http.services.immich.loadbalancer.server.port=2283"  
-      - "deunhealth.restart.on.unhealthy=true"
-    volumes:
-      - ${IMMICH__UPLOAD_LOCATION}:/data
-      - /etc/localtime:/etc/localtime:ro
+    - external
+    - db_postgres
+    - immich_backend
     devices:
-      - "/dev/dri:/dev/dri" 
+    - "/dev/dri:/dev/dri"   # hardware video transcoding
+
+    labels:
+    - "traefik.enable=true"
+    # No authelia@docker: forward-auth breaks the mobile app's API calls.
+    - "traefik.http.routers.${IMMICH__NAME}.rule=Host(`${IMMICH__SUBDOMAIN}.${DOMAINNAME}`)"
+    - "traefik.http.services.${IMMICH__NAME}.loadbalancer.server.port=2283"
+    - "deunhealth.restart.on.unhealthy=true"
+
+    volumes:
+    - ${IMMICH__UPLOAD_LOCATION}:/data
+    - /etc/localtime:/etc/localtime:ro
 
   immich-machine-learning:
-    container_name: immich_machine_learning
+    container_name: ${IMMICH_ML__NAME}
     image: ${IMMICH_ML__IMAGE}:${IMMICH_ML__VERSION}
     restart: always
+
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
     cap_drop:
-      - ALL
+    - ALL
     #read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
+
     logging:
       driver: "json-file"
       options:
         max-size: "1m"
         max-file: "3"
+
     networks:
-      - internal
+    - immich_backend
+
     labels:
-      - "deunhealth.restart.on.unhealthy=true"
+    - "deunhealth.restart.on.unhealthy=true"
+    # Diun: only report -openvino releases
+    - 'diun.include_tags=^v\d+\.\d+\.\d+-openvino$$'
+
     volumes:
-      - ${VOLDIR}/immich/model-cache:/cache:rw
+    - ${IMMICH_ML__CACHE_DIR}:/cache:rw

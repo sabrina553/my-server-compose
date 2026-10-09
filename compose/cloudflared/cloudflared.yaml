@@ -1,28 +1,42 @@
+## cloudflared  https://github.com/cloudflare/cloudflared
+## Cloudflare Tunnel: the only way in from the internet. Forwards to Traefik;
+## publishes no ports. Its fixed IP is the only source Traefik trusts for
+## X-Forwarded-For.
 services:
   tunnel:
-    container_name: cloudflared
+    container_name: ${CLOUDFLARED__NAME}
     image: ${CLOUDFLARED__IMAGE}:${CLOUDFLARED__VERSION}
     restart: unless-stopped
+    command: tunnel --no-autoupdate --protocol http2 run
+
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
     cap_drop:
-      - ALL
+    - ALL
     read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
+
     logging:
       driver: "json-file"
       options:
         max-size: "1m"
         max-file: "3"
-    command: tunnel run
+
     secrets:
-      - cf_tunnel_token
-    networks:
-      - external
+    - cloudflared_tunnel_token
     environment:
-      - TUNNEL_TOKEN_FILE=${CLOUDFLARED__TUNNEL_TOKEN_FILE}
+      TUNNEL_TOKEN_FILE: ${CLOUDFLARED__TUNNEL_TOKEN_FILE}
+
+    networks:
+      external:
+        # Fixed so Traefik can trust X-Forwarded-For from this container only
+        # (see forwardedHeaders.trustedIPs in traefik.yaml).
+        ipv4_address: 172.20.0.250
+    dns:
+    - 1.1.1.1
+    - 1.0.0.1
+
     labels:
-      - "traefik.enable=false"
-      - "deunhealth.restart.on.unhealthy=true"
+    - "traefik.enable=false"
+    - "deunhealth.restart.on.unhealthy=true"

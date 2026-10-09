@@ -1,33 +1,54 @@
+## PostgreSQL (VectorChord build)  https://hub.docker.com/r/tensorchord/vchord-postgres
+## Shared database server: one database and user per app (see .env.example).
+## Reachable only on the internal db_postgres network.
 services:
   postgres:
-    container_name: postgres
-    image: ${POSTGRES_IMAGE}:${POSTGRES_VERSION}
-    restart: unless-stopped      
+    container_name: ${POSTGRESQL__NAME}
+    image: ${POSTGRESQL__IMAGE}:${POSTGRESQL__VERSION}
+    restart: unless-stopped
+
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    cap_add:   # entrypoint chowns PGDATA to postgres, then drops to it
+    - CHOWN
+    - DAC_READ_SEARCH
+    - FOWNER
+    - SETGID
+    - SETUID
+
     logging:
       driver: "json-file"
       options:
         max-size: "1m"
         max-file: "3"
+
     secrets:
-      - postgres_password
+    - postgres_password
     environment:
-      - TZ=${TZ}
-      - POSTGRES_USER=${POSTGRESQL__USER}
-      - POSTGRES_PASSWORD_FILE=${POSTGRESQL__PASSWORD_FILE}
-      - POSTGRES_DB=${POSTGRESQL__DB_NAME}
-      - POSTGRES_INITDB_ARGS=${POSTGRESQL__INITDB_ARGS}
-      - POSTGRES_PORT=${POSTGRESQL__PORT}
+      TZ: ${TZ}
+      POSTGRES_USER: ${POSTGRESQL__USER}
+      POSTGRES_PASSWORD_FILE: ${POSTGRESQL__PASSWORD_FILE}
+      POSTGRES_DB: ${POSTGRESQL__DB_NAME}
+      POSTGRES_INITDB_ARGS: ${POSTGRESQL__INITDB_ARGS}
+      POSTGRES_PORT: ${POSTGRESQL__PORT}
+
     networks:
-      - internal
+    - db_postgres
+
     labels:
-      - "deunhealth.restart.on.unhealthy=true"
-      - "com.centurylinklabs.watchtower.monitor-only=true"
-      - "traefik.enable=false"
+    - "traefik.enable=false"
+    - "deunhealth.restart.on.unhealthy=true"
+    #- "com.centurylinklabs.watchtower.monitor-only=true"   # Watchtower is retired
+    # Diun: stay on Postgres 18 builds
+    - 'diun.include_tags=^pg18-v\d+\.\d+\.\d+$$'
+
     volumes:
-      - ${VOLDIR}/postgres:/var/lib/postgresql
+    - ${VOLDIR}/${POSTGRESQL__NAME}:/var/lib/postgresql
+
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRESQL__USER} -d ${POSTGRESQL__DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
-

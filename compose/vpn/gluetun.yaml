@@ -1,56 +1,79 @@
+## Gluetun  https://github.com/qdm12/gluetun
+## WireGuard VPN client. qBittorrent, Mousehole and Mousetrap share its network
+## namespace (network_mode: service:vpn), so all their traffic leaves through
+## the tunnel. Also an HTTP proxy for FlareSolverr (http://vpn:8888).
+## If Gluetun is recreated, recreate those containers too (see CLAUDE.md).
 services:
   vpn:
     container_name: ${VPN__NAME}
     image: ${VPN__IMAGE}:${VPN__VERSION}
     restart: unless-stopped
+
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
     cap_drop:
-      - ALL
+    - ALL
     cap_add:
-      - NET_ADMIN
-      - NET_RAW
+    - NET_ADMIN
+    - NET_RAW
+    - CHOWN
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid,uid=${PUID},gid=${PGID}
+
     logging:
       driver: "json-file"
       options:
         max-size: "1m"
-        max-file: "3"    
-    cpu_shares: 2048  # Ensure this always gets what is needed
-    sysctls:
-      - net.ipv6.conf.all.disable_ipv6=0
+        max-file: "3"
+
     secrets:
-      - wireguard_private_key
-      - wireguard_preshared_key
-      - wireguard_addresses
+    - vpn_wireguard_private_key
+    - vpn_wireguard_preshared_key
+    - vpn_wireguard_addresses
     environment:
-      - TZ=${TZ}
-      - LOG_LEVEL=${LOG_LEVEL}
-      - WIREGUARD_PRIVATE_KEY_FILE=${WIREGUARD_PRIVATE_KEY_FILE}
-      - WIREGUARD_PRESHARED_KEY_FILE=${WIREGUARD_PRESHARED_KEY_FILE}
-      - WIREGUARD_ADDRESSES_FILE=${WIREGUARD_ADDRESSES_FILE}
-      - VPN_SERVICE_PROVIDER="${VPN__SERVICE_PROVIDER}"
-      - VPN_TYPE="${VPN__TYPE}" 
-      - SERVER_COUNTRIES="${VPN__SERVER_COUNTRIES}"
-      - FIREWALL_VPN_INPUT_PORTS="${TORRENTING_PORT}"
-      - FIREWALL_OUTBOUND_SUBNETS="${VPN__EXTERNAL_SUBNETS}" 
-      - HTTPPROXY="on"
-    ports:
-      - 8080:8080 # qbittorrent webui      
-      - 38534:38534 # qbittorrent
-      - 8888:8888 # HTTP proxy
-      - 5010:5010 # Mousehole's port on the VPN container
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+      LOG_LEVEL: ${LOG_LEVEL}
+      # Gluetun's names end in _SECRETFILE (it ignores *_FILE). Their defaults,
+      # /run/secrets/wireguard_*, are not our secret names, so set them.
+      WIREGUARD_PRIVATE_KEY_SECRETFILE: ${VPN__WIREGUARD_PRIVATE_KEY_FILE}
+      WIREGUARD_PRESHARED_KEY_SECRETFILE: ${VPN__WIREGUARD_PRESHARED_KEY_FILE}
+      WIREGUARD_ADDRESSES_SECRETFILE: ${VPN__WIREGUARD_ADDRESSES_FILE}
+      VPN_SERVICE_PROVIDER: ${VPN__SERVICE_PROVIDER}
+      VPN_TYPE: ${VPN__TYPE}
+      SERVER_COUNTRIES: ${VPN__SERVER_COUNTRIES}
+      FIREWALL_VPN_INPUT_PORTS: ${TORRENTING_PORT}
+      FIREWALL_OUTBOUND_SUBNETS: ${VPN__EXTERNAL_SUBNETS}
+      HTTPPROXY: "on"
+      # PUBLICIP_FILE left at its default (/tmp/gluetun/ip, tmpfs). Nothing
+      # reads it. Writing it logs "permission denied" on every start, harmless:
+      # Gluetun creates the folder without the execute bit (mode 644), which
+      # root can't enter without DAC_OVERRIDE. Not worth adding that cap.
+
     networks:
-      - external
-      - internal
-    labels:
-      - "deunhealth.restart.on.unhealthy=false"
-      - "com.centurylinklabs.watchtower.monitor-only=true"
-      - "traefik.enable=false"
-    volumes:
-      - "/etc/localtime:/etc/localtime:ro"
-      - "${VOLDIR}/${VPN__NAME}:/gluetun:rw"
+    - external
+    - chaptarr_downloads   # Chaptarr -> qBittorrent
+    - prowlarr_downloads   # Prowlarr -> qBittorrent
+    - socket_proxy_ro      # Mousetrap -> read-only Docker API (GET only)
+    # No published ports on purpose. Anything published here bypasses Traefik and
+    # Authelia, and Docker's iptables rules bypass the host firewall.
+    #  - Web UIs (qbittorrent, mousehole, mousetrap) go through Traefik.
+    #  - The HTTP proxy is reached by other containers at http://vpn:8888.
+    #  - Torrent peers come in through the VPN tunnel (FIREWALL_VPN_INPUT_PORTS).
+    # If you need direct access while Traefik is down, bind to localhost only and
+    # use an SSH tunnel, e.g.:  - 127.0.0.1:8080:8080
     devices:
-      - "/dev/net/tun:/dev/net/tun"
+    - "/dev/net/tun:/dev/net/tun"
+    sysctls:
+    - net.ipv6.conf.all.disable_ipv6=1
+    cpu_shares: 2048   # ensure the tunnel always gets what it needs
+
+    labels:
+    - "traefik.enable=false"
+    - "deunhealth.restart.on.unhealthy=false"
+    #- "com.centurylinklabs.watchtower.monitor-only=true"   # Watchtower is retired
+
+    volumes:
+    - "/etc/localtime:/etc/localtime:ro"
+    - "${VOLDIR}/${VPN__NAME}:/gluetun:rw"

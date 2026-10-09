@@ -1,34 +1,96 @@
+## <App name>  <project URL>
+## One or two lines: what it is, how it's reached (forward-auth / OIDC / header
+## login), and anything unusual about this service.
+##
+## Conventions (every compose/<service>/<service>.yaml follows them):
+## - Key order: as below. Optional keys stay in their slot when used.
+## - From .env (.env.example section ###<APP>###): names, image + version,
+##   subdomain, host paths, ports and app settings. Never secrets (those are
+##   files in secrets/, mounted as Docker secrets).
+## - Stays in this file on purpose, because it IS the security model and must
+##   be visible when reviewing it: security_opt, cap_drop/cap_add, read_only,
+##   networks and fixed IPs, bind addresses, trusted proxies, the `.int`
+##   part of hostnames (2FA scope) and the authelia@docker middleware.
+## - The service key (`<app>` below) is fixed and short. Other containers reach
+##   this one by that key (http://<app>:<port>), never by container_name, so
+##   renaming the container in .env breaks nothing.
+## - environment is a map (KEY: value): quotes can't leak into values.
 services:
-  <NAME>:
-    container_name: <NAME>
-    image: 
+  <app>:
+    container_name: ${APP__NAME}
+    image: ${APP__IMAGE}:${APP__VERSION}
     restart: unless-stopped
-    #profiles: 
-    #extends:
-    #command: 
-    #deploy:
-    #security_opt:
+    # Only when the app can't read *_FILE secrets: wrapper entrypoint, plus the
+    # image's original CMD (overriding entrypoint discards it). Re-check both
+    # after upgrades:
+    #   docker image inspect --format '{{json .Config.Entrypoint}} {{json .Config.Cmd}}' <image>
+    #entrypoint:
+    #- /bin/sh
+    #- -c
+    #- >-
+    #  VAR=$$(cat /run/secrets/<app>_<secret>) && export VAR &&
+    #  exec "$$@"
+    #- --
+    #- <original ENTRYPOINT>
+    #command: [<original CMD>]
+
+    # Baseline hardening. Never apparmor:unconfined. Add back only what the
+    # image needs (see the table in CLAUDE.md):
+    #   root, chowns, then drops to a user -> CHOWN DAC_READ_SEARCH FOWNER SETGID SETUID
+    #   non-root throughout                -> usually none
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    #cap_add:
+    #read_only: true   # try it; many images need extra tmpfs mounts first
+    tmpfs:
+    - /tmp:rw,noexec,nosuid
+
     depends_on:
       traefik:
         condition: service_started
+        restart: false
     logging:
       driver: "json-file"
       options:
         max-size: "1m"
         max-file: "3"
-    #env:
+
     #secrets:
+    #- <app>_<secret>
     environment:
-    #ports:
+      TZ: ${TZ}
+      #APP_SETTING: ${APP__SETTING}
+      #APP_PASSWORD_FILE: /run/secrets/<app>_<secret>
+
     networks:
-      - external
-      - internal
+    - external          # internet + Traefik's default network
+    #- db_postgres      # only if it uses the shared Postgres
+    # Own database? Add an internal <app>_backend network in compose.yaml with
+    # just this service and its database.
+    #network_mode: "service:vpn"   # instead of networks:, for VPN-only apps
+    #dns / extra_hosts / ports / devices / sysctls: here, after networks
+
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.<NAME>-https.rule=Host(`<NAME>.${DOMAINNAME}`)"
-      - "traefik.http.services.<NAME>.loadbalancer.server.port=<PORT>"      
-      - "deunhealth.restart.on.unhealthy=true"
+    - "traefik.enable=true"
+    #- "traefik.docker.network=<network>"   # if not routed over external
+    - "traefik.http.routers.${APP__NAME}.rule=Host(`${APP__SUBDOMAIN}.${DOMAINNAME}`)"
+    # Internal-only (2FA via Authelia's *.int rule):
+    #- "traefik.http.routers.${APP__NAME}.rule=Host(`${APP__SUBDOMAIN}.int.${DOMAINNAME}`)"
+    - "traefik.http.routers.${APP__NAME}.middlewares=authelia@docker"
+    - "traefik.http.services.${APP__NAME}.loadbalancer.server.port=${APP__PORT}"
+    - "deunhealth.restart.on.unhealthy=true"
+    # Diun: suffixed tag schemes need a filter. Single quotes, $ as $$.
+    #- 'diun.include_tags=^\d+\.\d+\.\d+-<suffix>$$'
+
     volumes:
-      - ${VOLDIR}/<NAME>:/config
-    #devices:
-    healthcheck: 
+    - ${VOLDIR}/${APP__NAME}:/config:rw
+    #- ${DATADIR}/<share>:/<path>:rw
+
+    healthcheck:
+      test: ["CMD", "<command>"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s

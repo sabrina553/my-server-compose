@@ -1,17 +1,21 @@
+## deunhealth  https://github.com/qdm12/deunhealth
+## Restarts containers labelled deunhealth.restart.on.unhealthy=true when they
+## turn unhealthy. Talks to the restart-capable socket proxy (GET + container
+## restart/stop/kill), nothing else.
 services:
   deunhealth:
-    container_name: deunhealth
+    container_name: ${DEUNHEALTH__NAME}
     image: ${DEUNHEALTH__IMAGE}:${DEUNHEALTH__VERSION}
-    #profiles: ["${DEUNHEALTH_PROFILE:-infrastructure}"]
     restart: unless-stopped
+
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
     cap_drop:
-      - ALL
+    - ALL
     read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
+
     depends_on:
       socket-proxy:
         condition: service_healthy
@@ -21,13 +25,15 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
+
     environment:
       TZ: ${TZ}
       DOCKER_HOST: ${DOCKER_HOST}
       LOG_LEVEL: ${LOG_LEVEL}
+
     networks:
-      - internal
-      - socket_proxy
+    - socket_proxy
+
     labels:
-      - "deunhealth.restart.on.unhealthy=false"
-      - "traefik.enable=false"
+    - "traefik.enable=false"
+    - "deunhealth.restart.on.unhealthy=false"
