@@ -1,36 +1,40 @@
+## Grimmory  https://hub.docker.com/r/grimmory/grimmory
+## Book library (a BookLore successor) at <subdomain>.<domain>, behind Authelia,
+## with OIDC login (consent pre-configured). Its own MariaDB on the internal
+## grimmory_backend network.
 services:
   grimmory:
-    image: ${GRIMMORY__IMAGE}:${GRIMMORY__VERSION}
     container_name: ${GRIMMORY__NAME}
+    image: ${GRIMMORY__IMAGE}:${GRIMMORY__VERSION}
     restart: unless-stopped
     # Grimmory can't read secret files, so load them into its env vars at start.
     # command is the image's CMD (overriding entrypoint discards it); re-check
     # after upgrades:
-    #   docker image inspect --format '{{json .Config.Cmd}}' <image>
+    #   docker image inspect --format '{{json .Config.Entrypoint}} {{json .Config.Cmd}}' <image>
     entrypoint:
-      - /bin/sh
-      - -c
-      - >-
-        DATABASE_PASSWORD=$$(cat /run/secrets/grimmory_db_password) &&
-        export DATABASE_PASSWORD &&
-        exec "$$@"
-      - --
-      - /usr/local/bin/entrypoint.sh
+    - /bin/sh
+    - -c
+    - >-
+      DATABASE_PASSWORD=$$(cat /run/secrets/grimmory_db_password) &&
+      export DATABASE_PASSWORD &&
+      exec "$$@"
+    - --
+    - /usr/local/bin/entrypoint.sh
     command: ["java", "--enable-native-access=ALL-UNNAMED", "--enable-preview", "-jar", "/app/app.jar"]
-    secrets:
-      - grimmory_db_password
+
     security_opt:
-      - no-new-privileges:true
+    - no-new-privileges:true
     cap_drop:
-      - ALL
+    - ALL
     cap_add:   # entrypoint chowns /app/data, then drops to PUID/PGID
-      - CHOWN
-      - DAC_READ_SEARCH
-      - FOWNER
-      - SETGID
-      - SETUID
+    - CHOWN
+    - DAC_READ_SEARCH
+    - FOWNER
+    - SETGID
+    - SETUID
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
+
     depends_on:
       traefik:
         condition: service_started
@@ -43,65 +47,77 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
+
+    secrets:
+    - grimmory_db_password
     environment:
-      - TZ=${TZ}
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - LOG_LEVEL=${LOG_LEVEL}
-      - DATABASE_URL=${GRIMMORY__DB_URL}
-      - DATABASE_USERNAME=${GRIMMORY__DB_USER}
-      - GRIMMORY_PORT=${GRIMMORY__PORT}   
-    volumes:
-      - ${VOLDIR}/${GRIMMORY__NAME}/data:/app/data:rw
-      - ${DATADIR}/torrents/:/books:rw
-      - ${DATADIR}/downloads/:/bookdrop:rw
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      LOG_LEVEL: ${LOG_LEVEL}
+      DATABASE_URL: ${GRIMMORY__DB_URL}
+      DATABASE_USERNAME: ${GRIMMORY__DB_USER}
+      GRIMMORY_PORT: ${GRIMMORY__PORT}
+
     networks:
-      - external
-      - grimmory_backend
+    - external
+    - grimmory_backend
+
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.${GRIMMORY__NAME}.rule=Host(`${GRIMMORY__NAME}.$DOMAINNAME`)"      
-      - "traefik.http.routers.${GRIMMORY__NAME}.middlewares=authelia@docker"  
-      - "traefik.http.services.${GRIMMORY__NAME}.loadbalancer.server.port=${GRIMMORY__PORT}"
-      - "deunhealth.restart.on.unhealthy=true"
-  
+    - "traefik.enable=true"
+    - "traefik.http.routers.${GRIMMORY__NAME}.rule=Host(`${GRIMMORY__SUBDOMAIN}.${DOMAINNAME}`)"
+    - "traefik.http.routers.${GRIMMORY__NAME}.middlewares=authelia@docker"
+    - "traefik.http.services.${GRIMMORY__NAME}.loadbalancer.server.port=${GRIMMORY__PORT}"
+    - "deunhealth.restart.on.unhealthy=true"
+
+    volumes:
+    - ${VOLDIR}/${GRIMMORY__NAME}/data:/app/data:rw
+    - ${DATADIR}/torrents/:/books:rw
+    - ${DATADIR}/downloads/:/bookdrop:rw
+
   mariadb:
-    container_name: grimmory-mariadb
-    image: ${MARIADB__IMAGE}:${MARIADB__VERSION}
+    container_name: ${GRIMMORY__DB_CONTAINER}
+    image: ${GRIMMORY__DB_IMAGE}:${GRIMMORY__DB_VERSION}
     restart: unless-stopped
+
     security_opt:
-      - no-new-privileges:true
+    - no-new-privileges:true
     cap_drop:
-      - ALL
+    - ALL
     cap_add:   # linuxserver init chowns /config, then runs mariadb as abc
-      - CHOWN
-      - DAC_READ_SEARCH
-      - FOWNER
-      - SETGID
-      - SETUID
+    - CHOWN
+    - DAC_READ_SEARCH
+    - FOWNER
+    - SETGID
+    - SETUID
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
+
     logging:
       driver: "json-file"
       options:
         max-size: "1m"
         max-file: "3"
+
     secrets:
-      - grimmory_db_password
-      - grimmory_mdb_password
+    - grimmory_db_password
+    - grimmory_mdb_password
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-      - LOG_LEVEL=${LOG_LEVEL}
-      - MYSQL_USER=${GRIMMORY__DB_USER}
-      - MYSQL_DATABASE=${GRIMMORY__DB_NAME}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+      LOG_LEVEL: ${LOG_LEVEL}
+      MYSQL_USER: ${GRIMMORY__DB_USER}
+      MYSQL_DATABASE: ${GRIMMORY__DB_NAME}
       # linuxserver images read FILE__<VAR> from a file into <VAR>.
-      - FILE__MYSQL_PASSWORD=/run/secrets/grimmory_db_password
-      - FILE__MYSQL_ROOT_PASSWORD=/run/secrets/grimmory_mdb_password
-    volumes:
-      - ${VOLDIR}/${GRIMMORY__NAME}/mariadb/:/config:rw
+      FILE__MYSQL_PASSWORD: /run/secrets/grimmory_db_password
+      FILE__MYSQL_ROOT_PASSWORD: /run/secrets/grimmory_mdb_password
+
     networks:
-      - grimmory_backend
-    labels:      
-      - "deunhealth.restart.on.unhealthy=true"
+    - grimmory_backend
+
+    labels:
+    - "deunhealth.restart.on.unhealthy=true"
+
+    volumes:
+    - ${VOLDIR}/${GRIMMORY__NAME}/mariadb/:/config:rw
