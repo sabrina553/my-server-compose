@@ -32,8 +32,9 @@ services:
     - PGID=${PGID}
     - WEBUI_PORT=${WEBUI_PORT}
     - TORRENTING_PORT=${TORRENTING_PORT}
-    # service: (not container:) so Compose recreates qBittorrent whenever the vpn
-    # container is recreated; with container: it stays attached to the old one.
+    # service: (not container:) so Compose tracks the dependency. It still only
+    # *restarts* this container when vpn is recreated, which leaves it in the old
+    # namespace; the healthcheck below catches that (see CLAUDE.md gotchas).
     network_mode: "service:vpn"
     labels:
     - "traefik.enable=true"
@@ -45,12 +46,16 @@ services:
     - $VOLDIR/qbittorrent:/config:rw
     - $DATADIR/torrents/downloads:/downloads:rw
     - $VOLDIR/${VPN__NAME}:/gluetun-ip:ro
-    # healthcheck:
-    #   test: ["CMD", "curl", "--connect-timeout", "5", "--silent", "--show-error", "--fail", "http://localhost:8080/"]
-    #   interval: 30s
-    #   timeout: 15s
-    #   start_period: 30s
-    #   retries: 3
+    # Unhealthy when the VPN tunnel is gone from the shared network namespace,
+    # e.g. after Gluetun was recreated but this container wasn't. A restart
+    # can't fix that (it rejoins the old namespace); recreate it:
+    #   docker compose up -d --force-recreate <this service>
+    healthcheck:
+      test: ["CMD-SHELL", "test -e /sys/class/net/tun0 && curl -fso /dev/null http://localhost:8080/api/v2/app/version"]
+      interval: 30s
+      timeout: 15s
+      start_period: 30s
+      retries: 3
 
     # Fails (goes unhealthy) if either the WebUI stops responding, or gluetun's
     # persisted public IP has changed since the last check. deunhealth then
@@ -64,12 +69,3 @@ services:
     #   timeout: 10s
     #   retries: 3
     #   start_period: 60s
-
-
-
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "-s", "-o", "/dev/null", "http://localhost:8080/api/v2/app/version" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
