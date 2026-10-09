@@ -54,7 +54,7 @@ services:
     - "--entryPoints.websecure.http3=true"
     #EntryPoints :domain
     - "--entryPoints.websecure.http.tls.domains[0].main=${DOMAINNAME}"
-    - "--entryPoints.websecure.http.tls.domains[0].sans=*.${DOMAINNAME}"
+    - "--entryPoints.websecure.http.tls.domains[0].sans=*.${DOMAINNAME},*.int.${DOMAINNAME}"
     - "--entryPoints.websecure.http.tls.domains[1].main=${DOMAINNAME2}"
     - "--entryPoints.websecure.http.tls.domains[1].sans=*.${DOMAINNAME2}"
     #Forwarded headers: trust X-Forwarded-For ONLY from cloudflared (fixed IP in
