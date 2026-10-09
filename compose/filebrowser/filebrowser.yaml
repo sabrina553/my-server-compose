@@ -42,12 +42,16 @@ services:
     - PUID=${PUID}
     - PGID=${PGID}
     - FILEBROWSER_DATABASE=${FILEBROWSER__DATABASE}
+    # Only Traefik shares this network: FileBrowser logs users in from
+    # Authelia's Remote-User header (auth.methods.proxy in its config.yaml),
+    # so nothing else may be able to reach it. It needs no internet access.
     networks:
-    - external
+    - filebrowser_proxy
     labels:
     - "traefik.enable=true"
     - "traefik.http.routers.filebrowser.rule=Host(`files.${DOMAINNAME}`)"
     - "traefik.http.routers.filebrowser.middlewares=authelia@docker"
+    - "traefik.docker.network=filebrowser_proxy"
     - "traefik.http.services.filebrowser.loadbalancer.server.port=80"
     # Diun: only report -stable releases
     - 'diun.include_tags=^\d+\.\d+\.\d+-stable$$'

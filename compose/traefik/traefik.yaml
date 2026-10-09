@@ -34,6 +34,7 @@ services:
         # (FreshRSS TRUSTED_PROXY, Home Assistant trusted_proxies).
         ipv4_address: 172.20.0.249
       proxy_internal:
+      filebrowser_proxy:
       socket_proxy_ro:
     command:
     #API + Dash

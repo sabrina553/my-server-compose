@@ -84,6 +84,8 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
 - Backends sit on internal-only networks with just their consumers:
   `db_postgres`, `immich_backend`, `ghost_backend`, `leantime_backend`,
   `grimmory_backend`, `authelia_backend` (Authelia's Valkey session store).
+- `filebrowser_proxy`: Traefik and FileBrowser only (FileBrowser trusts the
+  `Remote-User` header).
 - `proxy_internal` is for routed services with no internet access; they need
   the label `traefik.docker.network=proxy_internal`.
 - Fixed IPs on `external`: cloudflared `.250`, Traefik `.249` (backends trust
