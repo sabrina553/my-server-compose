@@ -55,7 +55,6 @@ services:
     volumes:
     - ${VOLDIR}/${QBITTORRENT__NAME}:/config:rw
     - ${DATADIR}/torrents/downloads:/downloads:rw
-    - ${VOLDIR}/${VPN__NAME}:/gluetun-ip:ro
     # Copies qBittorrent's log file to stdout for Docker/Dozzle (see the script).
     # linuxserver requires these to be owned by root and not world-writable.
     - ./custom-services.d:/custom-services.d:ro
@@ -73,7 +72,8 @@ services:
 
     # Older idea, kept for reference: go unhealthy when Gluetun's public IP
     # changes, so deunhealth restarts this container. (A restart can't move it
-    # to a recreated Gluetun, see above.)
+    # to a recreated Gluetun, see above.) Would need Gluetun's PUBLICIP_FILE on a
+    # shared volume again, mounted here at /gluetun-ip.
     # healthcheck:
     #   test:
     #   - "CMD-SHELL"

@@ -70,7 +70,7 @@ services:
       CONFIGS: "0"
       DISTRIBUTION: "0"
       EXEC: "0"
-      IMAGES: "0"
+      IMAGES: "1"       # Diun inspects each container's image (GET only, POST=0)
       NODES: "0"
       PLUGINS: "0"
       SECRETS: "0"
