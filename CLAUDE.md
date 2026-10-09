@@ -146,3 +146,9 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
 - Diun's mail `From` must be a bare address.
 - Linkwarden reads registration/credential settings only from its compose
   file. The old `.env` values were never passed through.
+- When Gluetun (`vpn`) is **recreated** (any change to its service), Compose
+  only restarts qBittorrent/Mousehole/Mousetrap, which leaves them in the old,
+  dead network namespace (still "running"). Their healthcheck then goes
+  unhealthy (no `tun0`). Fix: `docker compose up -d --force-recreate
+  qbittorrent mousehole`. deunhealth can't fix it: a restart rejoins the old
+  namespace.
