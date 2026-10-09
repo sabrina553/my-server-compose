@@ -16,8 +16,8 @@ services:
     - /bin/sh
     - -c
     - >-
-      OIDC_CLIENT_ID=$$(cat /run/secrets/freshrss_oidc_clientid) &&
-      OIDC_CLIENT_SECRET=$$(cat /run/secrets/freshrss_oidc_secret) &&
+      OIDC_CLIENT_ID=$$(cat /run/secrets/freshrss_oidc_client_id) &&
+      OIDC_CLIENT_SECRET=$$(cat /run/secrets/freshrss_oidc_client_secret) &&
       OIDC_CLIENT_CRYPTO_KEY=$$(cat /run/secrets/freshrss_oidc_crypto_key) &&
       export OIDC_CLIENT_ID OIDC_CLIENT_SECRET OIDC_CLIENT_CRYPTO_KEY &&
       exec "$$@"
@@ -61,9 +61,9 @@ services:
         max-file: "3"
 
     secrets:
-    - freshrss_oidc_clientid
-    - freshrss_oidc_secret
-    - freshrss_pg_password
+    - freshrss_oidc_client_id
+    - freshrss_oidc_client_secret
+    - freshrss_db_password
     - freshrss_oidc_crypto_key
     environment:
       TZ: ${TZ}

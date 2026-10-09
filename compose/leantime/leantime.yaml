@@ -28,15 +28,15 @@ services:
         max-file: "3"
 
     secrets:
-    - leantime_mysql_root_password
-    - leantime_mysql_password
+    - leantime_db_root_password
+    - leantime_db_password
     environment:
       PUID: ${PUID}
       PGID: ${PGID}
-      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/leantime_mysql_root_password
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/leantime_db_root_password
       MYSQL_DATABASE: ${LEAN__MYSQL_DATABASE}
       MYSQL_USER: ${LEAN__MYSQL_USER}
-      MYSQL_PASSWORD_FILE: /run/secrets/leantime_mysql_password
+      MYSQL_PASSWORD_FILE: /run/secrets/leantime_db_password
 
     networks:
     - leantime_backend
@@ -64,10 +64,10 @@ services:
     - /bin/sh
     - -c
     - >-
-      LEAN_DB_PASSWORD=$$(cat /run/secrets/leantime_mysql_password) &&
-      LEAN_SESSION_PASSWORD=$$(cat /run/secrets/leantime_session_password) &&
-      LEAN_OIDC_CLIENT_ID=$$(cat /run/secrets/leantime_oidc_clientid) &&
-      LEAN_OIDC_CLIENT_SECRET=$$(cat /run/secrets/leantime_oidc_secret) &&
+      LEAN_DB_PASSWORD=$$(cat /run/secrets/leantime_db_password) &&
+      LEAN_SESSION_PASSWORD=$$(cat /run/secrets/leantime_session_secret) &&
+      LEAN_OIDC_CLIENT_ID=$$(cat /run/secrets/leantime_oidc_client_id) &&
+      LEAN_OIDC_CLIENT_SECRET=$$(cat /run/secrets/leantime_oidc_client_secret) &&
       LEAN_EMAIL_SMTP_PASSWORD=$$(cat /run/secrets/smtp_password) &&
       export LEAN_OIDC_CLIENT_ID LEAN_DB_PASSWORD LEAN_SESSION_PASSWORD LEAN_OIDC_CLIENT_SECRET LEAN_EMAIL_SMTP_PASSWORD &&
       exec "$$@"
@@ -97,10 +97,10 @@ services:
         max-file: "3"
 
     secrets:
-    - leantime_mysql_password
-    - leantime_session_password
-    - leantime_oidc_secret
-    - leantime_oidc_clientid
+    - leantime_db_password
+    - leantime_session_secret
+    - leantime_oidc_client_secret
+    - leantime_oidc_client_id
     - smtp_password
     environment:
       PUID: ${PUID}

@@ -101,7 +101,7 @@ services:
 
     secrets:
     - grimmory_db_password
-    - grimmory_mdb_password
+    - grimmory_db_root_password
     environment:
       PUID: ${PUID}
       PGID: ${PGID}
@@ -111,7 +111,7 @@ services:
       MYSQL_DATABASE: ${GRIMMORY__DB_NAME}
       # linuxserver images read FILE__<VAR> from a file into <VAR>.
       FILE__MYSQL_PASSWORD: /run/secrets/grimmory_db_password
-      FILE__MYSQL_ROOT_PASSWORD: /run/secrets/grimmory_mdb_password
+      FILE__MYSQL_ROOT_PASSWORD: /run/secrets/grimmory_db_root_password
 
     networks:
     - grimmory_backend

@@ -35,9 +35,9 @@ services:
 
     secrets:
     - smtp_password
-    - mealie_oidc_clientid
-    - mealie_oidc_secret
-    - mealie_pg_password
+    - mealie_oidc_client_id
+    - mealie_oidc_client_secret
+    - mealie_db_password
     environment:
       TZ: ${TZ}
       PUID: ${PUID}

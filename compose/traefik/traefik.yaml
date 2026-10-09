@@ -76,7 +76,7 @@ services:
         max-file: "3"
 
     secrets:
-    - cf_dns_api_token
+    - traefik_cloudflare_dns_api_token
     environment:
       TZ: ${TZ}
       CF_DNS_API_TOKEN_FILE: ${TRAEFIK__CF_DNS_API_TOKEN_FILE}

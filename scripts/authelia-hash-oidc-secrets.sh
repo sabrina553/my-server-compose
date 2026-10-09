@@ -6,8 +6,8 @@
 #   ./scripts/authelia-hash-oidc-secrets.sh --rotate <client>...
 #        new random client ID + secret for those clients, then hash them
 #
-#   reads:  secrets/<app>/oidc_clientid, secrets/<app>/<secret file>  (the app uses these)
-#   writes: secrets/authelia/oidc/<client>                            (Authelia uses this)
+#   reads:  secrets/<client>/oidc_client_id, secrets/<client>/oidc_client_secret  (the app uses these)
+#   writes: secrets/authelia/oidc_<client>_digest                                (Authelia uses this)
 #
 # Missing or empty client-ID / secret files are created first: you're prompted
 # to paste the app's existing value or generate a new one.
@@ -20,21 +20,15 @@ cd "$(dirname "$0")/.."
 
 IMAGE=${AUTHELIA_IMAGE:-docker.io/authelia/authelia:4.39.20}
 SECRETS=secrets
-OUT=$SECRETS/authelia/oidc
 
-# Authelia client name -> plaintext secret file (relative to secrets/). The
-# client ID lives next to it as oidc_clientid.
-declare -A SRC=(
-  [filebrowser]=filebrowser/oidc_secret
-  [freshrss]=freshrss/oidc_secret
-  [grimmory]=grimmory/oidc_secret
-  [homeassistant]=homeassis/oidc_secret
-  [immich]=immich/oidc_secret
-  [leantime]=leantime/oidc_secret
-  [linkwarden]=linkwarden/oidc_secret
-  [mealie]=mealie/oidc_secret
-  [vaultwarden]=vaultwarden/oidc_clientsecret
-)
+# Authelia client names. Each one's files follow the naming scheme
+# (Docker secret <app>_<item> = secrets/<app>/<item>):
+#   secrets/<client>/oidc_client_id, secrets/<client>/oidc_client_secret,
+#   secrets/authelia/oidc_<client>_digest
+declare -A SRC=()
+for c in filebrowser freshrss grimmory homeassistant immich leantime linkwarden mealie vaultwarden; do
+  SRC[$c]=$c/oidc_client_secret
+done
 
 # Compose service to restart after a rotation.
 declare -A SERVICE=(
@@ -50,7 +44,8 @@ declare -A MANUAL=(
   [immich]="Immich: Administration > Settings > OAuth"
 )
 
-id_file() { echo "$(dirname "${SRC[$1]}")/oidc_clientid"; }
+id_file() { echo "$1/oidc_client_id"; }
+digest_file() { echo "authelia/oidc_$1_digest"; }
 
 # Write a value to a secret file atomically: mode 444, folder 700.
 write_secret() {
@@ -104,7 +99,7 @@ for c in "${clients[@]}"; do
 
     echo
     echo "MISSING or empty: $path"
-    if [[ $f == */oidc_clientid ]]; then
+    if [[ $f == */oidc_client_id ]]; then
       read -rp "  Paste the existing client ID, or press Enter to generate one: " value
     else
       read -rsp "  Paste the existing client secret (hidden), or press Enter to generate one: " value
@@ -124,12 +119,12 @@ for c in "${clients[@]}"; do
     'authelia crypto hash generate pbkdf2 --variant sha512 --password "$(cat)"' \
     < "$SECRETS/${SRC[$c]}" | sed -n 's/^Digest: //p')
   [[ $digest == '$pbkdf2-sha512$'* ]] || { echo "FAILED to hash $c" >&2; exit 1; }
-  write_secret "$OUT/$c" "$digest"
+  write_secret "$SECRETS/$(digest_file "$c")" "$digest"
   echo "ok   $c"
 done
 unset digest
 
-echo "Done. Digests are in $OUT"
+echo "Done. Digests are in $SECRETS/authelia/oidc_<client>_digest"
 
 # 4. What to do next.
 if (( ${#rotate[@]} )); then

@@ -36,8 +36,8 @@ services:
     - smtp_password
     - lldap_jwt_secret
     - lldap_key_seed
-    - lldap_user_pass
-    - lldap_database_url
+    - lldap_admin_password
+    - lldap_db_url
     environment:
       UID: ${PUID}
       GID: ${PGID}

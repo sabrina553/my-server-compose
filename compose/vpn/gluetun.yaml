@@ -27,9 +27,9 @@ services:
         max-file: "3"
 
     secrets:
-    - wireguard_private_key
-    - wireguard_preshared_key
-    - wireguard_addresses
+    - vpn_wireguard_private_key
+    - vpn_wireguard_preshared_key
+    - vpn_wireguard_addresses
     environment:
       PUID: ${PUID}
       PGID: ${PGID}
