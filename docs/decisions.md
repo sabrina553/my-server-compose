@@ -24,9 +24,11 @@ and cloudflared's own address are inside the Docker subnets, so "from Docker"
 doesn't mean "trusted". Containers talk to each other by container name and
 never go through Traefik.
 
-**PKCE (S256) required for every OIDC client except Leantime.** (2026-10-09)
-Leantime's OIDC client doesn't send a `code_challenge`; with PKCE required it
-500s after login.
+**PKCE (S256) required for every OIDC client except Leantime and
+FileBrowser.** (2026-10-09) Neither app's OIDC client sends a
+`code_challenge`; with PKCE required, login fails after Authelia. Both still
+authenticate with a client secret and require two-factor, and FileBrowser is
+also behind forward-auth. Re-check after upgrades.
 
 **CouchDB sync uses JWT, not passwords.** (2026-10-09) This removes password
 login from the public API, which had no rate limiting. The key is ES256, and
