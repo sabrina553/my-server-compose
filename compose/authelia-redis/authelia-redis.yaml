@@ -33,6 +33,9 @@ services:
     - ALL
     cap_add:
     - CHOWN    # entrypoint chowns /data and the generated config to valkey
+    # Its `find /data` (as root) must enter appendonlydir, which valkey creates
+    # with mode 700; without this every restart after the first fails.
+    - DAC_READ_SEARCH
     - SETGID   # then drops to the valkey user (setpriv)
     - SETUID
     read_only: true
