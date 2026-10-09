@@ -19,6 +19,15 @@ off where the app allows it.
   exception: they're browser-only, so each has its own router with forward-auth
   in front of just those paths.
 
+**Header login (Authelia's `Remote-User`) only where nothing but Traefik can
+send it.** (2026-10-09) FreshRSS checks the sender's address
+(`TRUSTED_PROXY`, Traefik's `172.20.0.249`); qBittorrent skips its login only
+for that address; FileBrowser can't check, so it sits on `filebrowser_proxy`
+with Traefik alone and no internet. Grimmory, pgAdmin and the *arrs can't do
+either, so they keep their own login or OIDC. This also relies on Authelia
+never using `policy: bypass` for these hosts: on a bypass, Traefik passes a
+client-supplied `Remote-User` straight through.
+
 **No network-based bypass rules in Authelia.** (2026-10-09) Docker's gateway
 and cloudflared's own address are inside the Docker subnets, so "from Docker"
 doesn't mean "trusted". Containers talk to each other by container name and

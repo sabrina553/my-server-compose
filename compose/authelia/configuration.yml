@@ -98,6 +98,9 @@ access_control:
     ## Personal data. (photos. and ha. aren't here: Immich and Home Assistant
     ## have no forward-auth because of their mobile apps, and rely on their
     ## two_factor OIDC clients instead.)
+    # FileBrowser and FreshRSS log users in from the Remote-User header. Never
+    # give their hosts a 'bypass' policy: Traefik would then pass a
+    # client-supplied Remote-User straight through.
     - domain:
         - 'files.{{ env "DOMAINNAME" }}'
       policy: 'two_factor'

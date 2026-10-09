@@ -68,6 +68,15 @@ networks:
     ipam:
       config:
         - subnet: 172.21.8.0/24
+  # Traefik <-> FileBrowser only. FileBrowser trusts Authelia's Remote-User
+  # header, which is only safe while nothing but Traefik can reach it.
+  filebrowser_proxy:
+    name: filebrowser_proxy
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.21.9.0/24
   # For Traefik to reach routed services that have no internet access
   # (CouchDB, pgAdmin, Dozzle). Those carry traefik.docker.network=proxy_internal.
   proxy_internal:
