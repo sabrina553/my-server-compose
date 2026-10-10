@@ -1,10 +1,8 @@
-## Docker socket proxies
-##   socket-proxy-ro  https://github.com/wollomatic/socket-proxy
-##   socket-proxy     https://github.com/linuxserver/docker-socket-proxy
-## Nothing gets general write access: POST + CONTAINERS is root on the host.
-##   socket-proxy-ro  per-client allowlists (labels on each client: Traefik,
-##                    Dozzle, Diun); unlabelled containers get nothing
-##   socket-proxy     GET + container restart/stop/kill, for deunhealth only
+## Docker socket proxies, both https://github.com/wollomatic/socket-proxy with
+## per-client allowlists (labels on each client); unlabelled containers get
+## nothing. Nothing gets general write access: POST + CONTAINERS is root on the host.
+##   socket-proxy-ro  read-only: Traefik, Dozzle, Diun
+##   socket-proxy     deunhealth only: reads + POST containers/<name>/restart
 ## Never allow `.*`, `archive` or `export`: "GET only" still reads any
 ## container's files, /run/secrets included. Keep anything internet-facing or
 ## in the VPN namespace off both networks.
@@ -63,54 +61,31 @@ services:
     container_name: ${SOCKET_PROXY__NAME}
     image: ${SOCKET_PROXY__IMAGE}:${SOCKET_PROXY__VERSION}
     restart: unless-stopped
+    # nobody, plus the group that owns docker.sock.
+    user: "65534:${SOCKET_PROXY__DOCKER_GID}"
+    command:
+    # DEBUG logs every request with its path (see socket-proxy-ro).
+    - "-loglevel=INFO"
+    - "-listenip=0.0.0.0"
+    # Allowlists come from socket-proxy.allow.<method> labels on each client
+    # (deunhealth only); no label = no access.
+    - "-proxycontainername=${SOCKET_PROXY__NAME}"
+    - "-allowhealthcheck"
+    - "-watchdoginterval=600"
+    - "-stoponwatchdog"
+    - "-shutdowngracetime=5"
 
     security_opt:
     - no-new-privileges:true
     cap_drop:
     - ALL
     read_only: true
-    tmpfs:
-    - "/run"
 
     logging:
       driver: "json-file"
       options:
         max-size: "1m"
         max-file: "3"
-
-    environment:
-      TZ: "${TZ}"
-      LOG_LEVEL: "warning" # debug, info, notice, warning, err, crit, alert, emerg
-      DISABLE_IPV6: "0"
-      # deunhealth reads container health and restarts unhealthy ones.
-      # ALLOW_RESTARTS permits restart, stop and kill (there's no restart-only
-      # switch); every other POST is refused.
-      POST: "0"
-      ALLOW_START: "0"
-      ALLOW_STOP: "0"
-      ALLOW_RESTARTS: "1"
-      CONTAINERS: "1"
-      EVENTS: "1"
-      IMAGES: "0"
-      INFO: "1"
-      NETWORKS: "0"
-      PING: "1"
-      VERSION: "1"
-      AUTH: "0"
-      BUILD: "0"
-      COMMIT: "0"
-      CONFIGS: "0"
-      DISTRIBUTION: "0"
-      EXEC: "0"
-      NODES: "0"
-      PLUGINS: "0"
-      SECRETS: "0"
-      SERVICES: "0"
-      SESSION: "0"
-      SWARM: "0"
-      SYSTEM: "0"
-      TASKS: "0"
-      VOLUMES: "0"
 
     networks:
     - socket_proxy
@@ -120,11 +95,12 @@ services:
     - "deunhealth.restart.on.unhealthy=true"
 
     volumes:
+    # :ro doesn't restrict a socket; the allowlists do.
     - "/var/run/docker.sock:/var/run/docker.sock:ro"
 
     healthcheck:
-      test: "wget --no-verbose --tries=1 --spider http://localhost:2375/_ping || exit 1"
-      interval: "30s"
-      timeout: "5s"
+      test: ["CMD", "/healthcheck"]
+      interval: 30s
+      timeout: 5s
       retries: 3
-      start_period: "10s"
+      start_period: 10s

@@ -161,8 +161,8 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
   `-loglevel=DEBUG` and read its "allowed/blocked request" lines.
 - Nothing in the VPN namespace: Mousetrap has no Docker access (its port
   monitor doesn't need it), and `vpn` must never join a socket-proxy network.
-- `socket-proxy` (GET + container restart/stop/kill; `ALLOW_RESTARTS` has no
-  restart-only mode): deunhealth.
+- `socket-proxy` (also wollomatic, labels on deunhealth): list, events and
+  `POST containers/<name>/restart` only. No stop/kill/inspect/archive.
 - Nothing gets general write access.
 
 **Authelia**

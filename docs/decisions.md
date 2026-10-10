@@ -106,8 +106,13 @@ Services with no internet access use `proxy_internal` and say so with a label.
 access is effectively root on the host.
 - Traefik, Dozzle and Diun use a read-only proxy that allowlists the exact
   paths each one needs (see below).
-- deunhealth's proxy adds container restart, stop and kill (the image's
-  `ALLOW_RESTARTS` covers all three). At worst that stops containers.
+- deunhealth's proxy allows list, events and `POST containers/<name>/restart`,
+  nothing else. (2026-10-10; replaces linuxserver's GET + restart/stop/kill,
+  whose `CONTAINERS=1` also allowed `archive`) Same wollomatic image and label
+  scheme as the read-only proxy, running as nobody; the calls come from
+  deunhealth's source (version negotiation, ContainerList, Events,
+  ContainerRestart by name). Tested with a labelled, always-unhealthy
+  throwaway container: restarted, nothing blocked.
 - Nothing in the VPN's namespace reaches either proxy. (2026-10-10; replaces
   "the VPN joins `socket_proxy_ro` for Mousetrap's port monitor") The access
   was judged acceptable because secrets never sit in plain env, but that
@@ -125,8 +130,7 @@ access is effectively root on the host.
   debug-logged discovery run: Traefik lists, inspects and watches events;
   Dozzle also reads logs, stats and info; Diun lists running containers and
   inspects images. Container IDs must be hex, and image names can't contain
-  `..`. Anything unlabelled is refused. deunhealth's proxy is still
-  linuxserver: only deunhealth reaches it, and it has no internet access.
+  `..`. Anything unlabelled is refused.
 - Diun may inspect images (2026-10-10): without it, it watched nothing.
   Read-only, and the images are public; pulling, building and deleting are
   refused.
