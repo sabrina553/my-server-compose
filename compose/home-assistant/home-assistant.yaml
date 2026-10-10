@@ -8,6 +8,20 @@ services:
     container_name: ${HOMEASSISTANT__NAME}
     image: ${HOMEASSISTANT__IMAGE}:${HOMEASSISTANT__VERSION}
     restart: unless-stopped
+    # OIDC credentials from the secret files; configuration.yaml reads them with
+    # !env_var (s6's with-contenv passes them on to HA). The image has no CMD;
+    # re-check after upgrades:
+    #   docker image inspect --format '{{json .Config.Entrypoint}} {{json .Config.Cmd}}' <image>
+    entrypoint:
+    - /bin/sh
+    - -c
+    - >-
+      HASS_OIDC_CLIENT_ID=$$(cat /run/secrets/homeassistant_oidc_client_id) &&
+      HASS_OIDC_CLIENT_SECRET=$$(cat /run/secrets/homeassistant_oidc_client_secret) &&
+      export HASS_OIDC_CLIENT_ID HASS_OIDC_CLIENT_SECRET &&
+      exec "$$@"
+    - --
+    - /init
 
     # Never mount /run/dbus: the host bus treats this root container as host
     # root. For Bluetooth, use an ESPHome Bluetooth proxy (docs/decisions.md).
@@ -29,6 +43,9 @@ services:
         max-size: "1m"
         max-file: "3"
 
+    secrets:
+    - homeassistant_oidc_client_id
+    - homeassistant_oidc_client_secret
     networks:
     - external
 
