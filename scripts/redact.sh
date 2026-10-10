@@ -16,7 +16,9 @@
 #   - token-like strings of 32+ characters -> <token>
 #     (image digests written as sha256:<64 hex> are kept)
 #
-# Literal values are matched case-insensitively. The script never prints the
+# Literal values (and their URL-encoded forms) are matched case-insensitively.
+# Redact before truncating: a value cut off by `cut -c` or `head -c` no longer
+# matches, so `… | scripts/redact.sh | cut -c1-200`, never the other way round. The script never prints the
 # values it reads from .env or .env.redact. It narrows what can leak; it can't
 # hide a secret it has no pattern for.
 set -euo pipefail
@@ -55,6 +57,11 @@ def extra_values(path):
         return {}
 
 literals = {**site_values(".env"), **extra_values(".env.redact")}
+# Also their URL-encoded forms (paths in ?rd=https%3A%2F%2F... redirects).
+from urllib.parse import quote
+for v, k in list(literals.items()):
+    for enc in (quote(v, safe=""), quote(v)):
+        literals.setdefault(enc, k)
 lit_re = None
 if literals:
     keys = sorted(literals, key=len, reverse=True)
