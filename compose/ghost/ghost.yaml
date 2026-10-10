@@ -116,8 +116,8 @@ services:
     - ghost_backend
 
     labels:
-    # Diun: stay on MySQL 8.0.x
-    - 'diun.include_tags=^8\.0\.\d+$$'
+    # Diun: stay on MySQL 8.4.x (LTS)
+    - 'diun.include_tags=^8\.4\.\d+$$'
 
     volumes:
     - ${GHOST__MYSQL_DATA_LOCATION}:/var/lib/mysql
