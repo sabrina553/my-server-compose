@@ -7,7 +7,8 @@ services:
     container_name: ${CLOUDFLARED__NAME}
     image: ${CLOUDFLARED__IMAGE}:${CLOUDFLARED__VERSION}
     restart: unless-stopped
-    command: tunnel --no-autoupdate --protocol http2 run
+    # Metrics on localhost only, for the healthcheck (`tunnel ready`).
+    command: tunnel --no-autoupdate --protocol http2 --metrics 127.0.0.1:2000 run
 
     security_opt:
     - no-new-privileges:true
@@ -40,3 +41,12 @@ services:
     labels:
     - "traefik.enable=false"
     - "deunhealth.restart.on.unhealthy=true"
+
+    healthcheck:
+      # No shell in the image; exits non-zero until a connection to Cloudflare is up.
+      test: ["CMD", "cloudflared", "tunnel", "--metrics", "127.0.0.1:2000", "ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+      start_interval: 5s

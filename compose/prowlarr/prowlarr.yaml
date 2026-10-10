@@ -39,6 +39,14 @@ services:
     volumes:
     - ${FLARESOLVERR__VOLDIR}:/config
 
+    healthcheck:
+      test: curl -fsS -o /dev/null http://127.0.0.1:8191/health || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+      start_interval: 5s
+
   prowlarr:
     container_name: ${PROWLARR__NAME}
     image: ${PROWLARR__IMAGE}:${PROWLARR__VERSION}
@@ -89,3 +97,12 @@ services:
 
     volumes:
     - ${VOLDIR}/${PROWLARR__NAME}/:/config:rw
+
+    healthcheck:
+      # The UI listens only on its fixed address on `arr`, not on localhost.
+      test: curl -fsS -o /dev/null http://172.21.10.10:9696/ping || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+      start_interval: 5s

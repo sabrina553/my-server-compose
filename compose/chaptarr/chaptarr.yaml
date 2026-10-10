@@ -85,3 +85,12 @@ services:
     - ${VOLDIR}/${CHAPTARR__NAME}:/config:rw
     - ${DATADIR}/torrents/books:/ebooks:rw
     - ${DATADIR}/torrents/downloads:/downloads:rw
+
+    healthcheck:
+      # The UI listens only on its fixed address on `arr`, not on localhost.
+      test: wget -q -O /dev/null http://172.21.10.11:8789/ping || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+      start_interval: 5s

@@ -79,6 +79,16 @@ services:
     volumes:
     - ${GHOST__UPLOAD_LOCATION}:/var/lib/ghost/content
 
+    healthcheck:
+      # Without X-Forwarded-Proto Ghost 301s to its public https URL, which wget
+      # follows through Traefik, and Traefik doesn't route to an unhealthy Ghost.
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "--header", "X-Forwarded-Proto: https", "http://127.0.0.1:2368/ghost/api/admin/site/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+      start_interval: 5s
+
   db:
     container_name: ${GHOST__DATABASE_NAME}
     image: ${GHOST__DATABASE_IMAGE}:${GHOST__DATABASE_VERSION}

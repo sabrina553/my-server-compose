@@ -59,3 +59,11 @@ services:
     volumes:
     - ${HOMEASSISTANT__VOLDIR}:/config:rw
     - /etc/localtime:/etc/localtime:ro
+
+    healthcheck:
+      test: curl -fsS -o /dev/null http://127.0.0.1:8123/manifest.json || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+      start_interval: 5s
