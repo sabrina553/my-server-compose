@@ -98,7 +98,6 @@ as `CHANGE_ME`.
 | `authelia-hash-oidc-secrets.sh` | Generate Authelia's PBKDF2 digests of the OIDC client secrets; `--rotate <client>` for new credentials. |
 | `compose-diff.sh` | Show what a change does to the rendered config (redacted). Layout-only changes print "No differences". |
 | `couchdb-maintenance.sh` | List CouchDB databases and sizes; `--compact` to compact them. |
-| `migrate-secret-names.sh` | One-off move of `secrets/` to the current naming scheme (done; kept for `--reverse`). |
 | `hooks/pre-commit` | Block commits containing `.env*`, `secrets/` or site values. Enable with `git config core.hooksPath scripts/hooks`. |
 
 ## Common tasks
