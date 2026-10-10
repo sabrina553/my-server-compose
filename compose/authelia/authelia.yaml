@@ -147,7 +147,10 @@ services:
     volumes:
     # Read-only: Authelia stores state in Postgres and never needs to write here.
     - ".:/config:ro"
-    # The only writable file (read_only above). Create it once, owned by
+    # Writable log folder (read by CrowdSec). Created beforehand as dockersvc
+    # (750): Docker would create it as root.
+    - ${AUTHELIA__LOGDIR}:/var/log/authelia:rw
+    # The only other writable file (read_only above). Create it once, owned by
     # PUID:PGID; create_host_path: false makes a missing file an error instead
     # of Docker creating a directory in its place.
     - type: bind
