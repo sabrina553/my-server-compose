@@ -142,6 +142,13 @@ networks:
     ipam:
       config:
         - subnet: 172.21.15.0/24
+  crowdsec_lapi: # traefik (bouncer plugin) -> CrowdSec's LAPI, bound to crowdsec's fixed .10 here only
+    name: crowdsec_lapi
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.21.18.0/24
   # For Traefik to reach routed services that have no internet access
   # (CouchDB, pgAdmin, Dozzle). Those carry traefik.docker.network=proxy_internal.
   proxy_internal:
@@ -322,6 +329,7 @@ include:
     - compose/pg-admin/pg-admin.yaml
     - compose/redis/redis.yaml
     - compose/socket-proxy/socket-proxy.yaml
+    - compose/crowdsec/crowdsec.yaml
 
     # Books and downloads
     # - compose/audiobookshelf/audiobookshelf.yaml

@@ -26,6 +26,10 @@ server:
 
 log:
   format: 'text'
+  # A copy for CrowdSec (failed logins); stdout stays for Dozzle. Rotated on
+  # the host by /etc/logrotate.d/stack-logs.
+  file_path: '/var/log/authelia/authelia.log'
+  keep_stdout: true
 
 totp:
   issuer: '{{ env "DOMAINNAME" }}'

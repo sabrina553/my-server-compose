@@ -158,6 +158,9 @@ documentation. Notes there always use **plural** tags (`self-hosts`,
   resolve to the wrong one; use a per-network alias for bound addresses.
 - `proxy_internal` is for routed services with no internet access; they need
   the label `traefik.docker.network=proxy_internal`.
+- `crowdsec_lapi` (172.21.18.0/24): Traefik and CrowdSec only. CrowdSec's
+  local API listens only on its fixed `.10` there (`compose/crowdsec/
+  config.yaml.local`); its metrics only on 127.0.0.1 inside the container.
 - Fixed IPs on `external`: cloudflared `.250`, Traefik `.249` (backends trust
   only `.249` as their proxy).
 - Host ports: Traefik's 80/443 only, bound to `TRAEFIK__BIND_IP` (the LAN
@@ -180,6 +183,25 @@ documentation. Notes there always use **plural** tags (`self-hosts`,
 - `socket-proxy` (also wollomatic, labels on deunhealth): list, events and
   `POST containers/<name>/restart` only. No stop/kill/inspect/archive.
 - Nothing gets general write access.
+
+**CrowdSec**
+- Reads Traefik's JSON access log (`TRAEFIK__LOGDIR`) and a file copy of
+  Authelia's log (`AUTHELIA__LOGDIR`); both folders are created beforehand as
+  `dockersvc` (750) and rotated on the host by `/etc/logrotate.d/stack-logs`
+  (copytruncate). Traefik's `ClientHost` is the real visitor IP because
+  X-Forwarded-For is trusted from cloudflared only.
+- Hub items come from `CROWDSEC__COLLECTIONS` / `CROWDSEC__PARSERS`. The
+  `crowdsecurity/linux` collection is deliberately not installed (it brings
+  sshd rules), so the pieces it would provide are listed by hand:
+  `crowdsecurity/syslog-logs` (it contains the `non-syslog` node; without it
+  no file is parsed), `dateparse-enrich`, `geoip-enrich`, `whitelists`. The
+  start-up "Ignoring file … linux.yaml / sshd …" warnings are the image's
+  staged links to that collection: cosmetic.
+- Test a parser without real traffic: `docker exec crowdsec cscli explain
+  --type <traefik|authelia> --log '<line>'` (use 203.0.113.x as the IP).
+- Community blocklist on, console off. Traefik's bouncer plugin fails open,
+  so `backup-verify.sh watch` (cron, every 10 min) mails when CrowdSec is
+  down or the bouncer stops pulling.
 
 **Authelia**
 - `default_policy: deny`. Every forward-auth router needs a matching rule.

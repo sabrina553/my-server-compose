@@ -1,0 +1,13 @@
+# Merged over the config.yaml the image generates. The defaults listen on
+# every address; here the LAPI listens only on CrowdSec's fixed address on
+# crowdsec_lapi (shared with Traefik alone), and metrics only inside the
+# container (for `cscli metrics`).
+api:
+  server:
+    listen_uri: 172.21.18.10:8080
+prometheus:
+  enabled: true
+  listen_addr: 127.0.0.1
+db_config:
+  # SQLite on a local disk: WAL is the recommended mode.
+  use_wal: true

@@ -32,6 +32,19 @@ FreshRSS (`WEBSERVER_TRUSTED_PROXIES`, Traefik's fixed `172.21.7.249` on
 never using `policy: bypass` for these hosts: on a bypass, Traefik passes a
 client-supplied `Remote-User` straight through.
 
+**CrowdSec instead of fail2ban for web traffic.** (2026-10-10) Public requests
+arrive through cloudflared, so the visitor's IP never reaches the host's
+firewall and fail2ban's bans could never block them (its app jails also
+watched stale logs). CrowdSec reads Traefik's access log, where `ClientHost`
+is the real IP, and Authelia's failed logins, and Traefik's bouncer plugin
+refuses banned IPs before Authelia or any app. It runs as a container
+(`dockersvc`, read-only root), its API bound to one address on its own
+network with Traefik. The community blocklist is on (CrowdSec shares the
+attacking IPs and scenario names it sees, and receives known-bad IPs); the
+online console is off. The bouncer fails open, so a dead CrowdSec doesn't
+take the sites down; `backup-verify.sh watch` mails when it's down instead.
+fail2ban keeps only its `sshd` jail.
+
 **No network-based bypass rules in Authelia.** (2026-10-09) Docker's gateway
 and cloudflared's own address are inside the Docker subnets, so "from Docker"
 doesn't mean "trusted". Containers talk to each other by service key and

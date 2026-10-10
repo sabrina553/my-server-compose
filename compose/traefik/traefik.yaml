@@ -20,6 +20,14 @@ services:
     # Observability
     - "--log.level=${TRAEFIK__LOG_LEVEL}"
     - "--ping=true"
+    # Access log for CrowdSec (JSON, own folder: CrowdSec reads it, and must
+    # not see acme.json). Request headers are dropped (the default: no cookies
+    # or Authorization). ClientHost is already the real visitor IP, because
+    # X-Forwarded-For is trusted from cloudflared (checked 2026-10-10: equal to
+    # Cf-Connecting-Ip on every tunnel request).
+    - "--accesslog=true"
+    - "--accesslog.filepath=/var/log/traefik/access.log"
+    - "--accesslog.format=json"
     # Backends are plain HTTP. Never skip TLS verification globally; a backend
     # with a self-signed cert gets its own serversTransport.
     # Entrypoint :80, redirects to https
@@ -128,6 +136,9 @@ services:
 
     volumes:
     - ${VOLDIR}/${TRAEFIK__NAME}:/etc/traefik:rw
+    # Created beforehand as dockersvc (750): Docker would create it as root.
+    # Rotated on the host by /etc/logrotate.d/traefik-access.
+    - ${TRAEFIK__LOGDIR}:/var/log/traefik:rw
 
     healthcheck:
       test: wget --quiet --tries=1 --spider http://127.0.0.1:8080/ping || exit 1
