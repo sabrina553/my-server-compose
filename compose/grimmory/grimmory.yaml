@@ -96,6 +96,10 @@ services:
     - SETUID
     tmpfs:
     - /tmp:rw,noexec,nosuid
+    # Wiped on every start. Otherwise a `restart` keeps the old mysqld.pid, owned
+    # by abc, which the init (root without DAC_OVERRIDE) can't delete, and
+    # MariaDB never starts (2026-10-10).
+    - /run/mysqld:rw,noexec,nosuid
 
     logging:
       driver: "json-file"
