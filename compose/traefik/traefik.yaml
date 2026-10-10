@@ -109,7 +109,6 @@ services:
     - "traefik.http.routers.${TRAEFIK__NAME}.rule=Host(`${TRAEFIK__SUBDOMAIN}.int.${DOMAINNAME}`)"
     - "traefik.http.routers.${TRAEFIK__NAME}.middlewares=authelia@docker"
     - "traefik.http.routers.${TRAEFIK__NAME}.service=api@internal"
-    - "traefik.http.services.${TRAEFIK__NAME}.loadbalancer.server.port=8080"
     # Security headers for every websecure router. HSTS is sticky: browsers
     # refuse plain HTTP on these domains and subdomains for a year.
     - "traefik.http.middlewares.secure-headers.headers.stsSeconds=31536000"
