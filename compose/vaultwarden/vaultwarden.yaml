@@ -9,6 +9,8 @@ services:
     container_name: ${VAULTWARDEN__NAME}
     image: ${VAULTWARDEN__IMAGE}:${VAULTWARDEN__VERSION}
     restart: unless-stopped
+    # Not root (the image's default): it needs none, given a port above 1024.
+    user: "${PUID}:${PGID}"
 
     security_opt:
     - no-new-privileges:true
@@ -42,6 +44,8 @@ services:
     environment:
       TZ: ${TZ}
       DOMAIN: ${VAULTWARDEN__DOMAIN}
+      # Also read by the image's healthcheck.
+      ROCKET_PORT: ${VAULTWARDEN__PORT}
       # Must contain an argon2 PHC string, not a plaintext token. Generate with:
       #   docker run --rm -it vaultwarden/server /vaultwarden hash --preset owasp
       ADMIN_TOKEN_FILE: /run/secrets/vaultwarden_admin_token
@@ -88,7 +92,7 @@ services:
     - "traefik.http.routers.${VAULTWARDEN__NAME}-admin.rule=Host(`${VAULTWARDEN__SUBDOMAIN}.${DOMAINNAME}`) && PathRegexp(`^/+admin(/.*)?$$`)"
     - "traefik.http.routers.${VAULTWARDEN__NAME}-admin.middlewares=authelia@docker"
     - "traefik.http.routers.${VAULTWARDEN__NAME}-admin.service=${VAULTWARDEN__NAME}"
-    - "traefik.http.services.${VAULTWARDEN__NAME}.loadbalancer.server.port=80"
+    - "traefik.http.services.${VAULTWARDEN__NAME}.loadbalancer.server.port=${VAULTWARDEN__PORT}"
     - "deunhealth.restart.on.unhealthy=true"
 
     volumes:
