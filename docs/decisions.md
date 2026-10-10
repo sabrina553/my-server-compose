@@ -34,7 +34,7 @@ client-supplied `Remote-User` straight through.
 
 **No network-based bypass rules in Authelia.** (2026-10-09) Docker's gateway
 and cloudflared's own address are inside the Docker subnets, so "from Docker"
-doesn't mean "trusted". Containers talk to each other by container name and
+doesn't mean "trusted". Containers talk to each other by service key and
 never go through Traefik.
 
 **PKCE (S256) required for every OIDC client except Leantime and
@@ -171,7 +171,8 @@ back only the capabilities its image is known to need (learned by testing):
 |---|---|
 | starts as root, chowns, drops to a user (official DBs, Ghost, Grimmory, Chaptarr, CouchDB, Valkey) | `CHOWN DAC_READ_SEARCH FOWNER SETGID SETUID` |
 | LLDAP: checks `/data` is *writable* while root | `CHOWN DAC_OVERRIDE FOWNER SETGID SETUID` |
-| linuxserver (Prowlarr, qBittorrent): init chowns `/run/<app>-temp` | `CHOWN FOWNER SETGID SETUID` |
+| linuxserver (Prowlarr): init chowns `/run/<app>-temp` | `CHOWN FOWNER SETGID SETUID` |
+| linuxserver qBittorrent | `CHOWN SETGID SETUID` |
 | FreshRSS: entrypoint `chown -R` / `chmod -R` on `./data` | `CHOWN DAC_READ_SEARCH FOWNER SETGID SETUID` |
 | Leantime (its documented set) | `NET_BIND_SERVICE CHOWN SETGID SETUID` |
 | Linkwarden: root throughout | `CHOWN FOWNER` |

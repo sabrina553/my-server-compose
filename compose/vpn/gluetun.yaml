@@ -1,9 +1,9 @@
 ## Gluetun  https://github.com/qdm12/gluetun
-## WireGuard VPN client. qBittorrent, Mousehole and Mousetrap share its network
-## namespace (network_mode: service:vpn), so all their traffic leaves through
-## the tunnel. Also an HTTP proxy (http://vpn:8888) for FlareSolverr, Chaptarr
-## and Prowlarr. Not on `external`: see the networks in compose.yaml.
-## If Gluetun is recreated, recreate those containers too (see CLAUDE.md).
+## WireGuard VPN client. qBittorrent and Mousetrap share its network namespace
+## (network_mode: service:vpn), so all their traffic uses the tunnel. Also an
+## HTTP proxy (http://vpn:8888, no login) for FlareSolverr, Chaptarr and
+## Prowlarr. Not on `external` and publishes no ports: see compose.yaml.
+## If this is recreated, recreate the namespace's containers too (CLAUDE.md).
 services:
   vpn:
     container_name: ${VPN__NAME}
@@ -36,8 +36,7 @@ services:
       PGID: ${PGID}
       TZ: ${TZ}
       LOG_LEVEL: ${LOG_LEVEL}
-      # Gluetun's names end in _SECRETFILE (it ignores *_FILE). Their defaults,
-      # /run/secrets/wireguard_*, are not our secret names, so set them.
+      # Gluetun reads *_SECRETFILE (not *_FILE); the defaults don't match our names.
       WIREGUARD_PRIVATE_KEY_SECRETFILE: ${VPN__WIREGUARD_PRIVATE_KEY_FILE}
       WIREGUARD_PRESHARED_KEY_SECRETFILE: ${VPN__WIREGUARD_PRESHARED_KEY_FILE}
       WIREGUARD_ADDRESSES_SECRETFILE: ${VPN__WIREGUARD_ADDRESSES_FILE}
@@ -45,49 +44,36 @@ services:
       VPN_TYPE: ${VPN__TYPE}
       SERVER_COUNTRIES: ${VPN__SERVER_COUNTRIES}
       FIREWALL_VPN_INPUT_PORTS: ${TORRENTING_PORT}
-      # No FIREWALL_OUTBOUND_SUBNETS: nothing in this namespace starts
-      # connections to Docker networks, so everything leaves via the tunnel or
-      # not at all. (Replies to Traefik, Chaptarr and Prowlarr still work.)
-      # The HTTP proxy has no login and reaches every network vpn is on. It
-      # listens on all of them, because Chaptarr and Prowlarr use it too (their
-      # own proxy setting) as well as FlareSolverr. Acceptable because vpn is on
-      # neither `external` nor a socket-proxy network: only Traefik, Chaptarr,
-      # Prowlarr and FlareSolverr can reach it.
+      # No FIREWALL_OUTBOUND_SUBNETS: nothing here opens connections to Docker
+      # networks, so traffic leaves via the tunnel or not at all (replies still work).
+      # The proxy listens on all of vpn's networks: Chaptarr and Prowlarr use it
+      # too. Fine while vpn is on neither `external` nor a socket-proxy network.
       HTTPPROXY: "on"
-      # PUBLICIP_FILE left at its default (/tmp/gluetun/ip, tmpfs). Nothing
-      # reads it. Writing it logs "permission denied" on every start, harmless:
-      # Gluetun creates the folder without the execute bit (mode 644), which
-      # root can't enter without DAC_OVERRIDE. Not worth adding that cap.
+      # The "persisting public ip address: permission denied" line on start is
+      # harmless: nothing reads the file, and fixing it would need DAC_OVERRIDE.
 
+    # Never add a socket-proxy network: through the HTTP proxy, everything that
+    # can reach vpn would get the Docker API.
     networks:
       vpn_egress:            # the tunnel's way out; nothing else is on it
       vpn_ui:                # Traefik -> qBittorrent / Mousetrap UIs
       vpn_proxy:             # FlareSolverr -> HTTP proxy
       chaptarr_downloads:    # Chaptarr -> qBittorrent
       prowlarr_downloads:    # Prowlarr -> qBittorrent
-    # Never on a socket-proxy network: everything in this namespace (and,
-    # through the HTTP proxy, everything that can reach it) would get the
-    # Docker API.
-    # No published ports on purpose. Anything published here bypasses Traefik and
-    # Authelia, and Docker's iptables rules bypass the host firewall.
-    #  - Web UIs (qbittorrent, mousehole, mousetrap) go through Traefik.
-    #  - The HTTP proxy is reached by other containers at http://vpn:8888.
-    #  - Torrent peers come in through the VPN tunnel (FIREWALL_VPN_INPUT_PORTS).
-    # If you need direct access while Traefik is down, bind to localhost only and
-    # use an SSH tunnel, e.g.:  - 127.0.0.1:8080:8080
+    # No ports: UIs go through Traefik, peers arrive through the tunnel
+    # (FIREWALL_VPN_INPUT_PORTS). For emergency access, 127.0.0.1 only.
     devices:
     - "/dev/net/tun:/dev/net/tun"
     sysctls:
     - net.ipv6.conf.all.disable_ipv6=1
-    cpu_shares: 2048   # ensure the tunnel always gets what it needs
+    cpu_shares: 2048   # the tunnel gets CPU first
 
     labels:
     - "traefik.enable=false"
-    # Traefik reads the network for qBittorrent/Mousetrap/Mousehole from THIS
-    # container's labels (they share its namespace); a label on them is ignored.
+    # Traefik reads the network for everything in this namespace from vpn's
+    # labels; the same label on qBittorrent or Mousetrap is ignored.
     - "traefik.docker.network=vpn_ui"
     - "deunhealth.restart.on.unhealthy=false"
-    #- "com.centurylinklabs.watchtower.monitor-only=true"   # Watchtower is retired
 
     volumes:
     - "/etc/localtime:/etc/localtime:ro"

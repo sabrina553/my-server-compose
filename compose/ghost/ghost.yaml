@@ -124,10 +124,10 @@ services:
     - ${GHOST__MYSQL_INIT_LOCATION}:/docker-entrypoint-initdb.d
 
     healthcheck:
-      # No password: mysqladmin ping exits 0 whenever the server is up, even if
-      # access is denied, so there's no need to put a password on the command line.
+      # No password needed: mysqladmin ping exits 0 even when access is denied.
       test: mysqladmin ping -h 127.0.0.1 --silent
-      interval: 1s
-      retries: 120
-      start_period: 30s
-      start_interval: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+      start_interval: 2s

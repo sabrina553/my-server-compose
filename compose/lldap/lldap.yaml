@@ -14,9 +14,7 @@ services:
     - ALL
     cap_add:   # entrypoint chowns /data to UID/GID, then drops to it
     - CHOWN
-    # The entrypoint checks /data is writable while still root; /data is owned
-    # by UID, so root needs DAC_OVERRIDE (DAC_READ_SEARCH only covers reads).
-    - DAC_OVERRIDE
+    - DAC_OVERRIDE   # it checks /data is *writable* while still root
     - FOWNER
     - SETGID
     - SETUID
@@ -70,13 +68,10 @@ services:
       db_postgres:
       lldap_backend:   # Authelia -> LDAP
         ipv4_address: 172.21.15.10
-        # Authelia connects to this alias, which exists on this network only.
-        # Plain `lldap` can resolve to the `external` address, where LDAP
-        # doesn't listen (they share both networks).
+        # Authelia uses this alias: plain `lldap` may resolve to the `external`
+        # address, where LDAP doesn't listen.
         aliases:
         - lldap-ldap
-    # No published ports: LDAP is reached over lldap_backend only, and the web
-    # UI through Traefik.
 
     labels:
     - "traefik.enable=true"

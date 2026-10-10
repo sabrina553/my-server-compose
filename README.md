@@ -95,13 +95,17 @@ as `CHANGE_ME`.
 | `make-env-example.sh` | The reverse: regenerate `.env.example` from `.env`. Recovery only. |
 | `env-to-secret.sh` | Move a value from `.env` into a secret file without printing it. |
 | `redact.sh` | Mask SITE values, `.env.redact` terms, e-mails, IPs, hashes and tokens in piped output. |
-| `authelia-hash-oidc-secrets.sh` | Generate Authelia's PBKDF2 digests of the OIDC client secrets. |
+| `authelia-hash-oidc-secrets.sh` | Generate Authelia's PBKDF2 digests of the OIDC client secrets; `--rotate <client>` for new credentials. |
+| `compose-diff.sh` | Show what a change does to the rendered config (redacted). Layout-only changes print "No differences". |
+| `couchdb-maintenance.sh` | List CouchDB databases and sizes; `--compact` to compact them. |
+| `migrate-secret-names.sh` | One-off move of `secrets/` to the current naming scheme (done; kept for `--reverse`). |
 | `hooks/pre-commit` | Block commits containing `.env*`, `secrets/` or site values. Enable with `git config core.hooksPath scripts/hooks`. |
 
 ## Common tasks
 
 ```sh
 docker compose config -q                    # validate (should print nothing)
+scripts/compose-diff.sh                     # what the change does to the rendered config
 docker compose up -d                        # apply changes
 docker compose up -d --force-recreate <svc> # recreate one service
 

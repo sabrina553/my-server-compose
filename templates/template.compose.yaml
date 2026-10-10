@@ -35,7 +35,7 @@ services:
     #command: [<original CMD>]
 
     # Baseline hardening. Never apparmor:unconfined. Add back only what the
-    # image needs (see the table in CLAUDE.md):
+    # image needs (see the table in docs/decisions.md):
     #   root, chowns, then drops to a user -> CHOWN DAC_READ_SEARCH FOWNER SETGID SETUID
     #   non-root throughout                -> usually none
     security_opt:

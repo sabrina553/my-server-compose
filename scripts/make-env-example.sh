@@ -6,7 +6,7 @@
 # scripts/apply-env-example.sh. Use this only to recover from a .env that was
 # edited by hand, and review `git diff .env.example` before committing.
 #
-#   ./scripts/make-env-example.sh            (run from the docker/ directory)
+#   ./scripts/make-env-example.sh            (run from anywhere in the repo)
 #
 # Only the SITE block is rewritten, so keep anything personal or site-specific
 # in that block. The script refuses to run if .env contains something that

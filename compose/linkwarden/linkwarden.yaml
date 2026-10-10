@@ -29,22 +29,20 @@ services:
     - -c
     - 'export PATH=/data/node_modules/.bin:$$PATH && prisma migrate deploy --schema=/data/packages/prisma/schema.prisma && exec concurrently -k -n web,worker "cd /data/apps/web && exec next start" "cd /data/apps/worker && exec tsx worker.ts"'
 
-    depends_on:
-      postgres:
-        condition: service_healthy
-        restart: false
-
     security_opt:
     - no-new-privileges:true
-    # Runs entirely as root (no privilege drop), so it needs no capabilities to
-    # switch users. Root without DAC_OVERRIDE can still use its own files in
-    # /data/data, which it created.
     cap_drop:
     - ALL
+    # Root throughout (no user switch). Without DAC_OVERRIDE it can still use
+    # /data/data, which it created.
     cap_add:
     - CHOWN
     - FOWNER
 
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: false
     logging:
       driver: "json-file"
       options:

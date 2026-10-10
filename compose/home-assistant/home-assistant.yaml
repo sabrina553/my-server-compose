@@ -9,10 +9,8 @@ services:
     image: ${HOMEASSISTANT__IMAGE}:${HOMEASSISTANT__VERSION}
     restart: unless-stopped
 
-    # No host D-Bus and no apparmor:unconfined. The container runs as root, and
-    # the host's system bus treats it as host root, which can ask systemd to run
-    # anything: that was root on the host. For Bluetooth, use an ESPHome
-    # Bluetooth proxy rather than mounting /run/dbus (see docs/decisions.md).
+    # Never mount /run/dbus: the host bus treats this root container as host
+    # root. For Bluetooth, use an ESPHome Bluetooth proxy (docs/decisions.md).
     security_opt:
     - no-new-privileges:true
     cap_drop:

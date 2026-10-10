@@ -45,8 +45,7 @@ services:
     - "traefik.http.routers.${DOZZLE__NAME}.middlewares=authelia@docker"
     - "traefik.http.services.${DOZZLE__NAME}.loadbalancer.server.port=8080"
     - "deunhealth.restart.on.unhealthy=true"
-    # What this container may ask socket-proxy-ro for (see socket-proxy.yaml):
-    # exactly the calls it was seen making (list, inspect, logs, stats, events).
+    # socket-proxy-ro allowlist: exactly the calls Dozzle was seen making.
     # Single quotes: `\.` is a parse error in double-quoted YAML.
     - 'socket-proxy.allow.head=/_ping'
     - 'socket-proxy.allow.get=/v1\.[0-9]+/(version|info|events|containers/json|containers/[0-9a-f]{12,64}/(json|logs|stats))(\?.*)?'

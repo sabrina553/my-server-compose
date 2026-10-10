@@ -1,21 +1,21 @@
 
-###########################NETWORKS###########################
+# ============================== NETWORKS ==============================
 networks:
-  socket_proxy:
+  socket_proxy: # deunhealth -> restart-capable proxy
     name: socket_proxy
     driver: bridge
     internal: true
     ipam:
       config:
         - subnet: 172.21.0.0/24
-  socket_proxy_ro:
+  socket_proxy_ro: # Traefik, Dozzle, Diun -> allowlisted read-only proxy
     name: socket_proxy_ro
     driver: bridge
     internal: true
     ipam:
       config:
         - subnet: 172.21.1.0/24
-  external:
+  external: # internet, and Traefik's default route to apps
     name: "external"
     driver: bridge
     ipam:
@@ -86,7 +86,9 @@ networks:
     ipam:
       config:
         - subnet: 172.21.10.0/24
-  # Outgoing links only (the *arr UIs aren't bound on these):
+  # Outgoing links only (the *arr UIs aren't bound on these). One per *arr: if
+  # the two shared a second network, Docker DNS could resolve one to an address
+  # where its UI isn't bound.
   chaptarr_downloads: # chaptarr -> qBittorrent (vpn:8080)
     name: chaptarr_downloads
     driver: bridge
@@ -94,9 +96,7 @@ networks:
     ipam:
       config:
         - subnet: 172.21.11.0/24
-  prowlarr_downloads: # prowlarr -> qBittorrent (vpn:8080). Separate from
-    # chaptarr_downloads on purpose: if the two *arrs shared a second network,
-    # Docker DNS could resolve one to the address where its UI isn't bound.
+  prowlarr_downloads: # prowlarr -> qBittorrent (vpn:8080)
     name: prowlarr_downloads
     driver: bridge
     internal: true
@@ -110,10 +110,9 @@ networks:
     ipam:
       config:
         - subnet: 172.21.12.0/24
-  # Gluetun (vpn) is NOT on `external`: everything in its namespace (qBittorrent,
-  # Mousetrap, whose UI has no login and listens on all addresses) would be
-  # reachable by every app there. It gets the internet from a network of its
-  # own, and only the containers that need it can reach it.
+  # Gluetun (vpn) is NOT on `external`: its namespace (qBittorrent, Mousetrap
+  # with no login) would be reachable by every app there. It has its own way
+  # out, and only the containers that need it can reach it.
   vpn_egress: # vpn only: the WireGuard tunnel's way out
     name: vpn_egress
     driver: bridge
@@ -153,8 +152,10 @@ networks:
       config:
         - subnet: 172.21.7.0/24
 
-###########################SECRETS###########################
+# ============================== SECRETS ===============================
+# Docker secret <app>_<item> is always the file secrets/<app>/<item>.
 secrets:
+  # --- Shared and core
   smtp_password:
     file: $DOCKERDIR/secrets/smtp/password
   traefik_cloudflare_dns_api_token:
@@ -163,8 +164,7 @@ secrets:
     file: $DOCKERDIR/secrets/cloudflared/tunnel_token
   postgres_password:
     file: $DOCKERDIR/secrets/postgres/password
-
-  #AUHELIA####################################################
+  # --- Authelia
   authelia_jwt_secret:
     file: $DOCKERDIR/secrets/authelia/jwt_secret
   authelia_session_secret:
@@ -203,15 +203,15 @@ secrets:
     file: $DOCKERDIR/secrets/authelia/oidc_mealie_digest
   authelia_oidc_vaultwarden_digest:
     file: $DOCKERDIR/secrets/authelia/oidc_vaultwarden_digest
-  #CHAPTARR####################################################
+  # --- Chaptarr
   chaptarr_db_password:
     file: $DOCKERDIR/secrets/chaptarr/db_password
-  #FILEBROWSER####################################################
+  # --- FileBrowser
   filebrowser_oidc_client_id:
     file: $DOCKERDIR/secrets/filebrowser/oidc_client_id
   filebrowser_oidc_client_secret:
     file: $DOCKERDIR/secrets/filebrowser/oidc_client_secret
-  #FRESHRSS####################################################
+  # --- FreshRSS
   freshrss_oidc_client_id:
     file: $DOCKERDIR/secrets/freshrss/oidc_client_id
   freshrss_oidc_client_secret:
@@ -220,19 +220,19 @@ secrets:
     file: $DOCKERDIR/secrets/freshrss/db_password
   freshrss_oidc_crypto_key:
     file: $DOCKERDIR/secrets/freshrss/oidc_crypto_key
-  #GHOST####################################################
+  # --- Ghost
   ghost_db_root_password:
     file: $DOCKERDIR/secrets/ghost/db_root_password
   ghost_db_password:
     file: $DOCKERDIR/secrets/ghost/db_password
-  #GRIMMORY####################################################  
+  # --- Grimmory
   grimmory_db_password:
     file: $DOCKERDIR/secrets/grimmory/db_password
   grimmory_db_root_password:
     file: $DOCKERDIR/secrets/grimmory/db_root_password
   grimmory_oidc_client_id:
     file: $DOCKERDIR/secrets/grimmory/oidc_client_id
-  #LEANTIME####################################################
+  # --- Leantime
   leantime_oidc_client_id:
     file: $DOCKERDIR/secrets/leantime/oidc_client_id
   leantime_oidc_client_secret:
@@ -244,15 +244,15 @@ secrets:
     file: $DOCKERDIR/secrets/leantime/db_password
   leantime_session_secret:
     file: $DOCKERDIR/secrets/leantime/session_secret
-  #home-assistant####################################################
+  # --- Home Assistant
   homeassistant_oidc_client_id:
     file: $DOCKERDIR/secrets/homeassistant/oidc_client_id
-  #immich###########################################################
+  # --- Immich
   immich_oidc_client_id:
     file: $DOCKERDIR/secrets/immich/oidc_client_id
   immich_db_password:
     file: $DOCKERDIR/secrets/immich/db_password
-  #LINKWARDEN#################################################### 
+  # --- Linkwarden
   linkwarden_oidc_client_id:
     file: $DOCKERDIR/secrets/linkwarden/oidc_client_id
   linkwarden_oidc_client_secret:
@@ -262,7 +262,7 @@ secrets:
     file: $DOCKERDIR/secrets/linkwarden/db_url
   linkwarden_nextauth_secret:
     file: $DOCKERDIR/secrets/linkwarden/nextauth_secret
-#LLDAP#################################################### 
+  # --- LLDAP
   lldap_jwt_secret:
     file: $DOCKERDIR/secrets/lldap/jwt_secret
   lldap_key_seed:
@@ -271,17 +271,17 @@ secrets:
     file: $DOCKERDIR/secrets/lldap/admin_password
   lldap_db_url:
     file: $DOCKERDIR/secrets/lldap/db_url
-#MEALIE####################################################
+  # --- Mealie
   mealie_oidc_client_id:
     file: $DOCKERDIR/secrets/mealie/oidc_client_id
   mealie_oidc_client_secret:
     file: $DOCKERDIR/secrets/mealie/oidc_client_secret
   mealie_db_password:
     file: $DOCKERDIR/secrets/mealie/db_password
-#MOUSEHOLE####################################################
+  # --- Mousehole (disabled)
   mousehole_auth_password:
     file: $DOCKERDIR/secrets/mousehole/auth_password
-#VAULTWARDEN####################################################
+  # --- Vaultwarden
   vaultwarden_db_url:
     file: $DOCKERDIR/secrets/vaultwarden/db_url
   vaultwarden_oidc_client_id:
@@ -294,23 +294,25 @@ secrets:
     file: $DOCKERDIR/secrets/vaultwarden/push_installation_key
   vaultwarden_admin_token:
     file: $DOCKERDIR/secrets/vaultwarden/admin_token
- #WIREGUARD####################################################
+  # --- VPN (Gluetun)
   vpn_wireguard_private_key:
     file: $DOCKERDIR/secrets/vpn/wireguard_private_key
   vpn_wireguard_preshared_key:
     file: $DOCKERDIR/secrets/vpn/wireguard_preshared_key
   vpn_wireguard_addresses:
     file: $DOCKERDIR/secrets/vpn/wireguard_addresses
-###########################SERVICES###########################
+
+# ============================== SERVICES ==============================
+# A commented-out include is a disabled service.
 include:
-    #core
+    # Core
     - compose/cloudflared/cloudflared.yaml
-    - compose/traefik/traefik.yaml   
-    - compose/authelia/authelia.yaml 
+    - compose/traefik/traefik.yaml
+    - compose/authelia/authelia.yaml
     - compose/authelia-redis/authelia-redis.yaml
     - compose/lldap/lldap.yaml
-    - compose/vpn/gluetun.yaml   
-    - compose/dozzle/dozzle.yaml 
+    - compose/vpn/gluetun.yaml
+    - compose/dozzle/dozzle.yaml
     - compose/deunhealth/deunhealth.yaml
     - compose/diun/diun.yaml
     # - compose/watchtower/watchtower.yaml   # replaced by Diun (notify only)
@@ -318,31 +320,31 @@ include:
     - compose/pg-admin/pg-admin.yaml
     - compose/redis/redis.yaml
     - compose/socket-proxy/socket-proxy.yaml
-    
-    #arrstack
-    #- compose/audiobookshelf/audiobookshelf.yaml
-    - compose/grimmory/grimmory.yaml    
+
+    # Books and downloads
+    # - compose/audiobookshelf/audiobookshelf.yaml
+    - compose/grimmory/grimmory.yaml
     - compose/chaptarr/chaptarr.yaml
     - compose/prowlarr/prowlarr.yaml
     - compose/qbittorrent/qbittorrent.yaml
     # - compose/mousehole/mousehole.yaml
     - compose/mousetrap/mousetrap.yaml
-    #- compose/bookkeep/bookkeep.yaml
+    # - compose/bookkeep/bookkeep.yaml
 
-    #organization
+    # Organisation
     - compose/mealie/mealie.yaml
     - compose/couch-db/couch-db.yaml
     - compose/linkwarden/linkwarden.yaml
     - compose/leantime/leantime.yaml
 
-    #storage 
-    - compose/filebrowser/filebrowser.yaml 
-    - compose/immich/immich.yaml   
+    # Personal data
+    - compose/filebrowser/filebrowser.yaml
+    - compose/immich/immich.yaml
     - compose/vaultwarden/vaultwarden.yaml
     - compose/home-assistant/home-assistant.yaml
 
-    #other
+    # Other
     - compose/irc/thelounge.yaml
-    - compose/fresh-rss/fresh-rss.yaml  
+    - compose/fresh-rss/fresh-rss.yaml
     - compose/crosswatch/crosswatch.yaml
     - compose/ghost/ghost.yaml
