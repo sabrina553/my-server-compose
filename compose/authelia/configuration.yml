@@ -94,7 +94,7 @@ access_control:
     ## middleware (see vaultwarden.yaml); the rest of vw. uses Vaultwarden's own login.
     - domain: '{{ env "SUBDOMAIN_VAULTWARDEN" }}.{{ env "DOMAINNAME" }}'
       resources:
-        - '^/admin([/?].*)?$'
+        - '^/+admin([/?].*)?$'
       subject: 'group:admin'
       policy: 'two_factor'
 
@@ -103,8 +103,9 @@ access_control:
     ## use JWT bearer tokens checked by CouchDB itself.
     - domain: '{{ env "SUBDOMAIN_COUCHDB" }}.{{ env "DOMAINNAME" }}'
       resources:
-        - '^/_utils([/?].*)?$'
-        - '^/_session([?].*)?$'
+        # /+ and [/?]: CouchDB accepts //_session and /_session/ too.
+        - '^/+_utils([/?].*)?$'
+        - '^/+_session([/?].*)?$'
       subject: 'group:admin'
       policy: 'two_factor'
 
