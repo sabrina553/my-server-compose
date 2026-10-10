@@ -7,6 +7,8 @@ services:
     container_name: ${DEUNHEALTH__NAME}
     image: ${DEUNHEALTH__IMAGE}:${DEUNHEALTH__VERSION}
     restart: unless-stopped
+    # Not root (the image's default): it talks to Docker over TCP via the proxy.
+    user: "${PUID}:${PGID}"
 
     security_opt:
     - no-new-privileges:true

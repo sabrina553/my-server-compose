@@ -7,6 +7,8 @@ services:
     container_name: ${DOZZLE__NAME}
     image: ${DOZZLE__IMAGE}:${DOZZLE__VERSION}
     restart: unless-stopped
+    # Not root (the image's default): it reads Docker over TCP via the proxy.
+    user: "${PUID}:${PGID}"
 
     security_opt:
     - no-new-privileges:true
@@ -49,6 +51,11 @@ services:
     # Single quotes: `\.` is a parse error in double-quoted YAML.
     - 'socket-proxy.allow.head=/_ping'
     - 'socket-proxy.allow.get=/v1\.[0-9]+/(version|info|events|containers/json|containers/[0-9a-f]{12,64}/(json|logs|stats))(\?.*)?'
+
+    volumes:
+    # UI preferences ("profile"); the only writable path (read_only above).
+    # Owned by PUID:PGID (a folder Docker creates itself is root's).
+    - ${VOLDIR}/${DOZZLE__NAME}:/data:rw
 
     healthcheck:
       test: ["CMD", "/dozzle", "healthcheck"]
