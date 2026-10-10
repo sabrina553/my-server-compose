@@ -34,14 +34,14 @@ services:
     - "traefik.enable=true"
     - "traefik.http.routers.${IRC__NAME}.rule=Host(`${IRC__SUBDOMAIN}.int.${DOMAINNAME}`)"
     - "traefik.http.routers.${IRC__NAME}.middlewares=authelia@docker"
-    - "traefik.http.services.${IRC__NAME}.loadbalancer.server.port=9000"
+    - "traefik.http.services.${IRC__NAME}.loadbalancer.server.port=${IRC__PORT}"
     - "deunhealth.restart.on.unhealthy=true"
 
     volumes:
     - ${IRC__VOLDIR}/:/var/opt/thelounge
 
     healthcheck:
-      test: wget -q -O /dev/null http://127.0.0.1:9000/ || exit 1
+      test: wget -q -O /dev/null http://127.0.0.1:${IRC__PORT}/ || exit 1
       interval: 30s
       timeout: 5s
       retries: 3

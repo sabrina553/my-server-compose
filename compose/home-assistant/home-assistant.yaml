@@ -53,7 +53,7 @@ services:
     - "traefik.enable=true"
     # No authelia@docker: forward-auth breaks the Companion app (see the header).
     - "traefik.http.routers.${HOMEASSISTANT__NAME}.rule=Host(`${HOMEASSISTANT__SUBDOMAIN}.${DOMAINNAME}`)"
-    - "traefik.http.services.${HOMEASSISTANT__NAME}.loadbalancer.server.port=8123"
+    - "traefik.http.services.${HOMEASSISTANT__NAME}.loadbalancer.server.port=${HOMEASSISTANT__PORT}"
     - "deunhealth.restart.on.unhealthy=true"
 
     volumes:
@@ -61,7 +61,7 @@ services:
     - /etc/localtime:/etc/localtime:ro
 
     healthcheck:
-      test: curl -fsS -o /dev/null http://127.0.0.1:8123/manifest.json || exit 1
+      test: curl -fsS -o /dev/null http://127.0.0.1:${HOMEASSISTANT__PORT}/manifest.json || exit 1
       interval: 30s
       timeout: 5s
       retries: 3

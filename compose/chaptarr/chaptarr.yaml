@@ -76,7 +76,7 @@ services:
     - "traefik.docker.network=arr"
     - "traefik.http.routers.${CHAPTARR__NAME}.rule=Host(`${CHAPTARR__SUBDOMAIN}.${DOMAINNAME}`)"
     - "traefik.http.routers.${CHAPTARR__NAME}.middlewares=authelia@docker"
-    - "traefik.http.services.${CHAPTARR__NAME}.loadbalancer.server.port=8789"
+    - "traefik.http.services.${CHAPTARR__NAME}.loadbalancer.server.port=${CHAPTARR__PORT}"
     - "deunhealth.restart.on.unhealthy=true"
     # Diun: only :latest is published, so report when it changes
     - "diun.watch_repo=false"
@@ -88,7 +88,7 @@ services:
 
     healthcheck:
       # The UI listens only on its fixed address on `arr`, not on localhost.
-      test: wget -q -O /dev/null http://172.21.10.11:8789/ping || exit 1
+      test: wget -q -O /dev/null http://172.21.10.11:${CHAPTARR__PORT}/ping || exit 1
       interval: 30s
       timeout: 5s
       retries: 3

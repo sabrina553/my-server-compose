@@ -45,7 +45,7 @@ services:
     - "traefik.docker.network=proxy_internal"
     - "traefik.http.routers.${DOZZLE__NAME}.rule=Host(`${DOZZLE__SUBDOMAIN}.int.${DOMAINNAME}`)"
     - "traefik.http.routers.${DOZZLE__NAME}.middlewares=authelia@docker"
-    - "traefik.http.services.${DOZZLE__NAME}.loadbalancer.server.port=8080"
+    - "traefik.http.services.${DOZZLE__NAME}.loadbalancer.server.port=${DOZZLE__PORT}"
     - "deunhealth.restart.on.unhealthy=true"
     # socket-proxy-ro allowlist: exactly the calls Dozzle was seen making.
     # Single quotes: `\.` is a parse error in double-quoted YAML.

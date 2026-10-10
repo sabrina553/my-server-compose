@@ -40,7 +40,7 @@ services:
     - "traefik.enable=true"
     - "traefik.http.routers.${AUDIOBOOKSHELF__NAME}.rule=Host(`${AUDIOBOOKSHELF__SUBDOMAIN}.${DOMAINNAME}`)"
     - "traefik.http.routers.${AUDIOBOOKSHELF__NAME}.middlewares=authelia@docker"
-    - "traefik.http.services.${AUDIOBOOKSHELF__NAME}.loadbalancer.server.port=80"
+    - "traefik.http.services.${AUDIOBOOKSHELF__NAME}.loadbalancer.server.port=${AUDIOBOOKSHELF__PORT}"
     - "deunhealth.restart.on.unhealthy=true"
 
     volumes:

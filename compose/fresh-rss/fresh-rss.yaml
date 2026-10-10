@@ -94,7 +94,7 @@ services:
     - "traefik.enable=true"
     - "traefik.http.routers.${FRESHRSS__NAME}.rule=Host(`${FRESHRSS__SUBDOMAIN}.${DOMAINNAME}`)"
     - "traefik.http.routers.${FRESHRSS__NAME}.middlewares=authelia@docker"
-    - "traefik.http.services.${FRESHRSS__NAME}.loadbalancer.server.port=80"
+    - "traefik.http.services.${FRESHRSS__NAME}.loadbalancer.server.port=${FRESHRSS__PORT}"
     - "deunhealth.restart.on.unhealthy=true"
 
     volumes:

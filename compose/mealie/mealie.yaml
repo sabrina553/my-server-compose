@@ -92,7 +92,7 @@ services:
     - "traefik.enable=true"
     - "traefik.http.routers.${MEALIE__NAME}.rule=Host(`${MEALIE__SUBDOMAIN}.${DOMAINNAME}`)"
     - "traefik.http.routers.${MEALIE__NAME}.middlewares=authelia@docker"
-    - "traefik.http.services.${MEALIE__NAME}.loadbalancer.server.port=9000"
+    - "traefik.http.services.${MEALIE__NAME}.loadbalancer.server.port=${MEALIE__PORT}"
     - "deunhealth.restart.on.unhealthy=true"
 
     volumes:

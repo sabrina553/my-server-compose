@@ -68,7 +68,7 @@ services:
     - "traefik.enable=true"
     # No authelia@docker: public blog on DOMAINNAME2 (see the header).
     - "traefik.http.routers.${GHOST__NAME}.rule=Host(`${GHOST__DOMAIN}`)"
-    - "traefik.http.services.${GHOST__NAME}.loadbalancer.server.port=2368"
+    - "traefik.http.services.${GHOST__NAME}.loadbalancer.server.port=${GHOST__PORT}"
     - "deunhealth.restart.on.unhealthy=true"
     # Diun: only report -alpine releases
     - 'diun.include_tags=^\d+\.\d+\.\d+-alpine$$'
@@ -79,7 +79,7 @@ services:
     healthcheck:
       # Without X-Forwarded-Proto Ghost 301s to its public https URL, which wget
       # follows through Traefik, and Traefik doesn't route to an unhealthy Ghost.
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "--header", "X-Forwarded-Proto: https", "http://127.0.0.1:2368/ghost/api/admin/site/"]
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "--header", "X-Forwarded-Proto: https", "http://127.0.0.1:${GHOST__PORT}/ghost/api/admin/site/"]
       interval: 30s
       timeout: 5s
       retries: 3

@@ -73,7 +73,7 @@ services:
     - "traefik.docker.network=filebrowser_proxy"
     - "traefik.http.routers.${FILEBROWSER__NAME}.rule=Host(`${FILEBROWSER__SUBDOMAIN}.${DOMAINNAME}`)"
     - "traefik.http.routers.${FILEBROWSER__NAME}.middlewares=authelia@docker"
-    - "traefik.http.services.${FILEBROWSER__NAME}.loadbalancer.server.port=80"
+    - "traefik.http.services.${FILEBROWSER__NAME}.loadbalancer.server.port=${FILEBROWSER__PORT}"
     # Diun: only report -stable releases
     - 'diun.include_tags=^\d+\.\d+\.\d+-stable$$'
 
