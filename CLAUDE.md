@@ -12,6 +12,16 @@ This is the live server. The repo is checked out at `/opt/docker` on the `dev`
 branch, edited through VS Code Remote-SSH, and changes take effect here
 directly. Commit to `dev` and push. **The GitHub repo is public.**
 
+It's a Debian VM on a Proxmox VE 9 host. Its system disk is on the host's
+`local-lvm`; DATADIR is a second virtual disk on a separate NVMe (plain LVM,
+so no Proxmox snapshots of this VM while it's attached). Claude has no access
+to the Proxmox host, and can't edit root's crontab here (the permission check
+refuses it): for both, give the user the commands and ask for the output.
+
+`docs/obsidian/` (gitignored) is the user's Obsidian vault for notes and
+documentation. Notes there always use **plural** tags (`self-hosts`,
+`securities`, `backups`, …) and are linked from the hub note `Self Host.md`.
+
 ## Hard rules
 
 - **Never read anything under `secrets/`.** Not with cat, grep, head or diff,
@@ -25,7 +35,8 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
   2. run `scripts/apply-env-example.sh`, which rebuilds `.env` from the
      template and keeps only this server's SITE values. Its output is key
      names only.
-  3. `docker compose config -q`, then deploy.
+  3. validate (`scripts/compose-diff.sh`; see "Validating changes"), then
+     deploy.
 
   If the script reports drift (someone edited `.env` by hand), tell the user
   the key names and let them decide; don't `--force` on your own.
@@ -40,7 +51,9 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
   before; don't rely on it. **Redact before truncating**: `cut -c`/`head -c`
   ahead of `redact.sh` chops values so they no longer match (this leaked a
   domain on 2026-10-10). If the hook wants `redact.sh` last, use it twice:
-  `… | scripts/redact.sh | cut -c1-200 | scripts/redact.sh`.
+  `… | scripts/redact.sh | cut -c1-200 | scripts/redact.sh`. The hook reads
+  the command *text*, so a commit message that mentions logs or the journal
+  trips it: write the message to a file and `git commit -F <file>`.
 - **Nothing personal in tracked files.** No domains, hostnames, usernames,
   e-mail addresses, IPs outside Docker's 172.x ranges, providers or paths
   from the SITE block; use the variable names. The pre-commit hook
@@ -70,7 +83,9 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
   `environment`). Its header lists the conventions; the short version:
   - From `.env.example`: `<APP>__NAME` (container), `<APP>__SUBDOMAIN`,
     image/version, `<APP>__VOLDIR` when the data folder isn't
-    `${VOLDIR}/${<APP>__NAME}`, ports and app settings.
+    `${VOLDIR}/${<APP>__NAME}`, `<APP>__PORT` (the port the app listens on in
+    its container; Traefik's label and the healthcheck use it) and app
+    settings.
   - In the compose file on purpose (it's the security model): hardening,
     networks and fixed IPs, bind addresses, trusted proxies, the `.int`
     part of hostnames, `authelia@docker`.
@@ -185,7 +200,26 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
   `scripts/apply-env-example.sh`, then `docker compose up -d <svc>`.
 - Suffixed tag schemes need a `diun.include_tags` label. Use **single
   quotes**, because `\d` in double-quoted YAML is a parse error, and write `$`
-  as `$$`.
+  as `$$`. A regex kept in `.env.example` instead (like `DIUN__INCLUDE_TAGS`)
+  is single-quoted there and needs no `$$`: Compose doesn't re-interpolate a
+  substituted value.
+
+**Backups**
+- `scripts/db-dump.sh` (cron 06:20, 18:20) dumps every database to
+  `/var/backups/db-dumps` (root only). The live database folders are excluded
+  from restic on purpose: databases are restored from these dumps.
+- restic (cron 06:30, 18:30) runs from the user's own scripts in
+  `/srv/restic-repo/scripts` (a separate git repo; `identities/` holds repo
+  passwords: never read it). Sets: `MAIN` (this repo, volumes, dumps, …) to
+  the local repo and the PC; `DATA` (DATADIR) to the PC only. The PC pulls its
+  copies over SSH on its own timers. Local retention is short; the PC keeps
+  the history.
+- `scripts/backup-verify.sh`: `daily` (Mon–Sat 07:00, mails only on failure:
+  dump freshness and size, snapshot age, PC snapshot age, disk space, kernel
+  disk errors) and `weekly` (Sunday, always mails: `restic check`, a full
+  restore with `--verify`, every dump loaded into a throwaway copy of its
+  database and compared with live). `test-db <service>` runs one restore test.
+  A new database means a new line in both scripts.
 
 ## Validating changes
 
@@ -194,8 +228,13 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
   services), redacted. A pure layout change prints "No differences". It
   renders both sides with today's `.env`, so a renamed variable makes the
   *old* side look empty; that's an artifact, not a change.
-- `docker compose config -q` must be silent. Note that `docker compose config`
-  prints `$` as `$$`; that's display only.
+- Moving a literal into `.env.example` must print "No differences", and
+  `docker compose up -d` must then recreate nothing.
+- `docker compose config -q` must be silent; it's for the user to run.
+  Claude's settings deny `docker compose config*` (without `-q` it prints the
+  whole rendered config, SITE values included), so Claude validates with
+  `compose-diff.sh`, which renders the config and fails on errors. Note that
+  `docker compose config` prints `$` as `$$`; that's display only.
 - To check whether an image tag exists:
   `docker manifest inspect <image:tag>`. For `tag@sha256:…` refs, inspect
   `repo@sha256:…`. Docker Hub rate-limits anonymous lookups, so a
@@ -224,3 +263,14 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
   unhealthy (no `tun0`). Fix: `docker compose up -d --force-recreate
   qbittorrent mousehole`. deunhealth can't fix it: a restart rejoins the old
   namespace.
+- At boot, the Docker daemon restarts every `unless-stopped` container itself,
+  all at once, and ignores `depends_on` (only Compose reads it). A container
+  can fail once or twice until what it needs is up (Dozzle does), then
+  recovers. Not a bug to fix.
+- A plain `restart` keeps the container's filesystem; `up -d` with a change
+  recreates it. Stale files (pid files, sockets) can break a restart that a
+  fresh container doesn't hit: Grimmory's MariaDB couldn't delete its old
+  `mysqld.pid` (root without `DAC_OVERRIDE`), so `/run/mysqld` is a tmpfs.
+- A fresh linuxserver MariaDB leaves `root@localhost` with **no password**
+  (`MYSQL_ROOT_PASSWORD` only sets `root@%`). Grimmory's was fixed by hand;
+  `backup-verify.sh` relies on it for its throwaway copies.
