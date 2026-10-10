@@ -12,7 +12,7 @@
 #   - the server's newest MAIN snapshot is fresh and contains the dumps
 #   - the PC's repos have a recent snapshot (the PC may be off: if it can't be
 #     reached, the last snapshot time seen is used instead)
-#   - the disk isn't nearly full
+#   - the disk isn't nearly full, and the kernel logged no disk read errors
 #
 # weekly: the daily checks, then a restore test, and always e-mails, so silence
 # never passes for success.
@@ -172,6 +172,28 @@ check_disk() {
   else
     ok "disk: / is ${pct}% full"
   fi
+}
+
+# Read errors the kernel logged since the last run (first run: the last day).
+# The DATADIR NVMe had unreadable sectors for who knows how long before a full
+# read happened to hit them (2026-10-10); this makes the next one an e-mail.
+check_disk_errors() {
+  local since now lines n devs
+  since=$(cat "$STATE/kernel.since" 2>/dev/null || date -d '-1 day' +%s)
+  now=$(date +%s)
+  if ! lines=$(journalctl -k --since "@$since" --until "@$now" --no-pager -q 2>/dev/null); then
+    fail "disk errors: can't read the kernel log"; return
+  fi
+  lines=$(grep -E 'critical medium error|I/O error|EXT4-fs error|XFS .*error' <<<"$lines")
+  echo "$now" > "$STATE/kernel.since"
+  if [[ -z $lines ]]; then
+    ok "disk errors: none in the kernel log since the last check"
+    return
+  fi
+  n=$(grep -c . <<<"$lines")
+  devs=$(grep -o -E 'dev [a-z0-9]+|\[(sd[a-z]+|nvme[0-9n]+)\]' <<<"$lines" | tr -d '[]' | sed 's/^dev //' | sort -u | paste -sd, -)
+  fail "disk errors: $n kernel read/filesystem errors since the last check (${devs:-unknown device})"
+  while IFS= read -r l; do note "$l"; done < <(tail -n 3 <<<"$lines" | cut -c1-160)
 }
 
 # --- weekly: repository -------------------------------------------------------
@@ -421,12 +443,12 @@ finish() {   # <mode> <always mail?>
 # --- main ---------------------------------------------------------------------
 case ${1:-daily} in
   daily)
-    check_dumps; check_local; check_pc; check_disk
+    check_dumps; check_local; check_pc; check_disk; check_disk_errors
     finish daily no
     ;;
   weekly)
     t0=$SECONDS
-    check_dumps; check_local; check_pc; check_disk
+    check_dumps; check_local; check_pc; check_disk; check_disk_errors
     weekly_restore
     note "took $(( (SECONDS - t0) / 60 )) min"
     finish weekly yes
