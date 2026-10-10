@@ -37,7 +37,10 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
   PreToolUse hook `.claude/hooks/redact-guard.py` blocks those commands
   otherwise (it scans the whole command text, so edit files with the editor,
   not heredocs that mention them). Hand-written `sed` masking has leaked
-  before; don't rely on it.
+  before; don't rely on it. **Redact before truncating**: `cut -c`/`head -c`
+  ahead of `redact.sh` chops values so they no longer match (this leaked a
+  domain on 2026-10-10). If the hook wants `redact.sh` last, use it twice:
+  `… | scripts/redact.sh | cut -c1-200 | scripts/redact.sh`.
 - **Nothing personal in tracked files.** No domains, hostnames, usernames,
   e-mail addresses, IPs outside Docker's 172.x ranges, providers or paths
   from the SITE block; use the variable names. The pre-commit hook
