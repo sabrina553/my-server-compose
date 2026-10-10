@@ -62,3 +62,11 @@ services:
     volumes:
     - ${COUCHDB__VOLDIR}/dbdata:/opt/couchdb/data
     - ${COUCHDB__VOLDIR}/config:/opt/couchdb/etc
+
+    healthcheck:
+      test: curl -fsS -o /dev/null http://127.0.0.1:5984/_up || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+      start_interval: 5s

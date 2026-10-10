@@ -64,7 +64,7 @@ services:
 
     labels:
     - "traefik.enable=false"
-    - "deunhealth.restart.on.unhealthy=true"
+    # No deunhealth label: Diun has no health endpoint (restart: covers crashes).
     # socket-proxy-ro allowlist: exactly the calls Diun was seen making. Image
     # name segments can't start with a dot (no `..`). Single quotes: `\.` is a
     # parse error in double-quoted YAML.

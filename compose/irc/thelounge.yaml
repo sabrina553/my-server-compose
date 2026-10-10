@@ -40,3 +40,11 @@ services:
 
     volumes:
     - ${IRC__VOLDIR}/:/var/opt/thelounge
+
+    healthcheck:
+      test: wget -q -O /dev/null http://127.0.0.1:9000/ || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+      start_interval: 5s

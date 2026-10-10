@@ -52,3 +52,11 @@ services:
     volumes:
     - ${PGADMIN__VOLDIR}:/var/lib/pgadmin
     - ./config_local.py:/pgadmin4/config_local.py:ro
+
+    healthcheck:
+      test: wget -q -O /dev/null http://127.0.0.1:8080/misc/ping || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+      start_interval: 5s
