@@ -5,7 +5,7 @@ services:
   irc:
     container_name: ${IRC__NAME}
     image: ${IRC__IMAGE}:${IRC__VERSION}
-    restart: always
+    restart: unless-stopped
 
     security_opt:
     - no-new-privileges:true

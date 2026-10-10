@@ -52,7 +52,7 @@ services:
         condition: service_started
         restart: false
       postgres:
-        condition: service_started
+        condition: service_healthy
         restart: false
     logging:
       driver: "json-file"
@@ -72,7 +72,7 @@ services:
       ADMIN_EMAIL: ${EMAIL_ADMIN}
       BASE_URL: https://${FRESHRSS__SUBDOMAIN}.${DOMAINNAME}
       SERVER_DNS: ${FRESHRSS__SUBDOMAIN}.${DOMAINNAME}
-      DB_TYPE: ${POSTGRESQL__HOST}
+      DB_TYPE: pgsql
       DB_HOST: ${POSTGRESQL__HOST}
       DB_NAME: ${FRESHRSS__DB_NAME}
       DB_USER: ${FRESHRSS__DB_USER}

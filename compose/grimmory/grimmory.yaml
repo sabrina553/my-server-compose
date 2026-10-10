@@ -72,7 +72,7 @@ services:
 
     volumes:
     - ${VOLDIR}/${GRIMMORY__NAME}/data:/app/data:rw
-    - ${DATADIR}/torrents/:/books:rw
+    - ${DATADIR}/torrents/books:/books:rw   # the library only, not all torrents
     - ${DATADIR}/downloads/:/bookdrop:rw
 
   mariadb:
