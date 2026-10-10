@@ -62,7 +62,7 @@ services:
     - "traefik.enable=true"
     # No authelia@docker: forward-auth breaks the mobile app's API calls.
     - "traefik.http.routers.${IMMICH__NAME}.rule=Host(`${IMMICH__SUBDOMAIN}.${DOMAINNAME}`)"
-    - "traefik.http.services.${IMMICH__NAME}.loadbalancer.server.port=2283"
+    - "traefik.http.services.${IMMICH__NAME}.loadbalancer.server.port=${IMMICH__PORT}"
     - "deunhealth.restart.on.unhealthy=true"
 
     volumes:

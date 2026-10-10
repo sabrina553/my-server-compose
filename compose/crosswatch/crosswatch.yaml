@@ -41,7 +41,7 @@ services:
     - "traefik.enable=true"
     - "traefik.http.routers.${CROSSWATCH__NAME}.rule=Host(`${CROSSWATCH__SUBDOMAIN}.int.${DOMAINNAME}`)"
     - "traefik.http.routers.${CROSSWATCH__NAME}.middlewares=authelia@docker"
-    - "traefik.http.services.${CROSSWATCH__NAME}.loadbalancer.server.port=8787"
+    - "traefik.http.services.${CROSSWATCH__NAME}.loadbalancer.server.port=${CROSSWATCH__PORT}"
     - "deunhealth.restart.on.unhealthy=true"
 
     volumes:

@@ -58,7 +58,7 @@ services:
     # Network: set on vpn (traefik.docker.network=vpn_ui), not here.
     - "traefik.http.routers.${MOUSEHOLE__NAME}.rule=Host(`${MOUSEHOLE__SUBDOMAIN}.int.${DOMAINNAME}`)"
     - "traefik.http.routers.${MOUSEHOLE__NAME}.middlewares=authelia@docker"
-    - "traefik.http.services.${MOUSEHOLE__NAME}.loadbalancer.server.port=5010"
+    - "traefik.http.services.${MOUSEHOLE__NAME}.loadbalancer.server.port=${MOUSEHOLE__PORT}"
     - "deunhealth.restart.on.unhealthy=true"
 
     volumes:

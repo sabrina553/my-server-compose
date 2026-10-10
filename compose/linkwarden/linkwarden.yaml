@@ -76,7 +76,7 @@ services:
     # No authelia@docker: forward-auth breaks the mobile app and browser extension.
     # Login is SSO-only (Authelia two_factor OIDC client), see environment above.
     - "traefik.http.routers.${LINKWARDEN__NAME}.rule=Host(`${LINKWARDEN__SUBDOMAIN}.${DOMAINNAME}`)"
-    - "traefik.http.services.${LINKWARDEN__NAME}.loadbalancer.server.port=3000"
+    - "traefik.http.services.${LINKWARDEN__NAME}.loadbalancer.server.port=${LINKWARDEN__PORT}"
 
     volumes:
     - ${VOLDIR}/${LINKWARDEN__NAME}:/data/data

@@ -47,7 +47,7 @@ services:
     - "traefik.enable=true"
     - "traefik.http.routers.${BOOKKEEP__NAME}.rule=Host(`${BOOKKEEP__SUBDOMAIN}.${DOMAINNAME}`)"
     - "traefik.http.routers.${BOOKKEEP__NAME}.middlewares=authelia@docker"
-    - "traefik.http.services.${BOOKKEEP__NAME}.loadbalancer.server.port=8000"
+    - "traefik.http.services.${BOOKKEEP__NAME}.loadbalancer.server.port=${BOOKKEEP__PORT}"
     - "deunhealth.restart.on.unhealthy=true"
 
     volumes:

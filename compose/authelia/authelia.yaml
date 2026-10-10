@@ -135,11 +135,11 @@ services:
     - "traefik.http.routers.${AUTHELIA__NAME}.rule=Host(`${AUTHELIA__SUBDOMAIN}.${DOMAINNAME}`)"
     - "traefik.http.routers.${AUTHELIA__NAME}.entrypoints=websecure"
     - "traefik.http.routers.${AUTHELIA__NAME}.tls=true"
-    - "traefik.http.services.${AUTHELIA__NAME}.loadbalancer.server.port=9091"
+    - "traefik.http.services.${AUTHELIA__NAME}.loadbalancer.server.port=${AUTHELIA__PORT}"
     # The forward-auth middleware, referenced as authelia@docker by every
     # protected router. Its name is fixed on purpose. The address uses the
     # service key, so it doesn't depend on AUTHELIA__NAME.
-    - "traefik.http.middlewares.authelia.forwardAuth.address=http://authelia:9091/api/authz/forward-auth"
+    - "traefik.http.middlewares.authelia.forwardAuth.address=http://authelia:${AUTHELIA__PORT}/api/authz/forward-auth"
     - "traefik.http.middlewares.authelia.forwardAuth.trustForwardHeader=true"
     - "traefik.http.middlewares.authelia.forwardAuth.maxResponseBodySize=8192"
     - "traefik.http.middlewares.authelia.forwardAuth.authResponseHeaders=Remote-User,Remote-Groups,Remote-Email,Remote-Name"

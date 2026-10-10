@@ -97,7 +97,7 @@ services:
     - "traefik.docker.network=arr"
     - "traefik.http.routers.${PROWLARR__NAME}.rule=Host(`${PROWLARR__SUBDOMAIN}.int.${DOMAINNAME}`)"
     - "traefik.http.routers.${PROWLARR__NAME}.middlewares=authelia@docker"
-    - "traefik.http.services.${PROWLARR__NAME}.loadbalancer.server.port=9696"
+    - "traefik.http.services.${PROWLARR__NAME}.loadbalancer.server.port=${PROWLARR__PORT}"
     - "deunhealth.restart.on.unhealthy=true"
 
     volumes:
@@ -105,7 +105,7 @@ services:
 
     healthcheck:
       # The UI listens only on its fixed address on `arr`, not on localhost.
-      test: curl -fsS -o /dev/null http://172.21.10.10:9696/ping || exit 1
+      test: curl -fsS -o /dev/null http://172.21.10.10:${PROWLARR__PORT}/ping || exit 1
       interval: 30s
       timeout: 5s
       retries: 3
