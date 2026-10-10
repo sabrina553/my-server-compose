@@ -64,12 +64,22 @@ password_policy:
 ## authelia@docker middleware. Apps that don't (e.g. Vaultwarden, Linkwarden)
 ## rely on their own login + the OIDC client policies further down.
 ##
+## Who gets what (LLDAP groups). Everything is two_factor. A user matching no
+## rule for a host gets "forbidden" (default deny).
+##   admin            *.int admin UIs, Vaultwarden /admin, CouchDB admin, and
+##                    everything below
+##   privliged_user   FileBrowser, Chaptarr, Leantime (and the OIDC apps
+##                    Immich, Vaultwarden, Linkwarden, Home Assistant)
+##   user             Mealie, Grimmory, FreshRSS
+##   house_guest      Home Assistant only (OIDC; see authorization_policies)
+## The tiers don't nest in LLDAP, so each rule lists every group it admits.
+##
 access_control:
   default_policy: 'deny'
 
   rules:
     ## No network-based bypass rules. Containers talk to each other by
-    ## container name (http://prowlarr:9696, http://chaptarr:8789,
+    ## service key (http://prowlarr:9696, http://chaptarr:8789,
     ## http://vpn:8080 for qBittorrent) so they never go through Traefik.
     ## A bypass by source IP is unsafe here: Docker's gateway address and
     ## cloudflared's own address are inside the Docker subnets.
@@ -77,6 +87,7 @@ access_control:
     ## Admin / infrastructure UIs (dozzle, traefik, pgadmin, lldap, prowlarr,
     ## qbittorrent, mousehole, mousetrap, crosswatch, irc).
     - domain: '*.int.{{ env "DOMAINNAME" }}'
+      subject: 'group:admin'
       policy: 'two_factor'
 
     ## Vaultwarden admin panel. Only /admin goes through the authelia@docker
@@ -84,6 +95,7 @@ access_control:
     - domain: '{{ env "SUBDOMAIN_VAULTWARDEN" }}.{{ env "DOMAINNAME" }}'
       resources:
         - '^/admin([/?].*)?$'
+      subject: 'group:admin'
       policy: 'two_factor'
 
     ## CouchDB's Fauxton admin UI and password login (POST /_session). Only these
@@ -93,28 +105,36 @@ access_control:
       resources:
         - '^/_utils([/?].*)?$'
         - '^/_session([?].*)?$'
+      subject: 'group:admin'
       policy: 'two_factor'
 
-    ## Personal data. (photos. and ha. aren't here: Immich and Home Assistant
-    ## have no forward-auth because of their mobile apps, and rely on their
-    ## two_factor OIDC clients instead.)
+    ## Personal data and anything with a lot of reach. (photos. and ha. aren't
+    ## here: Immich and Home Assistant have no forward-auth because of their
+    ## mobile apps, and rely on their OIDC clients instead.)
     # FileBrowser and FreshRSS log users in from the Remote-User header. Never
     # give their hosts a 'bypass' policy: Traefik would then pass a
     # client-supplied Remote-User straight through.
     - domain:
         - '{{ env "SUBDOMAIN_FILEBROWSER" }}.{{ env "DOMAINNAME" }}'
-      policy: 'two_factor'
-
-    ## Everything else that is meant to be behind Authelia.
-    - domain:
+        - '{{ env "SUBDOMAIN_CHAPTARR" }}.{{ env "DOMAINNAME" }}'
+        - '{{ env "SUBDOMAIN_LEANTIME" }}.{{ env "DOMAINNAME" }}'
         - '{{ env "SUBDOMAIN_AUDIOBOOKSHELF" }}.{{ env "DOMAINNAME" }}'
         - '{{ env "SUBDOMAIN_BOOKKEEP" }}.{{ env "DOMAINNAME" }}'
-        - '{{ env "SUBDOMAIN_CHAPTARR" }}.{{ env "DOMAINNAME" }}'
+      subject:
+        - 'group:privliged_user'
+        - 'group:admin'
+      policy: 'two_factor'
+
+    ## Everyday apps.
+    - domain:
         - '{{ env "SUBDOMAIN_GRIMMORY" }}.{{ env "DOMAINNAME" }}'
-        - '{{ env "SUBDOMAIN_LEANTIME" }}.{{ env "DOMAINNAME" }}'
         - '{{ env "SUBDOMAIN_MEALIE" }}.{{ env "DOMAINNAME" }}'
         - '{{ env "SUBDOMAIN_FRESHRSS" }}.{{ env "DOMAINNAME" }}'
-      policy: 'one_factor'
+      subject:
+        - 'group:user'
+        - 'group:privliged_user'
+        - 'group:admin'
+      policy: 'two_factor'
 
 session:
   name: 'authelia_session'
@@ -147,6 +167,33 @@ identity_providers:
         - 'https://{{ env "SUBDOMAIN_AUTHELIA" }}.{{ env "DOMAINNAME" }}'
       allowed_origins_from_client_redirect_uris: false
 
+    ## Who may log in to each OIDC app: the same tiers as access_control above.
+    ## Matching no rule means "deny". Always two_factor.
+    authorization_policies:
+      privileged:
+        default_policy: 'deny'
+        rules:
+          - policy: 'two_factor'
+            subject:
+              - 'group:privliged_user'
+              - 'group:admin'
+      everyday:
+        default_policy: 'deny'
+        rules:
+          - policy: 'two_factor'
+            subject:
+              - 'group:user'
+              - 'group:privliged_user'
+              - 'group:admin'
+      homeassistant:
+        default_policy: 'deny'
+        rules:
+          - policy: 'two_factor'
+            subject:
+              - 'group:house_guest'
+              - 'group:privliged_user'
+              - 'group:admin'
+
     claims_policies:
       grimmory:
         id_token: ['email', 'email_verified', 'name', 'groups', 'preferred_username']
@@ -163,7 +210,7 @@ identity_providers:
       - client_name: 'FileBrowser Quantum'
         client_id: {{ secret "/run/secrets/filebrowser_oidc_client_id" | trim | squote }}
         client_secret: {{ secret "/run/secrets/authelia_oidc_filebrowser_digest" | trim | squote }}
-        authorization_policy: 'two_factor'
+        authorization_policy: 'privileged'
         consent_mode: 'pre-configured'
         pre_configured_consent_duration: '1 year'
         require_pkce: false   # FileBrowser Quantum's server-side OIDC doesn't send PKCE (checked 1.5.8, 2026-10-09)
@@ -175,7 +222,7 @@ identity_providers:
       - client_name: 'FreshRSS'
         client_id: {{ secret "/run/secrets/freshrss_oidc_client_id" | trim | squote }}
         client_secret: {{ secret "/run/secrets/authelia_oidc_freshrss_digest" | trim | squote }}
-        authorization_policy: 'one_factor'
+        authorization_policy: 'everyday'
         consent_mode: 'pre-configured'
         pre_configured_consent_duration: '1 year'
         require_pkce: true
@@ -189,7 +236,7 @@ identity_providers:
         client_id: {{ secret "/run/secrets/grimmory_oidc_client_id" | trim | squote }}
         client_secret: {{ secret "/run/secrets/authelia_oidc_grimmory_digest" | trim | squote }}
         claims_policy: 'grimmory'
-        authorization_policy: 'one_factor'
+        authorization_policy: 'everyday'
         consent_mode: 'pre-configured'
         pre_configured_consent_duration: '1 year'
         require_pkce: true
@@ -207,7 +254,7 @@ identity_providers:
       - client_name: 'Home Assistant'
         client_id: {{ secret "/run/secrets/homeassistant_oidc_client_id" | trim | squote }}
         client_secret: {{ secret "/run/secrets/authelia_oidc_homeassistant_digest" | trim | squote }}
-        authorization_policy: 'two_factor'
+        authorization_policy: 'homeassistant'
         consent_mode: 'pre-configured'
         pre_configured_consent_duration: '1 year'
         require_pkce: true
@@ -221,7 +268,7 @@ identity_providers:
       - client_name: 'Immich'
         client_id: {{ secret "/run/secrets/immich_oidc_client_id" | trim | squote }}
         client_secret: {{ secret "/run/secrets/authelia_oidc_immich_digest" | trim | squote }}
-        authorization_policy: 'two_factor'
+        authorization_policy: 'privileged'
         consent_mode: 'pre-configured'
         pre_configured_consent_duration: '1 year'
         require_pkce: true
@@ -237,7 +284,7 @@ identity_providers:
         client_id: {{ secret "/run/secrets/leantime_oidc_client_id" | trim | squote }}
         client_secret: {{ secret "/run/secrets/authelia_oidc_leantime_digest" | trim | squote }}
         claims_policy: 'leantime'
-        authorization_policy: 'two_factor'
+        authorization_policy: 'privileged'
         consent_mode: 'pre-configured'
         pre_configured_consent_duration: '1 year'
         require_pkce: false   # Leantime's OIDC client doesn't send PKCE (tested 2026-10-09)
@@ -249,7 +296,7 @@ identity_providers:
       - client_name: 'Linkwarden'
         client_id: {{ secret "/run/secrets/linkwarden_oidc_client_id" | trim | squote }}
         client_secret: {{ secret "/run/secrets/authelia_oidc_linkwarden_digest" | trim | squote }}
-        authorization_policy: 'two_factor'
+        authorization_policy: 'privileged'
         consent_mode: 'pre-configured'
         pre_configured_consent_duration: '1 year'
         require_pkce: true
@@ -262,7 +309,7 @@ identity_providers:
       - client_name: 'Mealie'
         client_id: {{ secret "/run/secrets/mealie_oidc_client_id" | trim | squote }}
         client_secret: {{ secret "/run/secrets/authelia_oidc_mealie_digest" | trim | squote }}
-        authorization_policy: 'one_factor'
+        authorization_policy: 'everyday'
         consent_mode: 'pre-configured'
         pre_configured_consent_duration: '1 year'
         require_pkce: true
@@ -275,7 +322,7 @@ identity_providers:
       - client_name: 'Vaultwarden'
         client_id: {{ secret "/run/secrets/vaultwarden_oidc_client_id" | trim | squote }}
         client_secret: {{ secret "/run/secrets/authelia_oidc_vaultwarden_digest" | trim | squote }}
-        authorization_policy: 'two_factor'
+        authorization_policy: 'privileged'
         consent_mode: 'pre-configured'
         pre_configured_consent_duration: '1 year'
         require_pkce: true

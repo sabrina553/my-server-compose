@@ -2,9 +2,9 @@
 
 Self-hosted services behind Cloudflare Tunnel → Traefik → Authelia (+ LLDAP).
 Everything runs from this repo with Docker Compose. Read `README.md` for the
-overview, `docs/decisions.md` before changing anything structural (don't undo
-a decision without saying so), and `docs/journal/` (newest first) for history
-and open to-dos.
+overview and `docs/decisions.md` before changing anything structural (don't
+undo a decision without saying so). History is the git log; there are no
+journals in this repo, so don't add any.
 
 ## Where this runs
 
@@ -98,12 +98,13 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
 
 **Hardening** (baseline on every service)
 - `no-new-privileges`, `cap_drop: ALL`, json-file log rotation.
-- Never add `apparmor:unconfined`; the server runs AppArmor. Home Assistant
-  is the one deliberate exception.
+- Never add `apparmor:unconfined`; the server runs AppArmor. No exceptions.
+- Never mount host sockets (`/run/dbus`, `docker.sock`, …) into an app:
+  containers run as host root, and `:ro` doesn't restrict a socket.
 - Add back only the capabilities the image needs. Root-then-drop images:
   `CHOWN DAC_READ_SEARCH FOWNER SETGID SETUID`. Use `DAC_OVERRIDE` if the
-  entrypoint checks writability as root (as LLDAP does). See the journal's
-  table.
+  entrypoint checks writability as root (as LLDAP does). See the table in
+  `docs/decisions.md`.
 
 **Networks**
 - `external`: internet access, and the network Traefik routes on by default.
@@ -116,10 +117,24 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
   Both run with no login of their own and bind their UI to that address only.
   `chaptarr_downloads`, `prowlarr_downloads` (each with `vpn`) and
   `prowlarr_flaresolverr` are their outbound links; the two *arrs share only `arr`.
+- `vpn` (Gluetun) is **not** on `external`: Mousetrap's UI in its namespace
+  has no login and listens everywhere. It uses `vpn_egress` (itself only) for
+  the tunnel, `vpn_ui` for Traefik (`.249`; the label
+  `traefik.docker.network=vpn_ui` goes on **vpn**: Traefik reads it from the
+  namespace owner and ignores it on qBittorrent/Mousetrap), and `vpn_proxy` for
+  FlareSolverr, which has no other way out. Gluetun's HTTP proxy (no login)
+  serves FlareSolverr, Chaptarr and Prowlarr (their in-app proxy setting).
+- `lldap_backend`: Authelia and LLDAP; LDAP listens only on LLDAP's `.10` there,
+  and Authelia uses the alias `lldap-ldap`, which exists only on that network.
+  When two containers share several networks, a plain service name may
+  resolve to the wrong one; use a per-network alias for bound addresses.
 - `proxy_internal` is for routed services with no internet access; they need
   the label `traefik.docker.network=proxy_internal`.
 - Fixed IPs on `external`: cloudflared `.250`, Traefik `.249` (backends trust
   only `.249` as their proxy).
+- Host ports: Traefik's 80/443 only, bound to `TRAEFIK__BIND_IP` (the LAN
+  address `*.int` resolves to). Public names arrive through cloudflared.
+  Nothing else publishes ports, and nothing binds to all interfaces.
 - Containers in the VPN's network use `network_mode: service:vpn`, never
   `container:vpn`.
 
@@ -133,6 +148,12 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
 
 **Authelia**
 - `default_policy: deny`. Every forward-auth router needs a matching rule.
+- Every rule and OIDC client is `two_factor` and names its LLDAP groups:
+  `admin` (`*.int` and admin paths), `privliged_user` (FileBrowser,
+  Chaptarr, Leantime, Immich, Vaultwarden, Linkwarden), `user` (Mealie,
+  Grimmory, FreshRSS), `house_guest` (Home Assistant only). Groups don't nest,
+  so each rule lists every group it admits. OIDC clients use the
+  `authorization_policies` (`privileged`, `everyday`, `homeassistant`).
 - Apps with mobile apps or extensions (Vaultwarden, Linkwarden, Immich, Home
   Assistant) do **not** use forward-auth. They use their own login plus a
   two_factor OIDC client.

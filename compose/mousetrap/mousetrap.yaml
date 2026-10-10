@@ -1,7 +1,9 @@
 ## MouseTrap  https://github.com/sirjmann92/mousetrap
 ## Seedbox/tracker helper with a port monitor. Runs in the VPN's network
-## namespace; web UI at <subdomain>.int.<domain> behind Authelia. Reads the
-## Docker API through the read-only socket proxy (see socket-proxy.yaml).
+## namespace; web UI at <subdomain>.int.<domain> behind Authelia. Its UI and API
+## have no login and listen on all addresses (hard-coded in start.sh), so only
+## what shares a network with vpn can reach them (vpn is not on `external`).
+## Reads the Docker API through the read-only socket proxy (see socket-proxy.yaml).
 services:
   mousetrap:
     container_name: ${MOUSETRAP__NAME}
@@ -55,6 +57,7 @@ services:
 
     labels:
     - "traefik.enable=true"
+    # Network: set on vpn (traefik.docker.network=vpn_ui), not here.
     - "traefik.http.routers.${MOUSETRAP__NAME}.rule=Host(`${MOUSETRAP__SUBDOMAIN}.int.${DOMAINNAME}`)"
     - "traefik.http.routers.${MOUSETRAP__NAME}.middlewares=authelia@docker"
     - "traefik.http.services.${MOUSETRAP__NAME}.loadbalancer.server.port=39842"

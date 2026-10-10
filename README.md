@@ -46,12 +46,17 @@ behind each point.
 - **No secrets in the repo or in environment variables.** Every password, key
   and token is a file in `secrets/`, mounted as a Docker secret. Apps without
   `*_FILE` support load them through a small wrapper entrypoint.
-- **Network isolation.** Only Traefik publishes ports (80/443). Each database
-  sits on its own internal-only network, reachable only by the apps that use
-  it.
+- **Network isolation.** Only Traefik publishes ports, on the LAN address
+  only (for the `*.int` admin names); public traffic arrives through the
+  tunnel. Each database sits on its own internal-only
+  network, reachable only by the apps that use it, and the VPN container is
+  reachable only by the few services that need it.
+- **Group-based access.** Admin UIs are for the `admin` group only; other apps
+  are open to the LLDAP groups they're meant for, always with two-factor.
 - **Minimal privileges.** Every container runs with `no-new-privileges`,
   `cap_drop: ALL` (plus only what its image needs) and Docker's default
-  AppArmor profile. Nothing has write access to the Docker API.
+  AppArmor profile, and none gets a host socket. Nothing has write access to
+  the Docker API.
 - **Pinned versions.** Every image is pinned to an exact version. Diun emails
   when newer releases appear, and updates are applied by hand.
 
@@ -66,7 +71,7 @@ compose/authelia/configuration.yml Authelia config (a Go template)
 secrets/                      secret files (not tracked)
 scripts/                      helpers (below)
 templates/template.compose.yaml    starting point for a new service
-docs/                         decisions and journal
+docs/decisions.md             why things are the way they are
 ```
 
 ## Configuration

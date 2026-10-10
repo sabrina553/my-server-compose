@@ -1,6 +1,7 @@
 ## LLDAP  https://github.com/lldap/lldap
-## User and group directory for Authelia (LDAP on 3890, internal only). Admin
-## UI at <subdomain>.int.<domain>, behind Authelia. Data lives in Postgres.
+## User and group directory for Authelia. LDAP (3890, plaintext, no rate
+## limit on binds) listens only on lldap_backend, shared with Authelia alone.
+## Admin UI at <subdomain>.int.<domain>, behind Authelia. Data lives in Postgres.
 services:
   lldap:
     container_name: ${LLDAP__NAME}
@@ -45,6 +46,9 @@ services:
       LLDAP_JWT_SECRET_FILE: ${LLDAP__JWT_SECRET}
       LLDAP_KEY_SEED_FILE: ${LLDAP__KEY_SEED}
       LLDAP_LDAP_BASE_DN: ${LLDAP__LDAP_BASE_DN}
+      # LDAP only on lldap_backend (Authelia). The web UI stays on all
+      # addresses, for Traefik on `external`.
+      LLDAP_LDAP_HOST: 172.21.15.10
       LLDAP_LDAP_USER_PASS_FILE: ${LLDAP__LDAP_USER_PASS}
       LLDAP_DATABASE_URL_FILE: ${LLDAP__DATABASE_URL}
       LLDAP_HTTP_URL: ${LLDAP__HTTP_URL}
@@ -62,10 +66,17 @@ services:
       #LLDAP_LDAPS_OPTIONS__KEY_FILE: /path/to/keyfile.key
 
     networks:
-    - external
-    - db_postgres
-    # No published ports: LDAP (3890) is reached over the Docker network only,
-    # and the web UI through Traefik.
+      external:        # Traefik (web UI) and SMTP (password reset)
+      db_postgres:
+      lldap_backend:   # Authelia -> LDAP
+        ipv4_address: 172.21.15.10
+        # Authelia connects to this alias, which exists on this network only.
+        # Plain `lldap` can resolve to the `external` address, where LDAP
+        # doesn't listen (they share both networks).
+        aliases:
+        - lldap-ldap
+    # No published ports: LDAP is reached over lldap_backend only, and the web
+    # UI through Traefik.
 
     labels:
     - "traefik.enable=true"
@@ -78,3 +89,12 @@ services:
 
     volumes:
     - ${VOLDIR}/${LLDAP__NAME}:/data
+
+    # The image's own healthcheck probes LDAP on localhost, where it no longer
+    # listens. Check LDAP on its address and the web UI's /health instead.
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 172.21.15.10 3890 && wget -q -O /dev/null http://127.0.0.1:17170/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

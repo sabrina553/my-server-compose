@@ -108,7 +108,9 @@ services:
       AUTHELIA_NOTIFIER_SMTP_SENDER: ${AUTHELIA__NOTIFIER_SMTP_SENDER}
       AUTHELIA_NOTIFIER_SMTP_SUBJECT: ${AUTHELIA__NOTIFIER_SMTP_SUBJECT}
 
-      AUTHELIA_AUTHENTICATION_BACKEND_LDAP_ADDRESS: ${LLDAP__LDAP_URL}
+      # The lldap_backend-only alias (see lldap.yaml): LDAP listens there alone.
+      # Set here, not in .env.example: it's part of the network isolation.
+      AUTHELIA_AUTHENTICATION_BACKEND_LDAP_ADDRESS: ldap://lldap-ldap:3890
       AUTHELIA_AUTHENTICATION_BACKEND_LDAP_BASE_DN: ${LLDAP__LDAP_BASE_DN}
       AUTHELIA_AUTHENTICATION_BACKEND_LDAP_PASSWORD_FILE: ${AUTHELIA__AUTHENTICATION_BACKEND_LDAP_PASSWORD_FILE}
       AUTHELIA_AUTHENTICATION_BACKEND_LDAP_IMPLEMENTATION: ${AUTHELIA__AUTHENTICATION_BACKEND_LDAP_IMPLEMENTATION}
@@ -124,6 +126,7 @@ services:
     networks:
     - authelia_backend
     - db_postgres
+    - lldap_backend   # LDAP
     - external
 
     labels:
