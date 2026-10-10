@@ -3,7 +3,8 @@
 personal or secret values unless that output goes through scripts/redact.sh.
 
 Risky: container logs and inspect output, the systemd journal, git history,
-and anything reading Docker volumes or the /opt/bak backups. Such a command
+restic (snapshots and listings carry real paths and hostnames), and anything
+reading Docker volumes, the database dumps or the /opt/bak backups. Such a command
 must end in `| scripts/redact.sh` (any path to it), and `docker logs` /
 `docker compose logs` must also merge stderr (2>&1), since that's where
 containers' error output goes.
@@ -20,7 +21,9 @@ RISKY = re.compile(
     r"|\bdocker\s+(?:container\s+)?inspect\b"
     r"|\bjournalctl\b"
     r"|\bgit\s+(?:-C\s+\S+\s+)?(?:log|show|reflog|blame)\b"
+    r"|\brestic\b"
     r"|/var/lib/docker/volumes"
+    r"|/var/backups/db-dumps"
     r"|/opt/bak\b"
 )
 ENDS_REDACTED = re.compile(r"\|\s*(?:\S*/)?scripts/redact\.sh\s*$")
