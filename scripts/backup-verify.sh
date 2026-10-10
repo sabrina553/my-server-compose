@@ -196,6 +196,41 @@ check_disk_errors() {
   while IFS= read -r l; do note "$l"; done < <(tail -n 3 <<<"$lines" | cut -c1-160)
 }
 
+# --- CrowdSec -----------------------------------------------------------------
+# Traefik lets traffic through when CrowdSec is down (fail-open, by choice), so
+# its health is watched: `watch` (cron, every 10 min, mails on change) and a
+# line in the daily/weekly report. Once a bouncer (Traefik's plugin) is
+# registered, it must also have pulled the ban list recently.
+CROWDSEC=${CROWDSEC:-crowdsec}
+MAX_BOUNCER_PULL_MIN=10
+
+# Prints what's wrong with CrowdSec, or nothing when it's fine.
+crowdsec_problem() {
+  local st bj name last age
+  st=$(docker inspect -f '{{.State.Status}} {{if .State.Health}}{{.State.Health.Status}}{{end}}' "$CROWDSEC" 2>/dev/null) \
+    || { echo "container not found"; return; }
+  [[ $st == "running healthy" ]] || { echo "container is $st"; return; }
+  bj=$(docker exec "$CROWDSEC" cscli bouncers list -o json 2>/dev/null) || { echo "cscli doesn't answer"; return; }
+  while IFS=$'\t' read -r name last; do
+    [[ -z $name ]] && continue
+    if [[ -z $last || $last == null ]]; then echo "bouncer $name has never pulled the ban list"; return; fi
+    age=$(( ($(date +%s) - $(date -d "$last" +%s)) / 60 ))
+    if (( age > MAX_BOUNCER_PULL_MIN )); then echo "bouncer $name last pulled the ban list ${age} min ago"; return; fi
+  done < <(jq -r '.[]? | [.name, (.last_pull // "")] | @tsv' <<<"$bj")
+}
+
+check_crowdsec() {
+  local p alerts capi bouncers
+  p=$(crowdsec_problem)
+  if [[ -n $p ]]; then
+    fail "crowdsec: $p (traffic passes unchecked while it's down)"; return
+  fi
+  alerts=$(docker exec "$CROWDSEC" cscli alerts list --since 24h -o json 2>/dev/null | jq 'length // 0')
+  capi=$(docker exec "$CROWDSEC" cscli decisions list --origin CAPI -o json 2>/dev/null | jq '[.[]?.decisions[]?] | length')
+  bouncers=$(docker exec "$CROWDSEC" cscli bouncers list -o json 2>/dev/null | jq 'length // 0')
+  ok "crowdsec: healthy, ${alerts:-?} detections in 24h, ${capi:-?} community blocklist IPs, ${bouncers:-0} bouncer(s)"
+}
+
 # --- weekly: repository -------------------------------------------------------
 check_repo() {
   local part out
@@ -443,12 +478,12 @@ finish() {   # <mode> <always mail?>
 # --- main ---------------------------------------------------------------------
 case ${1:-daily} in
   daily)
-    check_dumps; check_local; check_pc; check_disk; check_disk_errors
+    check_dumps; check_local; check_pc; check_disk; check_disk_errors; check_crowdsec
     finish daily no
     ;;
   weekly)
     t0=$SECONDS
-    check_dumps; check_local; check_pc; check_disk; check_disk_errors
+    check_dumps; check_local; check_pc; check_disk; check_disk_errors; check_crowdsec
     weekly_restore
     note "took $(( (SECONDS - t0) / 60 )) min"
     finish weekly yes
@@ -460,9 +495,32 @@ case ${1:-daily} in
     echo "took $(( SECONDS - t0 ))s"
     exit "$FAILED"
     ;;
+  watch)
+    # Mails only on a change, and only once a problem has shown in two runs in
+    # a row (a recreate during maintenance shouldn't page anyone).
+    p=$(crowdsec_problem)
+    prev=$(cat "$STATE/crowdsec.state" 2>/dev/null || echo ok)
+    if [[ -n $p ]]; then
+      case $prev in
+        ok)      echo "pending" > "$STATE/crowdsec.state" ;;
+        pending) echo "down" > "$STATE/crowdsec.state"
+                 echo "$(date '+%F %T') crowdsec DOWN: $p"
+                 printf '%s\n\n%s\n%s\n' "CrowdSec problem: $p" \
+                   "Traefik lets traffic through while CrowdSec is down (fail-open), so" \
+                   "nothing is being blocked. Check: docker compose ps crowdsec; docker logs crowdsec" \
+                   | send_mail "CrowdSec: DOWN on $(hostname)" ;;
+      esac
+    elif [[ $prev != ok ]]; then
+      echo "ok" > "$STATE/crowdsec.state"
+      if [[ $prev == down ]]; then
+        echo "$(date '+%F %T') crowdsec recovered"
+        echo "CrowdSec is healthy again and blocking." | send_mail "CrowdSec: recovered on $(hostname)"
+      fi
+    fi
+    ;;
   test-mail)
     echo "Test from scripts/backup-verify.sh." | send_mail "Backups: test from $(hostname)"
     ;;
   *)
-    echo "usage: $0 daily|weekly|test-db <service>|test-mail" >&2; exit 2 ;;
+    echo "usage: $0 daily|weekly|watch|test-db <service>|test-mail" >&2; exit 2 ;;
 esac
