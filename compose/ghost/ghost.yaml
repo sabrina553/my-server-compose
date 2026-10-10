@@ -8,6 +8,9 @@ services:
     container_name: ${GHOST__NAME}
     image: ${GHOST__IMAGE}:${GHOST__VERSION}
     restart: unless-stopped
+    # Non-root from the start (the image's node user is uid 1000, not PUID); the
+    # entrypoint then skips its chown/gosu, so no capabilities are needed.
+    user: "${PUID}:${PGID}"
     # Ghost can't read secret files, so load them into its env vars at start.
     # command is the image's CMD (overriding entrypoint discards it); re-check
     # after major upgrades:
@@ -28,12 +31,6 @@ services:
     - no-new-privileges:true
     cap_drop:
     - ALL
-    cap_add:   # entrypoint chowns content/ to node, then drops to it
-    - CHOWN
-    - DAC_READ_SEARCH
-    - FOWNER
-    - SETGID
-    - SETUID
     tmpfs:
     - /tmp:rw,noexec,nosuid
 
