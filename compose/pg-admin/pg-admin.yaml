@@ -9,14 +9,12 @@ services:
     image: ${PGADMIN__IMAGE}:${PGADMIN__VERSION}
     restart: unless-stopped
 
-    # pgAdmin runs as uid 5050. Its entrypoint only needs sudo to start postfix
-    # (mail), which is disabled below, so no-new-privileges is safe.
+    # Runs as uid 5050 with no extra caps. sudo was only for postfix, which is
+    # disabled (PGADMIN_DISABLE_POSTFIX); 9.18+ listens on 8080, not 80.
     security_opt:
     - no-new-privileges:true
     cap_drop:
     - ALL
-    # No cap_add: since 9.18 the entrypoint sees no-new-privileges, uses the
-    # plain (un-capped) python and listens on 8080 instead of 80.
     tmpfs:
     - /tmp:rw,noexec,nosuid
 

@@ -4,7 +4,7 @@
 #   sudo DOCKERDIR=/opt/docker ./scripts/env-to-secret.sh VAR secrets/path [VAR secrets/path ...]
 #
 # For each VAR / path pair:
-#   - secret file missing or empty -> writes the .env value into it (mode 600)
+#   - secret file missing or empty -> writes the .env value into it (444, folder 700)
 #   - secret file already there    -> reports whether it matches the .env value
 #                                     (never overwritten; decide which is current)
 #
@@ -65,6 +65,7 @@ while (( $# )); do
   else
     install -d -m 700 "$(dirname "$path")"
     (umask 077; printf '%s' "$value" > "$path")
+    chmod 444 "$path"   # containers read it as their own user (MySQL: uid 999)
     echo "wrote  $rel  <- $var"
   fi
 done

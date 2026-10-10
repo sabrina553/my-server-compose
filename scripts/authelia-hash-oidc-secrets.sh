@@ -18,7 +18,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-IMAGE=${AUTHELIA_IMAGE:-docker.io/authelia/authelia:4.39.20}
+# Same Authelia image as the stack (from .env.example), unless overridden.
+IMAGE=${AUTHELIA_IMAGE:-$(sed -nE 's/^AUTHELIA__IMAGE="(.*)"/\1/p' .env.example):$(sed -nE 's/^AUTHELIA__VERSION="(.*)"/\1/p' .env.example)}
+[[ $IMAGE == *authelia*:?* ]] || { echo "Can't read AUTHELIA__IMAGE/VERSION from .env.example" >&2; exit 1; }
 SECRETS=secrets
 
 # Authelia client names. Each one's files follow the naming scheme

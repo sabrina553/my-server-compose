@@ -16,9 +16,8 @@ services:
     # Observability
     - "--log.level=${TRAEFIK__LOG_LEVEL}"
     - "--ping=true"
-    # Every backend is plain HTTP on a Docker network. If one ever needs HTTPS
-    # with a self-signed certificate, give that service its own serversTransport
-    # rather than skipping verification globally.
+    # Backends are plain HTTP. Never skip TLS verification globally; a backend
+    # with a self-signed cert gets its own serversTransport.
     # Entrypoint :80, redirects to https
     - "--entryPoints.web.address=:80"
     - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
@@ -28,21 +27,18 @@ services:
     - "--entryPoints.websecure.address=:443"
     - "--entryPoints.websecure.http.tls=true"
     - "--entrypoints.websecure.http.tls.certresolver=letsencrypt"
-    # No HTTP/3: cloudflared connects over TCP, and no UDP port is published.
-    # LAN clients use HTTP/2.
-    # Certificates for both domains (the *.int ones are 2FA-only, see Authelia)
+    # No HTTP/3: cloudflared uses TCP and no UDP port is published.
+    # Certificates for both domains (the *.int ones are admin-only, see Authelia)
     - "--entryPoints.websecure.http.tls.domains[0].main=${DOMAINNAME}"
     - "--entryPoints.websecure.http.tls.domains[0].sans=*.${DOMAINNAME},*.int.${DOMAINNAME}"
     - "--entryPoints.websecure.http.tls.domains[1].main=${DOMAINNAME2}"
     - "--entryPoints.websecure.http.tls.domains[1].sans=*.${DOMAINNAME2}"
-    # Forwarded headers: trust X-Forwarded-For ONLY from cloudflared (fixed IP in
-    # cloudflared.yaml), so Authelia sees the real visitor IP for tunnel traffic
-    # instead of cloudflared's Docker IP. Everyone else's X-Forwarded-For is discarded.
+    # Trust X-Forwarded-* only from cloudflared's fixed IP, so Authelia sees the
+    # real visitor IP. Anyone else's are discarded.
     - "--entryPoints.web.forwardedHeaders.trustedIPs=172.20.0.250"
     - "--entryPoints.websecure.forwardedHeaders.trustedIPs=172.20.0.250"
-    # Strip headers that alias another (Remote_User / Remote.User for Remote-User).
-    # PHP backends (FreshRSS, Leantime) read them as the Remote-User header that
-    # Authelia's forwardAuth sets, so a client could spoof the logged-in user.
+    # Drop lookalike headers (Remote_User, Remote.User): PHP backends read them
+    # as Remote-User, so a client could spoof the logged-in user.
     - "--entryPoints.web.http.aliasHeadersStrategy=delete"
     - "--entryPoints.websecure.http.aliasHeadersStrategy=delete"
     # Security headers on every HTTPS response (middleware defined in labels below).
@@ -51,8 +47,7 @@ services:
     - "--providers.docker=true"
     - "--providers.docker.endpoint=${DOCKER_HOST_RO:-tcp://socket-proxy-ro:2375}"
     - "--providers.docker.exposedbydefault=false"
-    # Containers sit on several networks; route over external unless a service
-    # says otherwise with the traefik.docker.network label (see proxy_internal).
+    # Route over `external` unless a service sets traefik.docker.network.
     - "--providers.docker.network=external"
     # Let's Encrypt via Cloudflare DNS challenge
     - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
@@ -103,10 +98,8 @@ services:
       filebrowser_proxy:
       arr:
       socket_proxy_ro:
-    # Published on the LAN address only: *.int names resolve to it, so LAN
-    # clients connect here directly. Public names go through cloudflared over
-    # `external`. Never publish on every interface: Docker's iptables rules
-    # bypass the host firewall, and IPv6 would be included too.
+    # LAN address only (*.int names resolve to it); public names come through
+    # cloudflared. Never all interfaces: Docker's rules bypass the host firewall.
     ports:
     - ${TRAEFIK__BIND_IP}:80:80
     - ${TRAEFIK__BIND_IP}:443:443
@@ -117,18 +110,16 @@ services:
     - "traefik.http.routers.${TRAEFIK__NAME}.middlewares=authelia@docker"
     - "traefik.http.routers.${TRAEFIK__NAME}.service=api@internal"
     - "traefik.http.services.${TRAEFIK__NAME}.loadbalancer.server.port=8080"
-    # Security headers, applied to every router on websecure (see command above).
-    # HSTS is sticky: browsers will refuse plain HTTP on these domains and all
-    # their subdomains for a year after seeing it.
+    # Security headers for every websecure router. HSTS is sticky: browsers
+    # refuse plain HTTP on these domains and subdomains for a year.
     - "traefik.http.middlewares.secure-headers.headers.stsSeconds=31536000"
     - "traefik.http.middlewares.secure-headers.headers.stsIncludeSubdomains=true"
     - "traefik.http.middlewares.secure-headers.headers.contentTypeNosniff=true"
     - "traefik.http.middlewares.secure-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
     - "traefik.http.middlewares.secure-headers.headers.customFrameOptionsValue=SAMEORIGIN"
     - "deunhealth.restart.on.unhealthy=true"
-    # What this container may ask socket-proxy-ro for (see socket-proxy.yaml):
-    # exactly the calls it was seen making. Single quotes: `\.` is a parse
-    # error in double-quoted YAML.
+    # socket-proxy-ro allowlist: exactly the calls Traefik was seen making.
+    # Single quotes: `\.` is a parse error in double-quoted YAML.
     - 'socket-proxy.allow.head=/_ping'
     - 'socket-proxy.allow.get=/v1\.[0-9]+/(version|containers/json|containers/[0-9a-f]{12,64}/json|events)(\?.*)?'
 

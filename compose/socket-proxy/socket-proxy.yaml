@@ -1,56 +1,13 @@
 ## Docker socket proxies
-##   https://github.com/wollomatic/socket-proxy        (socket-proxy-ro)
-##   https://github.com/linuxserver/docker-socket-proxy (socket-proxy)
-## Two proxies so that nothing can write to the Docker API.
-## General write access (POST + CONTAINERS) is equivalent to root on the host:
-## it can start a privileged container that mounts /. Neither proxy allows it.
-##
-##   socket-proxy-ro  Per-client allowlists (method + path regex) from labels
-##                    on each client: Traefik, Dozzle, Diun. A container
-##                    without labels is refused. network: socket_proxy_ro
-##   socket-proxy     GET + restart/stop/kill. deunhealth.  network: socket_proxy
-##
-## "GET only" is not read-only enough: GET /containers/{id}/archive and
-## /export return any file or a whole filesystem from any container
-## (/run/secrets included). Never allow those, and never allow `.*`.
-## Keep internet-facing containers (and anything sharing their network
-## namespace, e.g. everything on network_mode: service:vpn) off both networks.
-## Even inspect exposes every container's environment variables, so keep
-## secrets in *_FILE / Docker secrets, not plain env.
-
-x-socket-proxy-common: &socket-proxy-common
-  image: ${SOCKET_PROXY__IMAGE}:${SOCKET_PROXY__VERSION}
-  restart: unless-stopped
-
-  security_opt:
-  - no-new-privileges:true
-  cap_drop:
-  - ALL
-  read_only: true
-  tmpfs:
-  - "/run"
-
-  logging:
-    driver: "json-file"
-    options:
-      max-size: "1m"
-      max-file: "3"
-
-  labels:
-  - "traefik.enable=false"
-  - "deunhealth.restart.on.unhealthy=true"
-  #- "com.centurylinklabs.watchtower.monitor-only=true"   # Watchtower is retired
-
-  volumes:
-  - "/var/run/docker.sock:/var/run/docker.sock:ro"
-
-  healthcheck:
-    interval: "30s"
-    timeout: "5s"
-    retries: 3
-    start_period: "10s"
-    test: "wget --no-verbose --tries=1 --spider http://localhost:2375/_ping || exit 1"
-
+##   socket-proxy-ro  https://github.com/wollomatic/socket-proxy
+##   socket-proxy     https://github.com/linuxserver/docker-socket-proxy
+## Nothing gets general write access: POST + CONTAINERS is root on the host.
+##   socket-proxy-ro  per-client allowlists (labels on each client: Traefik,
+##                    Dozzle, Diun); unlabelled containers get nothing
+##   socket-proxy     GET + container restart/stop/kill, for deunhealth only
+## Never allow `.*`, `archive` or `export`: "GET only" still reads any
+## container's files, /run/secrets included. Keep anything internet-facing or
+## in the VPN namespace off both networks.
 services:
   socket-proxy-ro:
     container_name: ${SOCKET_PROXY__RO_NAME}
@@ -59,18 +16,15 @@ services:
     # nobody, plus the group that owns docker.sock.
     user: "65534:${SOCKET_PROXY__DOCKER_GID}"
     command:
-    # Refused requests are logged at INFO/WARN. To see what a client asks for
-    # (e.g. after an upgrade breaks it), switch to DEBUG: every request is
-    # logged with its path.
+    # DEBUG logs every request with its path: use it to find what a client
+    # needs (new client, or one broken by an upgrade).
     - "-loglevel=INFO"
     - "-listenip=0.0.0.0"
-    # Per-client allowlists come from labels (socket-proxy.allow.<method>) on
-    # each client. -allowfrom stays at its default (127.0.0.1/32), so a
-    # container without labels gets nothing.
+    # Allowlists come from socket-proxy.allow.<method> labels on each client.
+    # -allowfrom stays at its default (127.0.0.1/32), so no label = no access.
     - "-proxycontainername=${SOCKET_PROXY__RO_NAME}"
     - "-allowhealthcheck"
-    # If the Docker socket goes away (e.g. a daemon upgrade), exit so the
-    # restart policy brings it back with a fresh connection.
+    # Exit if the socket goes away (daemon upgrade); restart reconnects.
     - "-watchdoginterval=600"
     - "-stoponwatchdog"
     - "-shutdowngracetime=5"
@@ -95,8 +49,7 @@ services:
     - "deunhealth.restart.on.unhealthy=true"
 
     volumes:
-    # :ro has no effect on a socket (it only stops replacing the file); the
-    # allowlists are what limit access.
+    # :ro doesn't restrict a socket; the allowlists do.
     - "/var/run/docker.sock:/var/run/docker.sock:ro"
 
     healthcheck:
@@ -107,16 +60,31 @@ services:
       start_period: 10s
 
   socket-proxy:
-    <<: *socket-proxy-common
     container_name: ${SOCKET_PROXY__NAME}
+    image: ${SOCKET_PROXY__IMAGE}:${SOCKET_PROXY__VERSION}
+    restart: unless-stopped
+
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    read_only: true
+    tmpfs:
+    - "/run"
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+
     environment:
       TZ: "${TZ}"
       LOG_LEVEL: "warning" # debug, info, notice, warning, err, crit, alert, emerg
       DISABLE_IPV6: "0"
-      # deunhealth: read container health, restart unhealthy ones. ALLOW_RESTARTS
-      # permits POST /containers/<id>/{restart,stop,kill} (the image has no
-      # restart-only switch); every other POST is refused. Worst case for a
-      # compromised client: containers stopped, never created or changed.
+      # deunhealth reads container health and restarts unhealthy ones.
+      # ALLOW_RESTARTS permits restart, stop and kill (there's no restart-only
+      # switch); every other POST is refused.
       POST: "0"
       ALLOW_START: "0"
       ALLOW_STOP: "0"
@@ -143,5 +111,20 @@ services:
       SYSTEM: "0"
       TASKS: "0"
       VOLUMES: "0"
+
     networks:
     - socket_proxy
+
+    labels:
+    - "traefik.enable=false"
+    - "deunhealth.restart.on.unhealthy=true"
+
+    volumes:
+    - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+    healthcheck:
+      test: "wget --no-verbose --tries=1 --spider http://localhost:2375/_ping || exit 1"
+      interval: "30s"
+      timeout: "5s"
+      retries: 3
+      start_period: "10s"

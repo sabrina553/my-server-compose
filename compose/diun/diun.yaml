@@ -42,10 +42,8 @@ services:
       DIUN_PROVIDERS_DOCKER: "true"
       DIUN_PROVIDERS_DOCKER_ENDPOINT: ${DOCKER_HOST_RO:-tcp://socket-proxy-ro:2375}
       DIUN_PROVIDERS_DOCKER_WATCHBYDEFAULT: "true"
-      # Images are pinned to exact versions, so watching the tag alone would
-      # never report anything new. Instead list the repo's tags and report the
-      # newest plain version number (1.2.3 / v1.2.3). A container can override
-      # this with a diun.include_tags label (see immich.yaml).
+      # Tags are pinned, so watch the repo and report the newest plain x.y.z.
+      # Suffixed schemes override this with a diun.include_tags label.
       DIUN_DEFAULTS_WATCHREPO: "true"
       DIUN_DEFAULTS_SORTTAGS: "semver"
       DIUN_DEFAULTS_MAXTAGS: "1"
@@ -67,10 +65,9 @@ services:
     labels:
     - "traefik.enable=false"
     - "deunhealth.restart.on.unhealthy=true"
-    # What this container may ask socket-proxy-ro for (see socket-proxy.yaml):
-    # exactly the calls it was seen making (running containers, image
-    # inspect). Image names may contain / : @ but no segment starting with a
-    # dot, so no `..`. Single quotes: `\.` is a parse error in double-quoted YAML.
+    # socket-proxy-ro allowlist: exactly the calls Diun was seen making. Image
+    # name segments can't start with a dot (no `..`). Single quotes: `\.` is a
+    # parse error in double-quoted YAML.
     - 'socket-proxy.allow.head=/_ping'
     - 'socket-proxy.allow.get=/v1\.[0-9]+/(version|containers/json)(\?.*)?'
     - 'socket-proxy.allow.get.1=/v1\.[0-9]+/images/([A-Za-z0-9_:@-][A-Za-z0-9._:@-]*/)*[A-Za-z0-9_:@-][A-Za-z0-9._:@-]*/json'

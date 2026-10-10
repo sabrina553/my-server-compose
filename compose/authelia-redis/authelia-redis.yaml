@@ -7,12 +7,9 @@ services:
     container_name: ${AUTHELIA__REDIS_NAME}
     image: ${REDIS__IMAGE}:${REDIS__VERSION}
     restart: unless-stopped
-    # Valkey can't read its password from a file, so write it into a config
-    # file on tmpfs at start (kept out of the process list and `docker
-    # inspect`), owned by the valkey user the entrypoint drops to. A missing or
-    # empty secret stops the container instead of starting without a password.
-    # Original ENTRYPOINT ["docker-entrypoint.sh"], CMD ["valkey-server"]; re-check
-    # after upgrades with:
+    # Valkey can't read a password file, so write it into a config on tmpfs
+    # (out of `ps` and `docker inspect`). An empty secret stops the container.
+    # Original ENTRYPOINT ["docker-entrypoint.sh"], CMD ["valkey-server"]; re-check:
     #   docker image inspect --format '{{json .Config.Entrypoint}} {{json .Config.Cmd}}' <image>
     entrypoint:
     - /bin/sh
@@ -23,8 +20,8 @@ services:
       unset p && chown valkey:valkey /tmp/valkey.conf &&
       exec docker-entrypoint.sh "$$@"
     - --
-    # A first argument ending in .conf makes the entrypoint run valkey-server
-    # with it. Append-only file in /data, so sessions survive a Valkey restart too.
+    # A .conf first argument makes the entrypoint run valkey-server with it.
+    # AOF in /data, so sessions survive a Valkey restart too.
     command: ["/tmp/valkey.conf", "--appendonly", "yes"]
 
     security_opt:
@@ -33,9 +30,7 @@ services:
     - ALL
     cap_add:
     - CHOWN    # entrypoint chowns /data and the generated config to valkey
-    # Its `find /data` (as root) must enter appendonlydir, which valkey creates
-    # with mode 700; without this every restart after the first fails.
-    - DAC_READ_SEARCH
+    - DAC_READ_SEARCH   # its `find /data` must enter appendonlydir (mode 700)
     - SETGID   # then drops to the valkey user (setpriv)
     - SETUID
     read_only: true
