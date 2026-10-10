@@ -107,14 +107,18 @@ access is effectively root on the host.
 - Traefik, Dozzle and Diun use a GET-only proxy.
 - deunhealth's proxy adds container restart, stop and kill (the image's
   `ALLOW_RESTARTS` covers all three). At worst that stops containers.
-- Nothing on the VPN's network can reach deunhealth's proxy. The VPN's
-  namespace does reach the GET-only one (for Mousetrap's port monitor;
-  changed 2026-10-09), which lets everything else in it (qBittorrent) read
-  container config too. That was judged acceptable because secrets never sit
-  in plain env, **but that reasoning is wrong** (found 2026-10-10): GET
-  `/containers/{id}/archive` (`docker cp`) returns any file from any
-  container, `/run/secrets` included. Under review; until it's settled, treat
-  everything that reaches `socket_proxy_ro` as able to read every secret.
+- Nothing in the VPN's namespace reaches either proxy. (2026-10-10; replaces
+  "the VPN joins `socket_proxy_ro` for Mousetrap's port monitor") The access
+  was judged acceptable because secrets never sit in plain env, but that
+  reasoning is wrong: GET `/containers/{id}/archive` (`docker cp`) returns
+  any file from any container, `/run/secrets` included. And Mousetrap didn't
+  need it: no port-monitor stacks were configured, its restart and exec
+  features need write access that nothing gets, and a stack works with a
+  manual IP. So it has no Docker access, and Gluetun has no
+  `FIREWALL_OUTBOUND_SUBNETS`.
+- The GET-only proxy still lets Traefik, Dozzle and Diun read any container's
+  files (`archive`) and filesystem (`export`). Under review: replace it with
+  one that allowlists the API paths they need.
 - The GET-only proxy allows `IMAGES` (changed 2026-10-10): Diun inspects each
   container's image, and without it watched nothing. Read-only, and the
   images are public; pulling, building and deleting are still refused.
@@ -135,11 +139,10 @@ and the Docker API (tested: CrossWatch got `200`). Mousetrap's UI and API have
 no login and listen on all addresses (hard-coded). So `vpn` gets the internet
 from `vpn_egress` (nothing else on it), Traefik reaches its UIs over `vpn_ui`,
 and FlareSolverr reaches the proxy over `vpn_proxy`, its only way out. What
-can reach the namespace now: Traefik, Chaptarr, Prowlarr, FlareSolverr, and the
-`socket_proxy_ro` members. The proxy listens on all of vpn's networks, because
-Chaptarr and Prowlarr use it as their own proxy (binding it to `vpn_proxy`
-alone broke their searches). Through it they can still reach
-`socket_proxy_ro`; that goes away with the socket-proxy review below.
+can reach the namespace now: Traefik, Chaptarr, Prowlarr and FlareSolverr.
+The proxy listens on all of vpn's networks, because Chaptarr and Prowlarr use
+it as their own proxy (binding it to `vpn_proxy` alone broke their searches).
+That's acceptable because vpn is on no socket-proxy network.
 
 **LDAP only between Authelia and LLDAP.** (2026-10-10) LDAP is plaintext with
 no rate limit on binds, and was reachable from every app on `external`. It now
