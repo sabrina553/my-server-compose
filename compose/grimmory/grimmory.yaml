@@ -58,6 +58,9 @@ services:
       DATABASE_URL: ${GRIMMORY__DB_URL}
       DATABASE_USERNAME: ${GRIMMORY__DB_USER}
       GRIMMORY_PORT: ${GRIMMORY__PORT}
+      # app.cors.allowed-origins (also WebSocket origins); default is `*`.
+      # Native apps send no Origin, so this only limits browsers.
+      APP_CORS_ALLOWED_ORIGINS: https://${GRIMMORY__SUBDOMAIN}.${DOMAINNAME}
 
     networks:
     - external
