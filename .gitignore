@@ -6,3 +6,6 @@
 
 *.json
 secrets/*
+
+# Local prep for the userns-remap / service-user work (not tracked yet)
+/prep-userns/
