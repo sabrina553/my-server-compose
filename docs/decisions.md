@@ -205,6 +205,18 @@ ignore it.
   gid 2000, so files created there as root (SSH, SFTP, editors) stay writable
   by the apps. Repair anything that isn't: `chown -R dockersvc:dockersvc <path>`.
 
+**No userns-remap; root containers moved to `dockersvc` one at a time
+instead.** (2026-10-10) userns-remap doesn't work with the containerd image
+store (Docker 29's default here, see moby#47377): it would mean the legacy
+overlay2 driver, re-pulling every image and rebuilding `akane`. Most apps
+already run as `dockersvc`, so the gain is limited to the containers still
+running as root. Each of those gets `user: "${PUID}:${PGID}"` (and a port
+above 1024 inside, where needed) if it works without root, tested as in the
+PUID move. Root by necessity: Gluetun (tunnel device, firewall rules) and
+Home Assistant (image and integrations assume root). Root only as a
+supervisor (s6, tini, Apache master) is fine: the app itself runs as
+`dockersvc` or its own uid.
+
 **No host sockets in containers; Home Assistant's exception removed.**
 (2026-10-10; replaces "Home Assistant keeps `apparmor:unconfined` for host
 D-Bus/Bluetooth") Containers run as host root (no userns-remap), and the
