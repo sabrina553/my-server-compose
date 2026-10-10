@@ -67,6 +67,13 @@ services:
     labels:
     - "traefik.enable=false"
     - "deunhealth.restart.on.unhealthy=true"
+    # What this container may ask socket-proxy-ro for (see socket-proxy.yaml):
+    # exactly the calls it was seen making (running containers, image
+    # inspect). Image names may contain / : @ but no segment starting with a
+    # dot, so no `..`. Single quotes: `\.` is a parse error in double-quoted YAML.
+    - 'socket-proxy.allow.head=/_ping'
+    - 'socket-proxy.allow.get=/v1\.[0-9]+/(version|containers/json)(\?.*)?'
+    - 'socket-proxy.allow.get.1=/v1\.[0-9]+/images/([A-Za-z0-9_:@-][A-Za-z0-9._:@-]*/)*[A-Za-z0-9_:@-][A-Za-z0-9._:@-]*/json'
 
     volumes:
     - ${VOLDIR}/${DIUN__NAME}:/data

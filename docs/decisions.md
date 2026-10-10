@@ -104,7 +104,8 @@ Services with no internet access use `proxy_internal` and say so with a label.
 
 **Nothing has general write access to the Docker API.** (2026-10-09) Write
 access is effectively root on the host.
-- Traefik, Dozzle and Diun use a GET-only proxy.
+- Traefik, Dozzle and Diun use a read-only proxy that allowlists the exact
+  paths each one needs (see below).
 - deunhealth's proxy adds container restart, stop and kill (the image's
   `ALLOW_RESTARTS` covers all three). At worst that stops containers.
 - Nothing in the VPN's namespace reaches either proxy. (2026-10-10; replaces
@@ -116,12 +117,19 @@ access is effectively root on the host.
   features need write access that nothing gets, and a stack works with a
   manual IP. So it has no Docker access, and Gluetun has no
   `FIREWALL_OUTBOUND_SUBNETS`.
-- The GET-only proxy still lets Traefik, Dozzle and Diun read any container's
-  files (`archive`) and filesystem (`export`). Under review: replace it with
-  one that allowlists the API paths they need.
-- The GET-only proxy allows `IMAGES` (changed 2026-10-10): Diun inspects each
-  container's image, and without it watched nothing. Read-only, and the
-  images are public; pulling, building and deleting are still refused.
+- The read-only proxy allowlists paths per client. (2026-10-10; replaces
+  linuxserver's GET-only proxy) "GET only" still let Traefik, Dozzle and Diun
+  read any container's files (`archive`) and filesystem (`export`).
+  `socket-proxy-ro` is now wollomatic/socket-proxy, with each client's
+  allowed method + path regexes in labels on that client, taken from a
+  debug-logged discovery run: Traefik lists, inspects and watches events;
+  Dozzle also reads logs, stats and info; Diun lists running containers and
+  inspects images. Container IDs must be hex, and image names can't contain
+  `..`. Anything unlabelled is refused. deunhealth's proxy is still
+  linuxserver: only deunhealth reaches it, and it has no internet access.
+- Diun may inspect images (2026-10-10): without it, it watched nothing.
+  Read-only, and the images are public; pulling, building and deleting are
+  refused.
 
 **Only Traefik publishes ports, and only on the LAN address.** (2026-10-10;
 was "Traefik's 80/443 on every interface") Docker's iptables rules bypass the

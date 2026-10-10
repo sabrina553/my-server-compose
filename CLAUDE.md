@@ -139,9 +139,15 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
   `container:vpn`.
 
 **Docker API**
-- `socket-proxy-ro` (GET only): Traefik, Dozzle, Diun. Nothing in the VPN
-  namespace: Mousetrap has no Docker access (its port monitor doesn't need
-  it), and `vpn` must never join a socket-proxy network.
+- `socket-proxy-ro` (wollomatic/socket-proxy): per-client allowlists in
+  labels on each client (`socket-proxy.allow.get` / `.head`, single-quoted
+  regexes). Traefik, Dozzle and Diun get only the paths they were seen using;
+  a container without labels gets nothing. Never allow `.*`, `archive` or
+  `export`: "GET only" still reads any container's files. To find what a
+  client needs (new client, or one broken by an upgrade), set the proxy to
+  `-loglevel=DEBUG` and read its "allowed/blocked request" lines.
+- Nothing in the VPN namespace: Mousetrap has no Docker access (its port
+  monitor doesn't need it), and `vpn` must never join a socket-proxy network.
 - `socket-proxy` (GET + container restart/stop/kill; `ALLOW_RESTARTS` has no
   restart-only mode): deunhealth.
 - Nothing gets general write access.
