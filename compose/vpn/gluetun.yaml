@@ -1,7 +1,8 @@
 ## Gluetun  https://github.com/qdm12/gluetun
 ## WireGuard VPN client. qBittorrent, Mousehole and Mousetrap share its network
 ## namespace (network_mode: service:vpn), so all their traffic leaves through
-## the tunnel. Also an HTTP proxy for FlareSolverr (http://vpn:8888).
+## the tunnel. Also an HTTP proxy (http://vpn:8888) for FlareSolverr, Chaptarr
+## and Prowlarr. Not on `external`: see the networks in compose.yaml.
 ## If Gluetun is recreated, recreate those containers too (see CLAUDE.md).
 services:
   vpn:
@@ -45,6 +46,11 @@ services:
       SERVER_COUNTRIES: ${VPN__SERVER_COUNTRIES}
       FIREWALL_VPN_INPUT_PORTS: ${TORRENTING_PORT}
       FIREWALL_OUTBOUND_SUBNETS: ${VPN__EXTERNAL_SUBNETS}
+      # No login, and it reaches every network vpn is on (socket_proxy_ro
+      # included). It listens on all of vpn's networks, because Chaptarr and
+      # Prowlarr use it too (their own proxy setting) as well as FlareSolverr.
+      # That's acceptable only because vpn is not on `external`: what can reach
+      # it is Traefik, Chaptarr, Prowlarr, FlareSolverr and socket_proxy_ro.
       HTTPPROXY: "on"
       # PUBLICIP_FILE left at its default (/tmp/gluetun/ip, tmpfs). Nothing
       # reads it. Writing it logs "permission denied" on every start, harmless:
@@ -52,10 +58,12 @@ services:
       # root can't enter without DAC_OVERRIDE. Not worth adding that cap.
 
     networks:
-    - external
-    - chaptarr_downloads   # Chaptarr -> qBittorrent
-    - prowlarr_downloads   # Prowlarr -> qBittorrent
-    - socket_proxy_ro      # Mousetrap -> read-only Docker API (GET only)
+      vpn_egress:            # the tunnel's way out; nothing else is on it
+      vpn_ui:                # Traefik -> qBittorrent / Mousetrap UIs
+      vpn_proxy:             # FlareSolverr -> HTTP proxy
+      chaptarr_downloads:    # Chaptarr -> qBittorrent
+      prowlarr_downloads:    # Prowlarr -> qBittorrent
+      socket_proxy_ro:       # Mousetrap -> read-only Docker API (GET only)
     # No published ports on purpose. Anything published here bypasses Traefik and
     # Authelia, and Docker's iptables rules bypass the host firewall.
     #  - Web UIs (qbittorrent, mousehole, mousetrap) go through Traefik.
@@ -71,6 +79,9 @@ services:
 
     labels:
     - "traefik.enable=false"
+    # Traefik reads the network for qBittorrent/Mousetrap/Mousehole from THIS
+    # container's labels (they share its namespace); a label on them is ignored.
+    - "traefik.docker.network=vpn_ui"
     - "deunhealth.restart.on.unhealthy=false"
     #- "com.centurylinklabs.watchtower.monitor-only=true"   # Watchtower is retired
 

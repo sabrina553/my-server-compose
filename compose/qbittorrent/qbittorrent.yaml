@@ -1,8 +1,8 @@
 ## qBittorrent  https://github.com/linuxserver/docker-qbittorrent
 ## Torrent client inside the VPN's network namespace (all traffic through the
 ## tunnel). Web UI at <subdomain>.int.<domain>; its login is skipped only for
-## Traefik's address (Web UI > whitelisted subnets: 172.20.0.249/32, set in
-## the app). Chaptarr and Prowlarr reach it at http://vpn:<webui port>.
+## Traefik's address on vpn_ui (Web UI > whitelisted subnets: 172.21.17.249/32,
+## set in the app). Chaptarr and Prowlarr reach it at http://vpn:<webui port>.
 services:
   qbittorrent:
     container_name: ${QBITTORRENT__NAME}
@@ -47,6 +47,7 @@ services:
 
     labels:
     - "traefik.enable=true"
+    # Network: set on vpn (traefik.docker.network=vpn_ui), not here.
     - "traefik.http.routers.${QBITTORRENT__NAME}.rule=Host(`${QBITTORRENT__SUBDOMAIN}.int.${DOMAINNAME}`)"
     - "traefik.http.routers.${QBITTORRENT__NAME}.middlewares=authelia@docker"
     - "traefik.http.services.${QBITTORRENT__NAME}.loadbalancer.server.port=${QBITTORRENT__WEBUI_PORT}"

@@ -1,7 +1,8 @@
 ## Prowlarr  https://github.com/linuxserver/docker-prowlarr
 ## FlareSolverr  https://github.com/FlareSolverr/FlareSolverr
 ## Prowlarr manages indexers for Chaptarr; FlareSolverr solves Cloudflare
-## challenges for it, going out through the VPN's HTTP proxy. Prowlarr has no
+## challenges for it, going out only through the VPN's HTTP proxy (it has no
+## internet access of its own, and only Prowlarr can reach it). Prowlarr has no
 ## login of its own: its UI listens only on its `arr` address, shared with
 ## Traefik (behind Authelia, <subdomain>.int.<domain>) and Chaptarr alone.
 services:
@@ -29,8 +30,8 @@ services:
       PROXY_URL: ${VPN__PROXY_URL}
 
     networks:
-    - external
-    - prowlarr_flaresolverr
+    - vpn_proxy               # -> Gluetun's HTTP proxy, its only way out
+    - prowlarr_flaresolverr   # <- Prowlarr
 
     labels:
     - "deunhealth.restart.on.unhealthy=true"

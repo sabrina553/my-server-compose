@@ -1,7 +1,9 @@
 ## Traefik  https://github.com/traefik/traefik
-## Reverse proxy and TLS (Let's Encrypt, Cloudflare DNS challenge). The only
-## container with host-published ports. Reads the Docker API through the
-## read-only socket proxy. Dashboard at <subdomain>.int.<domain>, behind Authelia.
+## Reverse proxy and TLS (Let's Encrypt, Cloudflare DNS challenge). Public
+## names arrive through cloudflared; *.int names resolve to the LAN address,
+## where 80/443 are published (and nowhere else). The only container with
+## host ports. Reads the Docker API through the read-only socket proxy.
+## Dashboard at <subdomain>.int.<domain>, behind Authelia.
 services:
   traefik:
     container_name: ${TRAEFIK__NAME}
@@ -14,7 +16,9 @@ services:
     # Observability
     - "--log.level=${TRAEFIK__LOG_LEVEL}"
     - "--ping=true"
-    - "--serversTransport.insecureSkipVerify=true"
+    # Every backend is plain HTTP on a Docker network. If one ever needs HTTPS
+    # with a self-signed certificate, give that service its own serversTransport
+    # rather than skipping verification globally.
     # Entrypoint :80, redirects to https
     - "--entryPoints.web.address=:80"
     - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
@@ -24,7 +28,8 @@ services:
     - "--entryPoints.websecure.address=:443"
     - "--entryPoints.websecure.http.tls=true"
     - "--entrypoints.websecure.http.tls.certresolver=letsencrypt"
-    - "--entryPoints.websecure.http3=true"
+    # No HTTP/3: cloudflared connects over TCP, and no UDP port is published.
+    # LAN clients use HTTP/2.
     # Certificates for both domains (the *.int ones are 2FA-only, see Authelia)
     - "--entryPoints.websecure.http.tls.domains[0].main=${DOMAINNAME}"
     - "--entryPoints.websecure.http.tls.domains[0].sans=*.${DOMAINNAME},*.int.${DOMAINNAME}"
@@ -91,12 +96,20 @@ services:
         # Fixed: pgAdmin trusts the Remote-User header only from this address
         # (WEBSERVER_TRUSTED_PROXIES in compose/pg-admin/config_local.py).
         ipv4_address: 172.21.7.249
+      vpn_ui:
+        # Fixed: qBittorrent skips its login only for this address (set in its
+        # Web UI under whitelisted subnets).
+        ipv4_address: 172.21.17.249
       filebrowser_proxy:
       arr:
       socket_proxy_ro:
+    # Published on the LAN address only: *.int names resolve to it, so LAN
+    # clients connect here directly. Public names go through cloudflared over
+    # `external`. Never publish on every interface: Docker's iptables rules
+    # bypass the host firewall, and IPv6 would be included too.
     ports:
-    - 80:80
-    - 443:443
+    - ${TRAEFIK__BIND_IP}:80:80
+    - ${TRAEFIK__BIND_IP}:443:443
 
     labels:
     - "traefik.enable=true"

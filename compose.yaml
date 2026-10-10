@@ -110,6 +110,39 @@ networks:
     ipam:
       config:
         - subnet: 172.21.12.0/24
+  # Gluetun (vpn) is NOT on `external`: everything in its namespace (qBittorrent,
+  # Mousetrap, whose UI has no login and listens on all addresses) would be
+  # reachable by every app there. It gets the internet from a network of its
+  # own, and only the containers that need it can reach it.
+  vpn_egress: # vpn only: the WireGuard tunnel's way out
+    name: vpn_egress
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.16.0/24
+  vpn_ui: # Traefik (fixed .249) -> qBittorrent and Mousetrap UIs
+    name: vpn_ui
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.21.17.0/24
+  # FlareSolverr -> Gluetun's HTTP proxy (vpn:8888). FlareSolverr has no other
+  # way out, so all its traffic goes through the tunnel.
+  vpn_proxy:
+    name: vpn_proxy
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.21.14.0/24
+  lldap_backend: # authelia -> LDAP, which listens on lldap's fixed .10 here only
+    name: lldap_backend
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.21.15.0/24
   # For Traefik to reach routed services that have no internet access
   # (CouchDB, pgAdmin, Dozzle). Those carry traefik.docker.network=proxy_internal.
   proxy_internal:

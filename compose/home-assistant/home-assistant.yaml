@@ -9,11 +9,12 @@ services:
     image: ${HOMEASSISTANT__IMAGE}:${HOMEASSISTANT__VERSION}
     restart: unless-stopped
 
+    # No host D-Bus and no apparmor:unconfined. The container runs as root, and
+    # the host's system bus treats it as host root, which can ask systemd to run
+    # anything: that was root on the host. For Bluetooth, use an ESPHome
+    # Bluetooth proxy rather than mounting /run/dbus (see docs/decisions.md).
     security_opt:
     - no-new-privileges:true
-    # The one deliberate exception to the AppArmor rule: host D-Bus/Bluetooth
-    # access (see docs/decisions.md).
-    - apparmor:unconfined
     cap_drop:
     - ALL
     #read_only: true
@@ -43,4 +44,3 @@ services:
     volumes:
     - ${HOMEASSISTANT__VOLDIR}:/config:rw
     - /etc/localtime:/etc/localtime:ro
-    - /run/dbus:/run/dbus:ro

@@ -22,7 +22,7 @@ off where the app allows it.
 **Header login (Authelia's `Remote-User`) only where nothing but Traefik can
 send it.** (2026-10-09) FreshRSS checks the sender's address
 (`TRUSTED_PROXY`, Traefik's `172.20.0.249`); qBittorrent skips its login only
-for that address; FileBrowser can't check, so it sits on `filebrowser_proxy`
+for Traefik's `172.21.17.249` on `vpn_ui`; FileBrowser can't check, so it sits on `filebrowser_proxy`
 with Traefik alone and no internet. Prowlarr and Chaptarr skip their login
 (Auth Method: External); their UIs bind only to their fixed address on `arr`,
 shared with Traefik alone, and they reach Postgres, qBittorrent and
@@ -51,6 +51,18 @@ have the claim. The sync user is a member of its database only.
 
 **TOTP alongside passkeys in Authelia.** (2026-10-09) Android in-app web views
 (the Home Assistant Companion app) can't use passkeys.
+
+**Access by LLDAP group, always two-factor.** (2026-10-10; replaces "any
+user, one_factor for everyday apps") LLDAP has several users, and before this
+any of them could reach every admin UI. Every forward-auth rule and OIDC client
+now names the groups it admits: `admin` for `*.int` and the admin paths;
+`privliged_user` for FileBrowser, Chaptarr, Leantime, Immich, Vaultwarden and
+Linkwarden; `user` for Mealie, Grimmory and FreshRSS; `house_guest` for Home
+Assistant only. Groups don't nest in LLDAP, so each rule lists every group it
+admits. One-factor went because Chaptarr has no login of its own, and with a
+one-month remember-me, two-factor costs little.
+- Vaultwarden's own password login still works for existing accounts; the
+  group check only gates SSO. Vaultwarden needs the master password either way.
 
 ## Secrets and configuration
 
@@ -98,14 +110,41 @@ access is effectively root on the host.
 - Nothing on the VPN's network can reach deunhealth's proxy. The VPN's
   namespace does reach the GET-only one (for Mousetrap's port monitor;
   changed 2026-10-09), which lets everything else in it (qBittorrent) read
-  container config too. That's acceptable only because secrets never sit in plain env.
+  container config too. That was judged acceptable because secrets never sit
+  in plain env, **but that reasoning is wrong** (found 2026-10-10): GET
+  `/containers/{id}/archive` (`docker cp`) returns any file from any
+  container, `/run/secrets` included. Under review; until it's settled, treat
+  everything that reaches `socket_proxy_ro` as able to read every secret.
 - The GET-only proxy allows `IMAGES` (changed 2026-10-10): Diun inspects each
   container's image, and without it watched nothing. Read-only, and the
   images are public; pulling, building and deleting are still refused.
 
-**No host-published ports except Traefik's 80/443.** (2026-10-09) Docker's
-iptables rules bypass the host firewall. Torrent traffic arrives through the
-VPN tunnel, not the host.
+**Only Traefik publishes ports, and only on the LAN address.** (2026-10-10;
+was "Traefik's 80/443 on every interface") Docker's iptables rules bypass the
+host firewall, and a host port bypasses Cloudflare. `*.int` names resolve to
+the server's LAN address (removing the ports entirely broke them), so 80/443
+are published on `TRAEFIK__BIND_IP` only: not IPv6, not the Docker bridges.
+The router must not forward 80/443 to it. Public names come through
+cloudflared over `external`; torrent traffic arrives through the VPN tunnel.
+HTTP/3 is off (no UDP port), and Traefik verifies backend TLS (no global
+`insecureSkipVerify`; every backend is plain HTTP anyway).
+
+**The VPN container is not on `external`.** (2026-10-10) Gluetun's HTTP proxy
+had no login, and through it any app on `external` reached `socket_proxy_ro`
+and the Docker API (tested: CrossWatch got `200`). Mousetrap's UI and API have
+no login and listen on all addresses (hard-coded). So `vpn` gets the internet
+from `vpn_egress` (nothing else on it), Traefik reaches its UIs over `vpn_ui`,
+and FlareSolverr reaches the proxy over `vpn_proxy`, its only way out. What
+can reach the namespace now: Traefik, Chaptarr, Prowlarr, FlareSolverr, and the
+`socket_proxy_ro` members. The proxy listens on all of vpn's networks, because
+Chaptarr and Prowlarr use it as their own proxy (binding it to `vpn_proxy`
+alone broke their searches). Through it they can still reach
+`socket_proxy_ro`; that goes away with the socket-proxy review below.
+
+**LDAP only between Authelia and LLDAP.** (2026-10-10) LDAP is plaintext with
+no rate limit on binds, and was reachable from every app on `external`. It now
+listens only on LLDAP's fixed address on `lldap_backend`. LLDAP stays on
+`external` for its web UI and SMTP.
 
 **VPN-network containers use `network_mode: service:vpn`.** (2026-10-09)
 With `container:vpn`, Compose doesn't recreate them when Gluetun is
@@ -115,8 +154,25 @@ recreated, and they're left attached to a network that no longer exists.
 
 **Hardening baseline on every service:** `no-new-privileges`, `cap_drop: ALL`,
 log rotation, and no `apparmor:unconfined`. (2026-10-09) Each service adds
-back only the capabilities its image is known to need; see the journal's
-table. Home Assistant keeps `apparmor:unconfined` for host D-Bus/Bluetooth.
+back only the capabilities its image is known to need (learned by testing):
+
+| Kind of image | cap_add |
+|---|---|
+| starts as root, chowns, drops to a user (official DBs, Ghost, Grimmory, Chaptarr, CouchDB, Valkey) | `CHOWN DAC_READ_SEARCH FOWNER SETGID SETUID` |
+| LLDAP: checks `/data` is *writable* while root | `CHOWN DAC_OVERRIDE FOWNER SETGID SETUID` |
+| linuxserver (Prowlarr, qBittorrent): init chowns `/run/<app>-temp` | `CHOWN FOWNER SETGID SETUID` |
+| FreshRSS: entrypoint `chown -R` / `chmod -R` on `./data` | `CHOWN DAC_READ_SEARCH FOWNER SETGID SETUID` |
+| Leantime (its documented set) | `NET_BIND_SERVICE CHOWN SETGID SETUID` |
+| Linkwarden: root throughout | `CHOWN FOWNER` |
+| pgAdmin: listens on 8080 with plain python since 9.18 | none extra; `PGADMIN_DISABLE_POSTFIX=true` so no `sudo` |
+
+**No host sockets in containers; Home Assistant's exception removed.**
+(2026-10-10; replaces "Home Assistant keeps `apparmor:unconfined` for host
+D-Bus/Bluetooth") Containers run as host root (no userns-remap), and the
+host's system D-Bus treats them as root, so an app with `/run/dbus` can have
+systemd run any command on the host. `:ro` doesn't restrict a socket. Home
+Assistant has no Bluetooth integration; if one is ever needed, use an ESPHome
+Bluetooth proxy.
 
 **Diun notifies; nothing updates automatically.** (2026-10-09) Watchtower
 auto-updated floating tags and could delete volumes
