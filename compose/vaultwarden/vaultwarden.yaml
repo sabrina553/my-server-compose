@@ -9,7 +9,7 @@ services:
     container_name: ${VAULTWARDEN__NAME}
     image: ${VAULTWARDEN__IMAGE}:${VAULTWARDEN__VERSION}
     restart: unless-stopped
-    # Not root (the image's default): it needs none, given a port above 1024.
+    # Not root (the image's default): it needs none.
     user: "${PUID}:${PGID}"
 
     security_opt:
