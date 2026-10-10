@@ -23,7 +23,7 @@ services:
         condition: service_started
         restart: false
       postgres:
-        condition: service_started
+        condition: service_healthy
         restart: false
     logging:
       driver: "json-file"

@@ -7,7 +7,7 @@ services:
   linkwarden:
     container_name: ${LINKWARDEN__NAME}
     image: ${LINKWARDEN__IMAGE}:${LINKWARDEN__VERSION}
-    restart: always
+    restart: unless-stopped
     # Linkwarden can't read secret files, so load them into its env vars at start.
     # command is the image's CMD (overriding entrypoint discards it); re-check
     # after upgrades:
@@ -28,6 +28,11 @@ services:
     - sh
     - -c
     - 'export PATH=/data/node_modules/.bin:$$PATH && prisma migrate deploy --schema=/data/packages/prisma/schema.prisma && exec concurrently -k -n web,worker "cd /data/apps/web && exec next start" "cd /data/apps/worker && exec tsx worker.ts"'
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: false
 
     security_opt:
     - no-new-privileges:true

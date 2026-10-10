@@ -106,6 +106,10 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
   entrypoint checks writability as root (as LLDAP does). See the table in
   `docs/decisions.md`.
 
+**Start-up**
+- `restart: unless-stopped` everywhere.
+- Apps that use Postgres wait for it with `condition: service_healthy`.
+
 **Networks**
 - `external`: internet access, and the network Traefik routes on by default.
 - Backends sit on internal-only networks with just their consumers:

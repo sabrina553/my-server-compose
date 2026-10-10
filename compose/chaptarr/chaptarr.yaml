@@ -37,6 +37,9 @@ services:
     - /tmp:rw,noexec,nosuid
 
     depends_on:
+      postgres:
+        condition: service_healthy
+        restart: false
       traefik:
         condition: service_started
         restart: false

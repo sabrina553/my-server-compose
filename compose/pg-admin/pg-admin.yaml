@@ -22,7 +22,7 @@ services:
 
     depends_on:
       postgres:
-        condition: service_started
+        condition: service_healthy
         restart: false
       traefik:
         condition: service_started

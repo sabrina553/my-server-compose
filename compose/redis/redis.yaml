@@ -5,7 +5,7 @@ services:
   redis:
     container_name: ${REDIS__NAME}
     image: ${REDIS__IMAGE}:${REDIS__VERSION}
-    restart: always
+    restart: unless-stopped
 
     security_opt:
     - no-new-privileges:true

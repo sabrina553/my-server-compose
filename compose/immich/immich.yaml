@@ -8,7 +8,7 @@ services:
   immich-server:
     container_name: ${IMMICH__NAME}
     image: ${IMMICH__IMAGE}:${IMMICH__VERSION}
-    restart: always
+    restart: unless-stopped
 
     security_opt:
     - no-new-privileges:true
@@ -26,7 +26,7 @@ services:
         condition: service_started
         restart: false
       postgres:
-        condition: service_started
+        condition: service_healthy
         restart: false
     logging:
       driver: "json-file"
@@ -68,7 +68,7 @@ services:
   immich-machine-learning:
     container_name: ${IMMICH_ML__NAME}
     image: ${IMMICH_ML__IMAGE}:${IMMICH_ML__VERSION}
-    restart: always
+    restart: unless-stopped
 
     security_opt:
     - no-new-privileges:true
