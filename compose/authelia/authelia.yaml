@@ -8,16 +8,17 @@ services:
     container_name: ${AUTHELIA__NAME}
     image: ${AUTHELIA__IMAGE}:${AUTHELIA__VERSION}
     restart: unless-stopped
+    # Non-root from the start: the entrypoint then skips its chown/su-exec and
+    # runs authelia directly, so no capabilities are needed.
+    user: "${PUID}:${PGID}"
 
     security_opt:
     - no-new-privileges:true
     cap_drop:
     - ALL
-    cap_add:
-    - CHOWN
-    - SETGID
-    - SETUID
-    #read_only: true   # tried 2026-10-10: start-up checks fail (reason not logged); needs a writable path
+    # Authelia writes /app/.healthcheck.env on every start (path hard-coded) and
+    # treats a failed write as a fatal start-up check; see the bind mount below.
+    read_only: true
     tmpfs:
     - /tmp:rw,noexec,nosuid
 
@@ -146,3 +147,11 @@ services:
     volumes:
     # Read-only: Authelia stores state in Postgres and never needs to write here.
     - ".:/config:ro"
+    # The only writable file (read_only above). Create it once, owned by
+    # PUID:PGID; create_host_path: false makes a missing file an error instead
+    # of Docker creating a directory in its place.
+    - type: bind
+      source: ${VOLDIR}/${AUTHELIA__NAME}/.healthcheck.env
+      target: /app/.healthcheck.env
+      bind:
+        create_host_path: false

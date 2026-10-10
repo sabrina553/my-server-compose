@@ -177,6 +177,15 @@ back only the capabilities its image is known to need (learned by testing):
 | Leantime (its documented set) | `NET_BIND_SERVICE CHOWN SETGID SETUID` |
 | Linkwarden: root throughout | `CHOWN FOWNER` |
 | pgAdmin: listens on 8080 with plain python since 9.18 | none extra; `PGADMIN_DISABLE_POSTFIX=true` so no `sudo` |
+| Authelia: `user: PUID:PGID`, so the entrypoint skips its chown/su-exec | none |
+
+**Authelia runs as `PUID:PGID` with a read-only root filesystem.** (2026-10-10)
+It ran as root
+because `PUID` was unset (`su-exec ":"`). Its fatal "Errors occurred performing
+startup checks" under `read_only` came from writing `/app/.healthcheck.env`,
+a hard-coded path the image's healthcheck reads. That one file is
+bind-mounted from `${VOLDIR}/authelia/` (`create_host_path: false`); the rest
+of the filesystem is read-only.
 
 **No host sockets in containers; Home Assistant's exception removed.**
 (2026-10-10; replaces "Home Assistant keeps `apparmor:unconfined` for host
