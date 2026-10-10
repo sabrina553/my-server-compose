@@ -9,6 +9,10 @@ services:
     container_name: ${TRAEFIK__NAME}
     image: ${TRAEFIK__IMAGE}:${TRAEFIK__VERSION}
     restart: unless-stopped
+    # Not root (the image's default). It still binds 80/443 inside: Docker sets
+    # net.ipv4.ip_unprivileged_port_start=0 in containers, so no capability is
+    # needed and cloudflared's https://traefik target stays the same.
+    user: "${PUID}:${PGID}"
     command:
     # API + dashboard: only via the router below (behind Authelia), not on :8080.
     - "--api.insecure=false"
