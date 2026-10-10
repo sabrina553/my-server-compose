@@ -55,9 +55,9 @@ services:
     - "--providers.docker.network=external"
     # Let's Encrypt via Cloudflare DNS challenge
     - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
-    - "--certificatesresolvers.letsencrypt.acme.dnschallenge.propagation.delayBeforeChecks=10"
+    - "--certificatesresolvers.letsencrypt.acme.dnschallenge.propagation.delayBeforeChecks=${TRAEFIK__ACME_DNS_DELAY}"
     - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare"
-    - "--certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=8.8.8.8:53"
+    - "--certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=${TRAEFIK__ACME_DNS_RESOLVERS}"
     - "--certificatesresolvers.letsencrypt.acme.email=${TRAEFIK__ACME_EMAIL}"
     - "--certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme.json"
 

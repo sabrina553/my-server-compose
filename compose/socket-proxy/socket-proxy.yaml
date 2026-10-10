@@ -16,7 +16,7 @@ services:
     command:
     # DEBUG logs every request with its path: use it to find what a client
     # needs (new client, or one broken by an upgrade).
-    - "-loglevel=INFO"
+    - "-loglevel=${SOCKET_PROXY__RO_LOG_LEVEL}"
     - "-listenip=0.0.0.0"
     # Allowlists come from socket-proxy.allow.<method> labels on each client.
     # -allowfrom stays at its default (127.0.0.1/32), so no label = no access.
@@ -65,7 +65,7 @@ services:
     user: "65534:${SOCKET_PROXY__DOCKER_GID}"
     command:
     # DEBUG logs every request with its path (see socket-proxy-ro).
-    - "-loglevel=INFO"
+    - "-loglevel=${SOCKET_PROXY__LOG_LEVEL}"
     - "-listenip=0.0.0.0"
     # Allowlists come from socket-proxy.allow.<method> labels on each client
     # (deunhealth only); no label = no access.

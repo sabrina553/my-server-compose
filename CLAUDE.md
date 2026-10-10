@@ -157,8 +157,9 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
   regexes). Traefik, Dozzle and Diun get only the paths they were seen using;
   a container without labels gets nothing. Never allow `.*`, `archive` or
   `export`: "GET only" still reads any container's files. To find what a
-  client needs (new client, or one broken by an upgrade), set the proxy to
-  `-loglevel=DEBUG` and read its "allowed/blocked request" lines.
+  client needs (new client, or one broken by an upgrade), set
+  `SOCKET_PROXY__RO_LOG_LEVEL` (or `SOCKET_PROXY__LOG_LEVEL`) to `DEBUG` in
+  `.env.example`, apply, and read its "allowed/blocked request" lines.
 - Nothing in the VPN namespace: Mousetrap has no Docker access (its port
   monitor doesn't need it), and `vpn` must never join a socket-proxy network.
 - `socket-proxy` (also wollomatic, labels on deunhealth): list, events and
