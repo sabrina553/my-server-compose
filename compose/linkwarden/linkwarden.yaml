@@ -8,6 +8,9 @@ services:
     container_name: ${LINKWARDEN__NAME}
     image: ${LINKWARDEN__IMAGE}:${LINKWARDEN__VERSION}
     restart: unless-stopped
+    # Not root (the image's default). Its HOME is /root (mode 700), where Prisma
+    # keeps a cache: HOME gets a tmpfs of its own below.
+    user: "${PUID}:${PGID}"
     # Linkwarden can't read secret files, so load them into its env vars at start.
     # command is the image's CMD (overriding entrypoint discards it); re-check
     # after upgrades:
@@ -33,11 +36,9 @@ services:
     - no-new-privileges:true
     cap_drop:
     - ALL
-    # Root throughout (no user switch). Without DAC_OVERRIDE it can still use
-    # /data/data, which it created.
-    cap_add:
-    - CHOWN
-    - FOWNER
+    tmpfs:
+    - /tmp:rw,noexec,nosuid
+    - /home/linkwarden:rw,nosuid
 
     depends_on:
       postgres:
@@ -55,6 +56,8 @@ services:
     - linkwarden_oidc_client_id
     - linkwarden_db_url
     environment:
+      HOME: /home/linkwarden    # tmpfs; the image's /root isn't readable as PUID
+      CHECKPOINT_DISABLE: "1"   # Prisma's update/telemetry check
       NEXTAUTH_URL: ${LINKWARDEN__NEXTAUTH_URL}
       # SSO only. Set here rather than in .env so they can't silently go missing:
       # with no Authelia in front of this router, these are what stop strangers
