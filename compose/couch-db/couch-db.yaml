@@ -50,12 +50,16 @@ services:
     - "traefik.http.routers.${COUCHDB__NAME}.service=${COUCHDB__NAME}"
     # Fauxton (the web admin UI) is browser-only, so it goes behind Authelia.
     # The longer rule wins over the router above.
-    - "traefik.http.routers.${COUCHDB__NAME}-utils.rule=Host(`${COUCHDB__SUBDOMAIN}.${DOMAINNAME}`) && PathPrefix(`/_utils`)"
+    # Regexes, not Path/PathPrefix: CouchDB treats /_session/ and //_utils like
+    # /_session and /_utils, and an exact Path() let POST /_session/ reach
+    # password login without Authelia (tested 2026-10-10).
+    - "traefik.http.routers.${COUCHDB__NAME}-utils.rule=Host(`${COUCHDB__SUBDOMAIN}.${DOMAINNAME}`) && PathRegexp(`^/+_utils(/.*)?$$`)"
     - "traefik.http.routers.${COUCHDB__NAME}-utils.middlewares=authelia@docker"
     - "traefik.http.routers.${COUCHDB__NAME}-utils.service=${COUCHDB__NAME}"
-    # Password login (POST /_session, used by Fauxton) also goes behind Authelia.
-    # Sync clients authenticate with JWT bearer tokens and never POST here.
-    - "traefik.http.routers.${COUCHDB__NAME}-session.rule=Host(`${COUCHDB__SUBDOMAIN}.${DOMAINNAME}`) && Path(`/_session`) && Method(`POST`)"
+    # /_session (password login, used by Fauxton) goes behind Authelia for
+    # every method and spelling. Sync clients use JWT bearer tokens and never
+    # touch it.
+    - "traefik.http.routers.${COUCHDB__NAME}-session.rule=Host(`${COUCHDB__SUBDOMAIN}.${DOMAINNAME}`) && PathRegexp(`^/+_session(/.*)?$$`)"
     - "traefik.http.routers.${COUCHDB__NAME}-session.middlewares=authelia@docker"
     - "traefik.http.routers.${COUCHDB__NAME}-session.service=${COUCHDB__NAME}"
     - "traefik.http.services.${COUCHDB__NAME}.loadbalancer.server.port=5984"

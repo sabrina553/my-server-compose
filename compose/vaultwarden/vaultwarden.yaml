@@ -85,7 +85,7 @@ services:
     - "traefik.http.routers.${VAULTWARDEN__NAME}.service=${VAULTWARDEN__NAME}"
     # The admin panel is never used by the apps, so it goes behind Authelia as well
     # as the admin token. The longer rule wins over the router above.
-    - "traefik.http.routers.${VAULTWARDEN__NAME}-admin.rule=Host(`${VAULTWARDEN__SUBDOMAIN}.${DOMAINNAME}`) && PathPrefix(`/admin`)"
+    - "traefik.http.routers.${VAULTWARDEN__NAME}-admin.rule=Host(`${VAULTWARDEN__SUBDOMAIN}.${DOMAINNAME}`) && PathRegexp(`^/+admin(/.*)?$$`)"
     - "traefik.http.routers.${VAULTWARDEN__NAME}-admin.middlewares=authelia@docker"
     - "traefik.http.routers.${VAULTWARDEN__NAME}-admin.service=${VAULTWARDEN__NAME}"
     - "traefik.http.services.${VAULTWARDEN__NAME}.loadbalancer.server.port=80"
