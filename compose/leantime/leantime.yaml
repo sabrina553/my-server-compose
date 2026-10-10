@@ -49,7 +49,8 @@ services:
     - ${LEAN__VOLUME_DIRECTORY}/db_data:/var/lib/mysql
 
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      # TCP, not the socket, so it isn't fooled by the first-run setup server.
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
       interval: 30s
       timeout: 10s
       retries: 3
