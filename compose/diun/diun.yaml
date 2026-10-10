@@ -8,6 +8,9 @@ services:
     container_name: ${DIUN__NAME}
     image: ${DIUN__IMAGE}:${DIUN__VERSION}
     restart: unless-stopped
+    # Not root (the image's default): it reads Docker over TCP via the proxy
+    # and writes only its database in /data.
+    user: "${PUID}:${PGID}"
     command: serve
 
     security_opt:
