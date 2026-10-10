@@ -45,12 +45,14 @@ services:
       VPN_TYPE: ${VPN__TYPE}
       SERVER_COUNTRIES: ${VPN__SERVER_COUNTRIES}
       FIREWALL_VPN_INPUT_PORTS: ${TORRENTING_PORT}
-      FIREWALL_OUTBOUND_SUBNETS: ${VPN__EXTERNAL_SUBNETS}
-      # No login, and it reaches every network vpn is on (socket_proxy_ro
-      # included). It listens on all of vpn's networks, because Chaptarr and
-      # Prowlarr use it too (their own proxy setting) as well as FlareSolverr.
-      # That's acceptable only because vpn is not on `external`: what can reach
-      # it is Traefik, Chaptarr, Prowlarr, FlareSolverr and socket_proxy_ro.
+      # No FIREWALL_OUTBOUND_SUBNETS: nothing in this namespace starts
+      # connections to Docker networks, so everything leaves via the tunnel or
+      # not at all. (Replies to Traefik, Chaptarr and Prowlarr still work.)
+      # The HTTP proxy has no login and reaches every network vpn is on. It
+      # listens on all of them, because Chaptarr and Prowlarr use it too (their
+      # own proxy setting) as well as FlareSolverr. Acceptable because vpn is on
+      # neither `external` nor a socket-proxy network: only Traefik, Chaptarr,
+      # Prowlarr and FlareSolverr can reach it.
       HTTPPROXY: "on"
       # PUBLICIP_FILE left at its default (/tmp/gluetun/ip, tmpfs). Nothing
       # reads it. Writing it logs "permission denied" on every start, harmless:
@@ -63,7 +65,9 @@ services:
       vpn_proxy:             # FlareSolverr -> HTTP proxy
       chaptarr_downloads:    # Chaptarr -> qBittorrent
       prowlarr_downloads:    # Prowlarr -> qBittorrent
-      socket_proxy_ro:       # Mousetrap -> read-only Docker API (GET only)
+    # Never on a socket-proxy network: everything in this namespace (and,
+    # through the HTTP proxy, everything that can reach it) would get the
+    # Docker API.
     # No published ports on purpose. Anything published here bypasses Traefik and
     # Authelia, and Docker's iptables rules bypass the host firewall.
     #  - Web UIs (qbittorrent, mousehole, mousetrap) go through Traefik.
