@@ -41,9 +41,12 @@ regulation:
   modes:
     - 'user'
     - 'ip'
-  max_retries: 3
+  ## Lenient on purpose (2026-10-10): every rule is two_factor, so this only has
+  ## to slow password guessing, not stop it. 3 / 15 min banned too easily (one
+  ## device with a stale password was enough).
+  max_retries: 6
   find_time: '2 minutes'
-  ban_time: '15 minutes'
+  ban_time: '5 minutes'
 
 ##
 ## Applies to Authelia's own password-reset flow (LLDAP stores the password).
