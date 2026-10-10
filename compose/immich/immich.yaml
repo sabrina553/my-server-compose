@@ -9,6 +9,8 @@ services:
     container_name: ${IMMICH__NAME}
     image: ${IMMICH__IMAGE}:${IMMICH__VERSION}
     restart: unless-stopped
+    # Not root (the image's default; it ignores PUID/PGID).
+    user: "${PUID}:${PGID}"
 
     security_opt:
     - no-new-privileges:true
@@ -38,8 +40,6 @@ services:
     - immich_db_password
     environment:
       TZ: ${TZ}
-      PUID: ${PUID}
-      PGID: ${PGID}
       UPLOAD_LOCATION: ${IMMICH__UPLOAD_LOCATION}
       DB_HOSTNAME: ${POSTGRESQL__HOST}
       DB_PORT: ${POSTGRESQL__PORT}
@@ -52,7 +52,11 @@ services:
     - db_postgres
     - immich_backend
     devices:
-    - "/dev/dri:/dev/dri"   # hardware video transcoding
+    # Hardware transcoding (Immich is set to VAAPI). This VM has no renderD128,
+    # so it can't work yet and Immich falls back to software. If a GPU is passed
+    # through, also add `group_add: ["<host render gid>"]`: as PUID it can only
+    # open the device through that group.
+    - "/dev/dri:/dev/dri"
 
     labels:
     - "traefik.enable=true"
@@ -69,6 +73,8 @@ services:
     container_name: ${IMMICH_ML__NAME}
     image: ${IMMICH_ML__IMAGE}:${IMMICH_ML__VERSION}
     restart: unless-stopped
+    # Not root (the image's default): it writes only its model cache.
+    user: "${PUID}:${PGID}"
 
     security_opt:
     - no-new-privileges:true
