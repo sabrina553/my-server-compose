@@ -40,7 +40,7 @@ services:
         condition: service_started
         restart: false
       mariadb:
-        condition: service_started
+        condition: service_healthy
         restart: false
     logging:
       driver: "json-file"
@@ -121,3 +121,12 @@ services:
 
     volumes:
     - ${VOLDIR}/${GRIMMORY__NAME}/mariadb/:/config:rw
+
+    healthcheck:
+      # No password needed: mariadb-admin ping exits 0 even when access is denied.
+      # TCP, not the socket, so it isn't fooled by the first-run setup server.
+      test: mariadb-admin ping -h 127.0.0.1 --silent
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
