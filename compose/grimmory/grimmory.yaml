@@ -52,8 +52,9 @@ services:
     - grimmory_db_password
     environment:
       TZ: ${TZ}
-      PUID: ${PUID}
-      PGID: ${PGID}
+      # Its entrypoint's names for PUID/PGID (default 1000); it ignores PUID/PGID.
+      USER_ID: ${PUID}
+      GROUP_ID: ${PGID}
       LOG_LEVEL: ${LOG_LEVEL}
       DATABASE_URL: ${GRIMMORY__DB_URL}
       DATABASE_USERNAME: ${GRIMMORY__DB_USER}

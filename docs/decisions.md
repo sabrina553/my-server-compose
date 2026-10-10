@@ -187,6 +187,24 @@ a hard-coded path the image's healthcheck reads. That one file is
 bind-mounted from `${VOLDIR}/authelia/` (`create_host_path: false`); the rest
 of the filesystem is read-only.
 
+**Apps run as the no-login service user `dockersvc` (PUID/PGID 2000).**
+(2026-10-10; replaces PUID/PGID 1000, a real login account) An escape after an
+image drops privileges now lands as a user that can't log in and owns only
+app data. Every non-root service takes its uid from PUID, under whatever name
+its image uses: `PUID`/`PGID` (linuxserver, Chaptarr, Mealie…), `APP_UID` /
+`APP_GID` (CrossWatch), `USER_ID`/`GROUP_ID` (Grimmory), `UID`/`GID` (LLDAP),
+or `user: "${PUID}:${PGID}"` where the image has a fixed user (Authelia,
+Ghost, The Lounge, FileBrowser). Check with the numeric uid of each
+container's processes, not with its env: an image can carry `PUID` and
+ignore it.
+- **Exceptions, still uid 1000:** FlareSolverr (undetected-chromedriver patches
+  `/app/chromedriver`) and Leantime (writes `bootstrap/cache` and nginx paths
+  inside its image). Both own files in their images; userns-remap covers them.
+- **Shared DATADIR folders** (`filebrowser`, `torrents/books`,
+  `torrents/downloads`, `downloads`) carry access and default ACLs for uid and
+  gid 2000, so files created there as root (SSH, SFTP, editors) stay writable
+  by the apps. Repair anything that isn't: `chown -R dockersvc:dockersvc <path>`.
+
 **No host sockets in containers; Home Assistant's exception removed.**
 (2026-10-10; replaces "Home Assistant keeps `apparmor:unconfined` for host
 D-Bus/Bluetooth") Containers run as host root (no userns-remap), and the

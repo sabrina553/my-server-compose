@@ -59,6 +59,10 @@ services:
     container_name: ${LEAN__NAME}
     image: ${LEAN__IMAGE}:${LEAN__VERSION}
     restart: unless-stopped
+    # Stays the image's own www-data (uid 1000), not PUID: it ignores PUID/PGID,
+    # and as any other uid it can't write bootstrap/cache or nginx's paths in the
+    # image (tested 2026-10-10: boot loop). Its four data mounts are owned by
+    # 1000 to match. userns-remap is what covers it.
     # Leantime can't read secret files, so load them into its env vars at start.
     # The image has no CMD, so only its ENTRYPOINT is repeated here.
     entrypoint:

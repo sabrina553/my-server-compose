@@ -108,6 +108,12 @@ directly. Commit to `dev` and push. **The GitHub repo is public.**
   `CHOWN DAC_READ_SEARCH FOWNER SETGID SETUID`. Use `DAC_OVERRIDE` if the
   entrypoint checks writability as root (as LLDAP does). See the table in
   `docs/decisions.md`.
+- Non-root apps run as `dockersvc` (PUID/PGID 2000, no login), never 1000 (a
+  real account). A new service takes its uid from PUID under the image's own
+  variable name, or `user: "${PUID}:${PGID}"`; verify the *process* uid
+  (`/proc/<pid>/status` via `docker top`), not the env. Exceptions at 1000:
+  FlareSolverr, Leantime. Shared DATADIR folders use ACLs for 2000; fix
+  ownership with `chown -R dockersvc:dockersvc`, never `chmod -R`.
 
 **Start-up**
 - `restart: unless-stopped` everywhere.
