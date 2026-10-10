@@ -3,11 +3,21 @@
 ## from Authelia's Remote-User header (auth.methods.proxy in its config.yaml),
 ## so it sits on filebrowser_proxy with Traefik alone and has no internet
 ## access. Its OIDC settings stay wired up as a fallback (disabled in config.yaml).
+## Gotchas (2026-10-10): accounts must have login method "proxy" (one created by
+## OIDC gets 403 on a header login); proxy.createUser is ignored, so anyone
+## Authelia admits gets an account (userDefaults permissions). OIDC needs
+## internet access to reach Authelia's public URL, which this network lacks: for
+## a one-off OIDC login, `docker network connect external filebrowser`, then
+## `up -d --force-recreate filebrowser` to drop it again.
 services:
   filebrowser:
     container_name: ${FILEBROWSER__NAME}
     image: ${FILEBROWSER__IMAGE}:${FILEBROWSER__VERSION}
     restart: unless-stopped
+    # The image runs as its own uid 1000 and ignores PUID/PGID, so set them here.
+    # Its cache is data/cache (cacheDir in config.yaml): the image's
+    # /home/filebrowser/tmp belongs to uid 1000.
+    user: "${PUID}:${PGID}"
     # FileBrowser can't read secret files, so load them into its env vars at start.
     # The image has no CMD, so only its ENTRYPOINT is repeated here.
     entrypoint:
@@ -47,8 +57,6 @@ services:
     - filebrowser_oidc_client_secret
     environment:
       TZ: ${TZ}
-      PUID: ${PUID}
-      PGID: ${PGID}
       FILEBROWSER_DATABASE: ${FILEBROWSER__DATABASE}
 
     # Only Traefik shares this network: FileBrowser trusts the Remote-User

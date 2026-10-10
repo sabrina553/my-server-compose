@@ -6,14 +6,13 @@ services:
     container_name: ${IRC__NAME}
     image: ${IRC__IMAGE}:${IRC__VERSION}
     restart: unless-stopped
+    # The image runs as node (uid 1000), not PUID; it needs no capabilities.
+    user: "${PUID}:${PGID}"
 
     security_opt:
     - no-new-privileges:true
     cap_drop:
     - ALL
-    cap_add:   # entrypoint drops to the node user
-    - SETGID
-    - SETUID
     #read_only: true
     tmpfs:
     - /tmp:rw,noexec,nosuid

@@ -10,6 +10,9 @@ services:
     container_name: ${FLARESOLVERR__NAME}
     image: ${FLARESOLVERR__IMAGE}:${FLARESOLVERR__VERSION}
     restart: unless-stopped
+    # Stays the image's own uid 1000, not PUID: undetected-chromedriver patches
+    # /app/chromedriver, which that uid owns (tested 2026-10-10: any other uid
+    # fails with "Permission denied"). userns-remap is what covers it.
 
     security_opt:
     - no-new-privileges:true
