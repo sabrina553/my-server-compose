@@ -126,6 +126,11 @@ services:
     - "traefik.http.middlewares.secure-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
     - "traefik.http.middlewares.secure-headers.headers.customFrameOptionsValue=SAMEORIGIN"
     - "deunhealth.restart.on.unhealthy=true"
+    # What this container may ask socket-proxy-ro for (see socket-proxy.yaml):
+    # exactly the calls it was seen making. Single quotes: `\.` is a parse
+    # error in double-quoted YAML.
+    - 'socket-proxy.allow.head=/_ping'
+    - 'socket-proxy.allow.get=/v1\.[0-9]+/(version|containers/json|containers/[0-9a-f]{12,64}/json|events)(\?.*)?'
 
     volumes:
     - ${VOLDIR}/${TRAEFIK__NAME}:/etc/traefik:rw
