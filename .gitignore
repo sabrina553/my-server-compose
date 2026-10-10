@@ -5,6 +5,9 @@
 !.env.example
 
 *.json
+# Claude Code's project rules (deny list, redaction hook) belong with the repo;
+# settings.local.json stays local.
+!.claude/settings.json
 secrets/*
 
 # Local prep for the userns-remap / service-user work (not tracked yet)

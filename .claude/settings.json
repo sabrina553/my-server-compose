@@ -1,0 +1,74 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.bak*)",
+      "Read(./.env.local)",
+      "Read(./.env.*.local)",
+      "Read(./secrets/**)",
+      "Edit(./.env)",
+      "Edit(./.env.bak*)",
+      "Edit(./.env.local)",
+      "Edit(./.env.*.local)",
+      "Edit(./secrets/**)",
+      "Bash(cat .env)",
+      "Bash(cat .env.bak*)",
+      "Bash(cat secrets/*)",
+      "Bash(cat ./secrets/*)",
+      "Bash(less .env*)",
+      "Bash(head .env)",
+      "Bash(tail .env)",
+      "Bash(grep * .env)",
+      "Bash(grep * secrets/*)",
+      "Bash(grep -r * secrets*)",
+      "Bash(source .env)",
+      "Bash(env)",
+      "Bash(printenv*)",
+      "Bash(docker compose config*)",
+      "Read(//var/lib/docker/volumes/*/secrets.yaml)",
+      "Read(//var/lib/docker/volumes/*/.storage/**)",
+      "Edit(//var/lib/docker/volumes/*/secrets.yaml)",
+      "Edit(//var/lib/docker/volumes/*/.storage/**)",
+      "Bash(docker exec homeassistant cat /config/secrets.yaml*)",
+      "Bash(docker exec homeassistant cat /config/.storage*)",
+      "Read(./.env.redact)",
+      "Edit(./.env.redact)",
+      "Read(//opt/bak/**)",
+      "Read(//srv/restic-repo/scripts/identities/**)",
+      "Edit(//srv/restic-repo/scripts/identities/**)",
+      "Bash(cat /srv/restic-repo/scripts/identities/*)",
+      "Bash(cat identities/*)",
+      "Read(//var/backups/db-dumps/**)",
+      "Edit(//var/backups/db-dumps/**)",
+      "Bash(cat /var/backups/db-dumps/*)",
+      "Bash(less /var/backups/db-dumps/*)"
+    ],
+    "ask": [
+      "Read(//var/lib/docker/volumes/**)",
+      "Edit(//var/lib/docker/volumes/**)",
+      "Bash(cat /var/lib/docker/volumes*)",
+      "Bash(less /var/lib/docker/volumes*)",
+      "Bash(head * /var/lib/docker/volumes*)",
+      "Bash(tail * /var/lib/docker/volumes*)",
+      "Bash(grep * /var/lib/docker/volumes*)",
+      "Bash(docker exec homeassistant *)",
+      "Bash(docker cp *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/redact-guard.py\"",
+            "timeout": 10,
+            "onFailure": "block",
+            "statusMessage": "Checking output redaction"
+          }
+        ]
+      }
+    ]
+  }
+}
