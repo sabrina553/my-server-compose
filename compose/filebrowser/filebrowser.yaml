@@ -5,7 +5,11 @@
 ## access. Its OIDC settings stay wired up as a fallback (disabled in config.yaml).
 ## Gotchas (2026-10-10): accounts must have login method "proxy" (one created by
 ## OIDC gets 403 on a header login); proxy.createUser is ignored, so anyone
-## Authelia admits gets an account (userDefaults permissions). OIDC needs
+## Authelia admits gets an account (userDefaults permissions), and one named
+## like auth.adminUsername (default "admin") is made admin; Authelia refuses
+## LLDAP's built-in admin, so that name never arrives. 1.5.8 ignores
+## userGroups/groupsClaim for proxy logins (newer releases check them: add
+## groupsClaim "Remote-Groups" + userGroups after upgrading). OIDC needs
 ## internet access to reach Authelia's public URL, which this network lacks: for
 ## a one-off OIDC login, `docker network connect external filebrowser`, then
 ## `up -d --force-recreate filebrowser` to drop it again.
