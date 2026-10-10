@@ -177,11 +177,17 @@ back only the capabilities its image is known to need (learned by testing):
 | LLDAP: checks `/data` is *writable* while root | `CHOWN DAC_OVERRIDE FOWNER SETGID SETUID` |
 | linuxserver (Prowlarr): init chowns `/run/<app>-temp` | `CHOWN FOWNER SETGID SETUID` |
 | linuxserver qBittorrent | `CHOWN SETGID SETUID` |
+| linuxserver MariaDB (Grimmory) | `CHOWN DAC_READ_SEARCH FOWNER SETGID SETUID`, plus a tmpfs on `/run/mysqld` (see below) |
 | FreshRSS: entrypoint `chown -R` / `chmod -R` on `./data` | `CHOWN DAC_READ_SEARCH FOWNER SETGID SETUID` |
 | Leantime (its documented set) | `NET_BIND_SERVICE CHOWN SETGID SETUID` |
-| Linkwarden: root throughout | `CHOWN FOWNER` |
 | pgAdmin: listens on 8080 with plain python since 9.18 | none extra; `PGADMIN_DISABLE_POSTFIX=true` so no `sudo` |
-| Authelia: `user: PUID:PGID`, so the entrypoint skips its chown/su-exec | none |
+| `user: "${PUID}:${PGID}"`, so the image never starts as root: Authelia, Traefik, Vaultwarden, Immich (server and ML), Linkwarden, Ghost, The Lounge, FileBrowser, Dozzle, Diun, deunhealth | none |
+
+**Grimmory's MariaDB has a tmpfs on `/run/mysqld`.** (2026-10-10) A plain
+`restart` keeps the container's filesystem, so the old `mysqld.pid` (owned by
+the app user) was still there, and the linuxserver init, root without
+`DAC_OVERRIDE`, couldn't delete it: MariaDB never started. A tmpfs is wiped on
+every start; that fixes it without the extra capability.
 
 **Authelia runs as `PUID:PGID` with a read-only root filesystem.** (2026-10-10)
 It ran as root
@@ -203,7 +209,9 @@ container's processes, not with its env: an image can carry `PUID` and
 ignore it.
 - **Exceptions, still uid 1000:** FlareSolverr (undetected-chromedriver patches
   `/app/chromedriver`) and Leantime (writes `bootstrap/cache` and nginx paths
-  inside its image). Both own files in their images; userns-remap covers them.
+  inside its image). Both own files in their images. Accepted: uid 1000 owns
+  no app data any more, and without userns-remap (below) an escape from either
+  lands as that account.
 - **Shared DATADIR folders** (`filebrowser`, `torrents/books`,
   `torrents/downloads`, `downloads`) carry access and default ACLs for uid and
   gid 2000, so files created there as root (SSH, SFTP, editors) stay writable
@@ -242,3 +250,39 @@ Chaptarr, which only publishes `latest`; Diun watches its digest.
 **Security headers on every HTTPS response.** (2026-10-09) HSTS (1 year,
 including subdomains), nosniff, strict referrer policy, `SAMEORIGIN` framing.
 HSTS can't be undone quickly, so every subdomain must stay HTTPS.
+
+**Every setting in `.env.example`, ports included.** (2026-10-10) Container
+ports (`<APP>__PORT`, used by Traefik's label and the healthcheck), Diun's
+watch settings, Traefik's DNS-challenge resolver and delay, and the socket
+proxies' log levels moved out of the compose files. What stays in a compose
+file is the security model (networks, fixed IPs, bind addresses, trusted
+proxies, hardening, registration switches) and fixed internals (secret paths,
+DB engine names). Traefik's DNS provider stays too: it goes with how the API
+token is passed.
+
+## Backups
+
+**Databases are backed up as dumps, not as live files.** (2026-10-10) A copy
+of a running Postgres or MySQL isn't guaranteed to restore. `db-dump.sh`
+dumps each one (plain SQL; restic compresses and deduplicates) ten minutes
+before each backup, and the live database folders are excluded from restic:
+server space is tight, and the weekly restore test is what makes dumps-only
+safe. CouchDB is copied live: its files are append-only.
+
+**A backup isn't trusted until it has been restored.** (2026-10-10) The PC
+copies had silently stopped for two months, and nothing had ever been
+test-restored. `backup-verify.sh` checks freshness daily and, weekly,
+restores the newest snapshot in full with `--verify` and loads every dump into
+a throwaway copy of its database (same image, no network), comparing table
+and row counts with live. Results go by e-mail from their own sender
+(`BACKUP__MAIL_FROM`); the weekly one always mails, so silence never passes
+for success. Kernel disk read errors fail the daily check: the DATADIR NVMe
+had unreadable sectors that only a full read revealed.
+
+**Short history on the server, long history on the PC.** (2026-10-10) The
+server's local repo keeps 7 daily, 4 weekly and 3 monthly snapshots (fast
+local restores while the PC is off); the PC keeps 30 daily, 8 weekly, 12
+monthly and yearly. Older local snapshots were `restic copy`'d to the PC, not
+deleted. Proxmox snapshots are for rollbacks, not backups: they share the
+VM's disk and slow it down as they grow, and the DATADIR disk (plain LVM)
+can't be snapshotted at all.

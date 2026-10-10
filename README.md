@@ -25,7 +25,7 @@ Internet ──► Cloudflare Tunnel (cloudflared)
 
 | Area | Services |
 |---|---|
-| **Core** | Traefik (reverse proxy), cloudflared (tunnel), Authelia (SSO, 2FA, OIDC provider), LLDAP (users), two Docker socket proxies (per-client path allowlists / restart-stop-kill), deunhealth (restarts unhealthy containers), Diun (update notifications), Dozzle (logs) |
+| **Core** | Traefik (reverse proxy), cloudflared (tunnel), Authelia (SSO, 2FA, OIDC provider), LLDAP (users), two Docker socket proxies (per-client path allowlists; one read-only, one that can only restart containers), deunhealth (restarts unhealthy containers), Diun (update notifications), Dozzle (logs) |
 | **Data** | Postgres (shared, one database and user per app), Valkey/Redis (Immich; a separate one for Authelia's sessions), pgAdmin |
 | **Books and downloads** | Grimmory (library), Chaptarr (ebook/audiobook manager), Prowlarr + FlareSolverr (indexers), qBittorrent and Mousetrap, all inside a Gluetun WireGuard VPN container |
 | **Personal data** | Immich (photos), Vaultwarden (passwords), FileBrowser (files), CouchDB (Obsidian LiveSync), Home Assistant |
@@ -59,6 +59,16 @@ behind each point.
   the Docker API.
 - **Pinned versions.** Every image is pinned to an exact version. Diun emails
   when newer releases appear, and updates are applied by hand.
+
+## Backups
+
+Databases are dumped to plain SQL twice a day, then restic backs up the
+stack, the volumes and the dumps (live database folders excluded) to a small
+local repository and to a second machine, which also gets the bulk data.
+`scripts/backup-verify.sh` checks them every morning and, once a week,
+restores the newest snapshot and loads every dump into a throwaway copy of
+its database to compare with the live one. Results arrive by e-mail. The
+restic scripts themselves live outside this repo.
 
 ## Layout
 
@@ -98,6 +108,8 @@ as `CHANGE_ME`.
 | `authelia-hash-oidc-secrets.sh` | Generate Authelia's PBKDF2 digests of the OIDC client secrets; `--rotate <client>` for new credentials. |
 | `compose-diff.sh` | Show what a change does to the rendered config (redacted). Layout-only changes print "No differences". |
 | `couchdb-maintenance.sh` | List CouchDB databases and sizes; `--compact` to compact them. |
+| `db-dump.sh` | Dump every database to plain SQL for the backups (cron, before each restic run). |
+| `backup-verify.sh` | Check the backups and e-mail the result: `daily` (failures only), `weekly` (full restore test, always mails), `test-db <service>`. |
 | `hooks/pre-commit` | Block commits containing `.env*`, `secrets/` or site values. Enable with `git config core.hooksPath scripts/hooks`. |
 
 ## Common tasks
