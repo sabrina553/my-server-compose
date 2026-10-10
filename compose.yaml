@@ -247,6 +247,8 @@ secrets:
   # --- Home Assistant
   homeassistant_oidc_client_id:
     file: $DOCKERDIR/secrets/homeassistant/oidc_client_id
+  homeassistant_oidc_client_secret:
+    file: $DOCKERDIR/secrets/homeassistant/oidc_client_secret
   # --- Immich
   immich_oidc_client_id:
     file: $DOCKERDIR/secrets/immich/oidc_client_id

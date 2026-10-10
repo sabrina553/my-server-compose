@@ -42,7 +42,6 @@ declare -A SERVICE=(
 # Apps that keep their own copy of the ID/secret instead of reading the files.
 declare -A MANUAL=(
   [grimmory]="Grimmory: Settings > OIDC"
-  [homeassistant]="Home Assistant: oidc-clientid / oidc-secret in its secrets.yaml (quote the values)"
   [immich]="Immich: Administration > Settings > OAuth"
 )
 
