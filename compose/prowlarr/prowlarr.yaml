@@ -75,6 +75,8 @@ services:
         max-file: "3"
 
     environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
       # No login of its own (Authelia in front). Safe only because the UI listens
       # on its `arr` address alone, which nothing but Traefik and Chaptarr share.
       PROWLARR__AUTH__METHOD: External

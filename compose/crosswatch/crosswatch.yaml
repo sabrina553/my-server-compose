@@ -30,6 +30,9 @@ services:
 
     environment:
       TZ: ${TZ}
+      # Its entrypoint's names for PUID/PGID (default 1000).
+      APP_UID: ${PUID}
+      APP_GID: ${PGID}
 
     networks:
     - external
