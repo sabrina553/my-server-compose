@@ -164,6 +164,26 @@ check_pc() {
   done
 }
 
+# The last exit code of each backup run (repo + set), written by the restic
+# scripts' functions/backup.sh. Snapshot age alone misses exit 3: the snapshot
+# is made, but files that couldn't be read (a failing disk) are left out.
+# Results older than a week are skipped (a repo or set no longer in use).
+check_runs() {
+  local f name rc t
+  shopt -s nullglob
+  for f in "$RESTIC_SCRIPTS"/state/last-backup-*; do
+    read -r rc t < "$f" || continue
+    name=${f##*/last-backup-}
+    (( $(age_hours "$t") > 168 )) && continue
+    case $rc in
+      0) ok "backup run $name: completed" ;;
+      3) fail "backup run $name: some files couldn't be read (restic exit 3; see logs/restic_backup.log)" ;;
+      *) fail "backup run $name: failed (restic exit $rc; see logs/restic_backup.log)" ;;
+    esac
+  done
+  shopt -u nullglob
+}
+
 check_disk() {
   local pct
   pct=$(df --output=pcent / | tail -n1 | tr -dc 0-9)
@@ -478,12 +498,12 @@ finish() {   # <mode> <always mail?>
 # --- main ---------------------------------------------------------------------
 case ${1:-daily} in
   daily)
-    check_dumps; check_local; check_pc; check_disk; check_disk_errors; check_crowdsec
+    check_dumps; check_local; check_pc; check_runs; check_disk; check_disk_errors; check_crowdsec
     finish daily no
     ;;
   weekly)
     t0=$SECONDS
-    check_dumps; check_local; check_pc; check_disk; check_disk_errors; check_crowdsec
+    check_dumps; check_local; check_pc; check_runs; check_disk; check_disk_errors; check_crowdsec
     weekly_restore
     note "took $(( (SECONDS - t0) / 60 )) min"
     finish weekly yes
