@@ -13,6 +13,19 @@ services:
     # net.ipv4.ip_unprivileged_port_start=0 in containers, so no capability is
     # needed and cloudflared's https://traefik target stays the same.
     user: "${PUID}:${PGID}"
+    # The CrowdSec bouncer key goes from its secret file into an env var that
+    # dynamic/crowdsec.yml reads (the plugin can't read a file). Original
+    # ENTRYPOINT ["/entrypoint.sh"], CMD ["traefik"] (it adds `traefik` itself
+    # when the first argument is a flag); re-check after upgrades:
+    #   docker image inspect --format '{{json .Config.Entrypoint}} {{json .Config.Cmd}}' <image>
+    entrypoint:
+    - /bin/sh
+    - -c
+    - >-
+      CROWDSEC_BOUNCER_KEY=$$(cat /run/secrets/crowdsec_bouncer_key_traefik) &&
+      export CROWDSEC_BOUNCER_KEY &&
+      exec /entrypoint.sh "$$@"
+    - --
     command:
     # API + dashboard: only via the router below (behind Authelia), not on :8080.
     - "--api.insecure=false"
@@ -54,7 +67,14 @@ services:
     - "--entryPoints.web.http.aliasHeadersStrategy=delete"
     - "--entryPoints.websecure.http.aliasHeadersStrategy=delete"
     # Security headers on every HTTPS response (middleware defined in labels below).
-    - "--entryPoints.websecure.http.middlewares=secure-headers@docker"
+    # Then CrowdSec's bouncer: banned IPs get a 403 (fails open, see
+    # dynamic/crowdsec.yml).
+    - "--entryPoints.websecure.http.middlewares=secure-headers@docker,crowdsec@file"
+    # CrowdSec bouncer plugin, loaded from local source (pinned, no download at
+    # start): ${VOLDIR}/traefik-plugins mounted at /plugins-local.
+    - "--experimental.localPlugins.crowdsec.moduleName=github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin"
+    # Dynamic config files (the CrowdSec middleware), read-only from the repo.
+    - "--providers.file.directory=/etc/traefik-dynamic"
     # Docker provider, through the read-only socket proxy
     - "--providers.docker=true"
     - "--providers.docker.endpoint=${DOCKER_HOST_RO:-tcp://socket-proxy-ro:2375}"
@@ -89,6 +109,7 @@ services:
 
     secrets:
     - traefik_cloudflare_dns_api_token
+    - crowdsec_bouncer_key_traefik
     environment:
       TZ: ${TZ}
       CF_DNS_API_TOKEN_FILE: ${TRAEFIK__CF_DNS_API_TOKEN_FILE}
@@ -110,6 +131,7 @@ services:
       filebrowser_proxy:
       arr:
       socket_proxy_ro:
+      crowdsec_lapi:   # bouncer -> CrowdSec's LAPI
     # LAN address only (*.int names resolve to it); public names come through
     # cloudflared. Never all interfaces: Docker's rules bypass the host firewall.
     ports:
@@ -139,6 +161,8 @@ services:
     # Created beforehand as dockersvc (750): Docker would create it as root.
     # Rotated on the host by /etc/logrotate.d/stack-logs.
     - ${TRAEFIK__LOGDIR}:/var/log/traefik:rw
+    - ./dynamic:/etc/traefik-dynamic:ro
+    - ${VOLDIR}/traefik-plugins:/plugins-local:ro
 
     healthcheck:
       test: wget --quiet --tries=1 --spider http://127.0.0.1:8080/ping || exit 1

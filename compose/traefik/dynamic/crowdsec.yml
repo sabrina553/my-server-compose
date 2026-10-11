@@ -1,0 +1,36 @@
+# CrowdSec bouncer middleware (crowdsec@file), applied to every websecure
+# router through the entrypoint (traefik.yaml). Plugin: maxlerebourg/
+# crowdsec-bouncer-traefik-plugin, as a local plugin (source pinned in
+# ${VOLDIR}/traefik-plugins, version in its VERSION file).
+#
+# This file is a Go template (Traefik's file provider): the LAPI key comes from
+# the environment, set by traefik.yaml's entrypoint from the Docker secret
+# crowdsec_bouncer_key_traefik. Never put the key here.
+http:
+  middlewares:
+    crowdsec:
+      plugin:
+        crowdsec:
+          enabled: true
+          # stream: banned IPs cached in Traefik, refreshed from the LAPI every
+          # updateIntervalSeconds; no LAPI call per request.
+          crowdsecMode: stream
+          crowdsecLapiScheme: http
+          # CrowdSec's fixed address on crowdsec_lapi (it listens nowhere else).
+          crowdsecLapiHost: 172.21.18.10:8080
+          crowdsecLapiKey: '{{ env "CROWDSEC_BOUNCER_KEY" }}'
+          updateIntervalSeconds: 60
+          # Fail open: if CrowdSec is down (at start-up or later), traffic
+          # passes. backup-verify.sh watch mails when that happens.
+          updateMaxFailure: -1
+          streamStartupBlock: false
+          # The real visitor IP is in X-Forwarded-For, trusted from cloudflared
+          # only (as in traefik.yaml).
+          forwardedHeadersTrustedIPs:
+          - 172.20.0.250/32
+          # LAN clients (*.int names) are never blocked. Not 172.16.0.0/12:
+          # that holds the Docker networks, cloudflared included.
+          clientTrustedIPs:
+          - 10.0.0.0/8
+          - 192.168.0.0/16
+          remediationStatusCode: 403

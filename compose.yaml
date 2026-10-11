@@ -169,6 +169,9 @@ secrets:
     file: $DOCKERDIR/secrets/traefik/cloudflare_dns_api_token
   cloudflared_tunnel_token:
     file: $DOCKERDIR/secrets/cloudflared/tunnel_token
+  # Shared with CrowdSec, which registers the bouncer from it at start.
+  crowdsec_bouncer_key_traefik:
+    file: $DOCKERDIR/secrets/crowdsec/bouncer_key_traefik
   postgres_password:
     file: $DOCKERDIR/secrets/postgres/password
   # --- Authelia
