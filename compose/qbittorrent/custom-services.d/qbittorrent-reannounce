@@ -1,0 +1,27 @@
+#!/usr/bin/with-contenv bash
+# shellcheck shell=bash
+# When Gluetun restarts its tunnel it can come back with a new exit IP in the
+# same namespace. Traffic follows, but private trackers keep the IP of the last
+# announce until qBittorrent's next scheduled one, so seeding stops. This
+# watches the public IP (through the tunnel) and reannounces every torrent
+# when it changes. qBittorrent's own "reannounce on address change" only sees
+# the tunnel's local address, which doesn't change.
+# Uses the localhost API without a login (WebUI\LocalHostAuth=false).
+exec s6-setuidgid abc bash -c '
+api="http://localhost:${WEBUI_PORT:-8080}/api/v2"
+last=""
+while true; do
+  sleep 60
+  ip=$(curl -fsS --max-time 10 https://1.1.1.1/cdn-cgi/trace 2>/dev/null | sed -n "s/^ip=//p")
+  [ -n "$ip" ] || continue
+  if [ -n "$last" ] && [ "$ip" != "$last" ]; then
+    if curl -fsS --max-time 10 -d "hashes=all" "$api/torrents/reannounce" >/dev/null; then
+      echo "[reannounce] public IP changed, reannounced all torrents"
+    else
+      echo "[reannounce] public IP changed, reannounce failed; retrying"
+      continue
+    fi
+  fi
+  last=$ip
+done
+'
