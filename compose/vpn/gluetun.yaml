@@ -20,6 +20,9 @@ services:
     - CHOWN
     tmpfs:
     - /tmp:rw,noexec,nosuid,uid=${PUID},gid=${PGID}
+    # Gluetun creates this folder as 0644 (no x), which root can't enter
+    # without DAC_OVERRIDE; provide it with a usable mode instead.
+    - /tmp/gluetun:rw,noexec,nosuid,mode=0755
 
     logging:
       driver: "json-file"
