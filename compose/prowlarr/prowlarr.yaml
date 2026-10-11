@@ -12,7 +12,7 @@ services:
     restart: unless-stopped
     # Stays the image's own uid 1000, not PUID: undetected-chromedriver patches
     # /app/chromedriver, which that uid owns (tested 2026-10-10: any other uid
-    # fails with "Permission denied"). userns-remap is what covers it.
+    # fails with "Permission denied"). Accepted: uid 1000 owns no app data (docs/decisions.md).
 
     security_opt:
     - no-new-privileges:true
