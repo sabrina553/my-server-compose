@@ -283,7 +283,7 @@ documentation. Notes there always use **plural** tags (`self-hosts`,
   only restarts qBittorrent/Mousehole/Mousetrap, which leaves them in the old,
   dead network namespace (still "running"). Their healthcheck then goes
   unhealthy (no `tun0`). Fix: `docker compose up -d --force-recreate
-  qbittorrent mousehole`. deunhealth can't fix it: a restart rejoins the old
+  qbittorrent mousetrap`. deunhealth can't fix it: a restart rejoins the old
   namespace.
 - At boot, the Docker daemon restarts every `unless-stopped` container itself,
   all at once, and ignores `depends_on` (only Compose reads it). A container

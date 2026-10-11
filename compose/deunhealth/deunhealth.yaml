@@ -1,7 +1,7 @@
 ## deunhealth  https://github.com/qdm12/deunhealth
 ## Restarts containers labelled deunhealth.restart.on.unhealthy=true when they
-## turn unhealthy. Talks to the restart-capable socket proxy (GET + container
-## restart/stop/kill), nothing else.
+## turn unhealthy. Talks to the restart-capable socket proxy (list, events and
+## POST containers/<name>/restart), nothing else.
 services:
   deunhealth:
     container_name: ${DEUNHEALTH__NAME}

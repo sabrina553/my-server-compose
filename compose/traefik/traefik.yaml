@@ -137,7 +137,7 @@ services:
     volumes:
     - ${VOLDIR}/${TRAEFIK__NAME}:/etc/traefik:rw
     # Created beforehand as dockersvc (750): Docker would create it as root.
-    # Rotated on the host by /etc/logrotate.d/traefik-access.
+    # Rotated on the host by /etc/logrotate.d/stack-logs.
     - ${TRAEFIK__LOGDIR}:/var/log/traefik:rw
 
     healthcheck:
