@@ -44,6 +44,11 @@ attacking IPs and scenario names it sees, and receives known-bad IPs); the
 online console is off. The bouncer fails open, so a dead CrowdSec doesn't
 take the sites down; `backup-verify.sh watch` mails when it's down instead.
 fail2ban keeps only its `sshd` jail.
+- Blocking on since 2026-10-11, after a day in detect-only mode (only
+  scanners were flagged). The plugin is loaded as a local plugin from pinned
+  source, not downloaded at start: a failed download would leave every HTTPS
+  router without its middleware. Its key reaches it through the file
+  provider's template, because the plugin has no key-file option.
 
 **No network-based bypass rules in Authelia.** (2026-10-09) Docker's gateway
 and cloudflared's own address are inside the Docker subnets, so "from Docker"

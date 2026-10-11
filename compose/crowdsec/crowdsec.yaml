@@ -3,8 +3,9 @@
 ## plus the community blocklist (CAPI). It blocks nothing itself: Traefik's
 ## bouncer plugin asks its local API (LAPI) and refuses banned IPs. The LAPI
 ## listens only on its fixed address on crowdsec_lapi (Traefik and CrowdSec);
-## metrics are off. No console enrollment. Not routed (no web UI): use
-## `docker exec crowdsec cscli …` (decisions list / delete, alerts list).
+## metrics only on 127.0.0.1 inside (config.yaml.local). No console
+## enrollment. Not routed (no web UI): use `docker exec crowdsec cscli …`
+## (decisions list / delete, alerts list).
 services:
   crowdsec:
     container_name: ${CROWDSEC__NAME}
@@ -32,6 +33,12 @@ services:
         max-size: "1m"
         max-file: "3"
 
+    # Traefik's bouncer key. The start script registers every
+    # /run/secrets/bouncer_key_<name> as bouncer <name> (once; to change the
+    # key: cscli bouncers delete traefik, then restart).
+    secrets:
+    - source: crowdsec_bouncer_key_traefik
+      target: bouncer_key_traefik
     environment:
       TZ: ${TZ}
       COLLECTIONS: ${CROWDSEC__COLLECTIONS}

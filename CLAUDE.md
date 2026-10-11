@@ -202,6 +202,20 @@ documentation. Notes there always use **plural** tags (`self-hosts`,
 - Community blocklist on, console off. Traefik's bouncer plugin fails open,
   so `backup-verify.sh watch` (cron, every 10 min) mails when CrowdSec is
   down or the bouncer stops pulling.
+- Blocking: the `crowdsec@file` middleware (`compose/traefik/dynamic/
+  crowdsec.yml`, stream mode, 60 s) on the `websecure` entrypoint after
+  `secure-headers`. The plugin is a **local plugin**: its source, pinned, is
+  in `${VOLDIR}/traefik-plugins` (version in its `VERSION` file), so Traefik
+  downloads nothing at start. To update it, replace that folder with the new
+  release's source and recreate Traefik. The LAPI key is the secret
+  `crowdsec_bouncer_key_traefik`: CrowdSec registers it from
+  `/run/secrets/bouncer_key_traefik`; Traefik's wrapper entrypoint exports it
+  and the dynamic file reads it with `{{ env }}` (the plugin can't read a
+  file). It's visible in Traefik's dashboard API (admin only).
+- Test a ban without a real IP: `cscli decisions add --ip 172.20.0.201
+  --duration 10m`, then `docker run --rm --network external --ip 172.20.0.201
+  curlimages/curl …` against Traefik's `.249` with a real hostname: 403 within
+  a minute. Delete the decision afterwards.
 
 **Authelia**
 - `default_policy: deny`. Every forward-auth router needs a matching rule.
