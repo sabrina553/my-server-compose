@@ -11,6 +11,10 @@ services:
     restart: unless-stopped
     # Not root (the image's default; it ignores PUID/PGID).
     user: "${PUID}:${PGID}"
+    # The VM's `render` group: as PUID it can open /dev/dri/renderD128 only
+    # through it (hardware transcoding on the passed-through iGPU).
+    group_add:
+    - "${IMMICH__RENDER_GID}"
 
     security_opt:
     - no-new-privileges:true
@@ -52,10 +56,8 @@ services:
     - db_postgres
     - immich_backend
     devices:
-    # Hardware transcoding (Immich is set to VAAPI). This VM has no renderD128,
-    # so it can't work yet and Immich falls back to software. If a GPU is passed
-    # through, also add `group_add: ["<host render gid>"]`: as PUID it can only
-    # open the device through that group.
+    # Hardware transcoding on the host's iGPU (HD 530), passed through to the
+    # VM. See group_add above.
     - "/dev/dri:/dev/dri"
 
     labels:
