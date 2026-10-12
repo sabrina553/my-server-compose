@@ -62,6 +62,7 @@ services:
     # Overrides on top of the generated config.yaml, and what to read.
     - ./config.yaml.local:/etc/crowdsec/config.yaml.local:ro
     - ./acquis.yaml:/etc/crowdsec/acquis.d/stack.yaml:ro
+    - ./bouncer-blocked.yaml:/etc/crowdsec/parsers/s02-enrich/stack-bouncer-blocked.yaml:ro
     - ${TRAEFIK__LOGDIR}:/var/log/traefik:ro
     - ${AUTHELIA__LOGDIR}:/var/log/authelia:ro
 
