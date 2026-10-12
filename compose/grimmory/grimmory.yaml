@@ -32,8 +32,11 @@ services:
     - FOWNER
     - SETGID
     - SETUID
+    # Not noexec: PDFium (PDF rendering) unpacks its native library into /tmp
+    # and loads it from there. Docker defaults tmpfs to noexec, so `exec` has
+    # to be explicit. See docs/decisions.md.
     tmpfs:
-    - /tmp:rw,noexec,nosuid
+    - /tmp:rw,exec,nosuid
 
     depends_on:
       traefik:
