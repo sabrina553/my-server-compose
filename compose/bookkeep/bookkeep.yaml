@@ -4,7 +4,8 @@
 ##  - its secret key, Hardcover API token and database URL must become files in
 ##    secrets/bookkeep/, loaded with a wrapper entrypoint (see the template);
 ##    never put them back in .env
-##  - drop or re-password the old `bookkeep` Postgres user
+##  - create a new `bookkeep` Postgres user and database (the old ones were
+##    dropped on 2026-10-13; their last dump is in the db-dumps folder)
 ##  - give it a Redis it can reach (Immich's is on immich_backend only)
 ##  - pin a version in .env.example
 services:
