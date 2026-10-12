@@ -121,7 +121,7 @@ documentation. Notes there always use **plural** tags (`self-hosts`,
   containers run as host root, and `:ro` doesn't restrict a socket.
 - Add back only the capabilities the image needs. Root-then-drop images:
   `CHOWN DAC_READ_SEARCH FOWNER SETGID SETUID`. Use `DAC_OVERRIDE` if the
-  entrypoint checks writability as root (as LLDAP does). See the table in
+  entrypoint checks writability as root (as LLDAP's root image did). See the table in
   `docs/decisions.md`.
 - Non-root apps run as `dockersvc` (PUID/PGID 2000, no login), never 1000 (a
   real account). A new service takes its uid from PUID under the image's own

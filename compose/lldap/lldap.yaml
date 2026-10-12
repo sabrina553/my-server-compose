@@ -7,17 +7,14 @@ services:
     container_name: ${LLDAP__NAME}
     image: ${LLDAP__IMAGE}:${LLDAP__VERSION}
     restart: unless-stopped
+    # The -rootless image: no chown-then-drop entrypoint, so no capabilities,
+    # and tini runs as the same user as lldap, so it can pass on SIGTERM.
+    user: "${PUID}:${PGID}"
 
     security_opt:
     - no-new-privileges:true
     cap_drop:
     - ALL
-    cap_add:   # entrypoint chowns /data to UID/GID, then drops to it
-    - CHOWN
-    - DAC_OVERRIDE   # it checks /data is *writable* while still root
-    - FOWNER
-    - SETGID
-    - SETUID
     tmpfs:
     - /tmp:rw,noexec,nosuid
 
@@ -38,11 +35,12 @@ services:
     - lldap_admin_password
     - lldap_db_url
     environment:
-      UID: ${PUID}
-      GID: ${PGID}
       TZ: ${TZ}
       LLDAP_JWT_SECRET_FILE: ${LLDAP__JWT_SECRET}
       LLDAP_KEY_SEED_FILE: ${LLDAP__KEY_SEED}
+      # The key comes from the seed; an empty key_file stops the start-up
+      # warning that the default one is being ignored.
+      LLDAP_KEY_FILE: ""
       LLDAP_LDAP_BASE_DN: ${LLDAP__LDAP_BASE_DN}
       # LDAP only on lldap_backend (Authelia). The web UI stays on all
       # addresses, for Traefik on `external`.
@@ -79,8 +77,8 @@ services:
     - "traefik.http.routers.${LLDAP__NAME}.middlewares=authelia@docker"
     - "traefik.http.services.${LLDAP__NAME}.loadbalancer.server.port=${LLDAP__PORT}"
     - "deunhealth.restart.on.unhealthy=true"
-    # Diun: only report -alpine releases
-    - 'diun.include_tags=^v\d+\.\d+\.\d+-alpine$$'
+    # Diun: only report -alpine-rootless releases
+    - 'diun.include_tags=^v\d+\.\d+\.\d+-alpine-rootless$$'
 
     volumes:
     - ${VOLDIR}/${LLDAP__NAME}:/data

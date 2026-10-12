@@ -192,20 +192,36 @@ back only the capabilities its image is known to need (learned by testing):
 | Kind of image | cap_add |
 |---|---|
 | starts as root, chowns, drops to a user (official DBs, Ghost, Grimmory, Chaptarr, CouchDB, Valkey) | `CHOWN DAC_READ_SEARCH FOWNER SETGID SETUID` |
-| LLDAP: checks `/data` is *writable* while root | `CHOWN DAC_OVERRIDE FOWNER SETGID SETUID` |
 | linuxserver (Prowlarr): init chowns `/run/<app>-temp` | `CHOWN FOWNER SETGID SETUID` |
 | linuxserver qBittorrent | `CHOWN SETGID SETUID` |
 | linuxserver MariaDB (Grimmory) | `CHOWN DAC_READ_SEARCH FOWNER SETGID SETUID`, plus a tmpfs on `/run/mysqld` (see below) |
 | FreshRSS: entrypoint `chown -R` / `chmod -R` on `./data` | `CHOWN DAC_READ_SEARCH FOWNER SETGID SETUID` |
 | Leantime (its documented set) | `NET_BIND_SERVICE CHOWN SETGID SETUID` |
 | pgAdmin: listens on 8080 with plain python since 9.18 | none extra; `PGADMIN_DISABLE_POSTFIX=true` so no `sudo` |
-| `user: "${PUID}:${PGID}"`, so the image never starts as root: Authelia, Traefik, Vaultwarden, Immich (server and ML), Linkwarden, Ghost, The Lounge, FileBrowser, Dozzle, Diun, deunhealth | none |
+| `user: "${PUID}:${PGID}"`, so the image never starts as root: Authelia, Traefik, Vaultwarden, Immich (server and ML), Linkwarden, Ghost, The Lounge, FileBrowser, Dozzle, Diun, deunhealth, LLDAP (`-rootless` image) | none |
 
 **Grimmory's MariaDB has a tmpfs on `/run/mysqld`.** (2026-10-10) A plain
 `restart` keeps the container's filesystem, so the old `mysqld.pid` (owned by
 the app user) was still there, and the linuxserver init, root without
 `DAC_OVERRIDE`, couldn't delete it: MariaDB never started. A tmpfs is wiped on
 every start; that fixes it without the extra capability.
+
+**Grimmory's `/tmp` allows exec.** (2026-10-12; an exception to the
+`noexec` `/tmp` in the template) PDFium, its native PDF renderer, unpacks its
+library into `/tmp/pdfium4j-*` and loads it from there; with `noexec` it
+logged "PDFium: NOT available" on every start. `noexec` bought little here:
+the app user can already write to `/app/data`, `/books` and `/bookdrop`, all
+of which allow exec. `nosuid` stays. The option is spelled out (`exec`):
+Docker mounts a tmpfs `noexec` by default.
+
+**LLDAP uses its `-rootless` image.** (2026-10-12; replaces the root
+`-alpine` image with `CHOWN DAC_OVERRIDE FOWNER SETGID SETUID`) In the root
+image, tini stayed root while lldap dropped to PUID, and root without
+`CAP_KILL` can't signal another user's process: every stop logged "tini:
+Unexpected error when forwarding signal: Operation not permitted" and ended in
+a SIGKILL after 10 s. The rootless image runs everything as
+`user: "${PUID}:${PGID}"` with no capabilities. `/data` was already owned by
+2000.
 
 **Authelia runs as `PUID:PGID` with a read-only root filesystem.** (2026-10-10)
 It ran as root
@@ -220,7 +236,7 @@ of the filesystem is read-only.
 image drops privileges now lands as a user that can't log in and owns only
 app data. Every non-root service takes its uid from PUID, under whatever name
 its image uses: `PUID`/`PGID` (linuxserver, Chaptarr, Mealie…), `APP_UID` /
-`APP_GID` (CrossWatch), `USER_ID`/`GROUP_ID` (Grimmory), `UID`/`GID` (LLDAP),
+`APP_GID` (CrossWatch), `USER_ID`/`GROUP_ID` (Grimmory),
 or `user: "${PUID}:${PGID}"` where the image has a fixed user (Authelia,
 Ghost, The Lounge, FileBrowser). Check with the numeric uid of each
 container's processes, not with its env: an image can carry `PUID` and
