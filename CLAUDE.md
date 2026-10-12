@@ -307,6 +307,11 @@ documentation. Notes there always use **plural** tags (`self-hosts`,
   recreates it. Stale files (pid files, sockets) can break a restart that a
   fresh container doesn't hit: Grimmory's MariaDB couldn't delete its old
   `mysqld.pid` (root without `DAC_OVERRIDE`), so `/run/mysqld` is a tmpfs.
+- Each socket proxy finds its own container with Docker's name filter, which
+  matches substrings, so neither proxy's name may contain the other's. With
+  `socket-proxy` and `socket-proxy-ro`, the restart proxy sometimes took the
+  read-only one's networks and clients, and deunhealth got 403 "forbidden IP"
+  (seen after the reboot on 2026-10-13). It's now `socket-proxy-restart`.
 - A fresh linuxserver MariaDB leaves `root@localhost` with **no password**
   (`MYSQL_ROOT_PASSWORD` only sets `root@%`). Grimmory's was fixed by hand;
   `backup-verify.sh` relies on it for its throwaway copies.
