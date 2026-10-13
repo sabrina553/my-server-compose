@@ -1,20 +1,22 @@
+## The Lounge  https://github.com/thelounge/thelounge-docker
+## Web IRC client at <subdomain>.int.<domain>, behind Authelia (2FA), plus its
+## own user login.
 services:
   irc:
-    container_name: thelounge
+    container_name: ${IRC__NAME}
     image: ${IRC__IMAGE}:${IRC__VERSION}
-    restart: always
+    restart: unless-stopped
+    # The image runs as node (uid 1000), not PUID; it needs no capabilities.
+    user: "${PUID}:${PGID}"
+
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
     cap_drop:
-      - ALL
-    cap_add:
-      #- chown
-      - SETGID
-      - SETUID
+    - ALL
     #read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
+
     depends_on:
       traefik:
         condition: service_started
@@ -24,13 +26,24 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
-    networks: 
-      - external
+
+    networks:
+    - external
+
     labels:
-      - "traefik.enable=true"       
-      - "traefik.http.routers.irc.rule=Host(`irc.int.$DOMAINNAME`)"   
-      - "traefik.http.routers.irc.middlewares=authelia@docker"     
-      - "traefik.http.services.irc.loadbalancer.server.port=9000" 
-      - "deunhealth.restart.on.unhealthy=true" 
+    - "traefik.enable=true"
+    - "traefik.http.routers.${IRC__NAME}.rule=Host(`${IRC__SUBDOMAIN}.int.${DOMAINNAME}`)"
+    - "traefik.http.routers.${IRC__NAME}.middlewares=authelia@docker"
+    - "traefik.http.services.${IRC__NAME}.loadbalancer.server.port=${IRC__PORT}"
+    - "deunhealth.restart.on.unhealthy=true"
+
     volumes:
-      - ${VOLDIR}/irc/:/var/opt/thelounge
+    - ${IRC__VOLDIR}/:/var/opt/thelounge
+
+    healthcheck:
+      test: wget -q -O /dev/null http://127.0.0.1:${IRC__PORT}/ || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+      start_interval: 5s

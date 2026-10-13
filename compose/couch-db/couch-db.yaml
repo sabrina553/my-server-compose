@@ -1,16 +1,28 @@
+## CouchDB  https://github.com/apache/couchdb
+## Sync backend for Obsidian LiveSync, at <subdomain>.<domain>. The sync API has
+## no forward-auth (clients can't do it) and accepts only JWT bearer tokens;
+## Basic auth and password login over the API are disabled in CouchDB's config.
+## Fauxton (/_utils) and password login (POST /_session) sit behind Authelia.
+## No internet access (proxy_internal).
 services:
   couchserver:
-    container_name: couchdb
+    container_name: ${COUCHDB__NAME}
     image: ${COUCHDB__IMAGE}:${COUCHDB__VERSION}
-    restart: always
+    restart: unless-stopped
+
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
-    #cap_drop:
-    #  - ALL
-    #read_only: true
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    cap_add:   # entrypoint chowns data/config to couchdb, then drops to it
+    - CHOWN
+    - DAC_READ_SEARCH
+    - FOWNER
+    - SETGID
+    - SETUID
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
+
     depends_on:
       traefik:
         condition: service_started
@@ -20,17 +32,41 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
+
     environment:
-      TZ: ${TZ}   
+      TZ: ${TZ}
       PUID: ${PUID}
       PGID: ${PGID}
+
     networks:
-      - internal
+    - proxy_internal
+
     labels:
-      - "traefik.enable=true"       
-      - "traefik.http.routers.couchserver.rule=Host(`couch.$DOMAINNAME`)"      
-      - "traefik.http.services.couchserver.loadbalancer.server.port=5984"  
-      - "deunhealth.restart.on.unhealthy=true"
+    - "traefik.enable=true"
+    - "traefik.docker.network=proxy_internal"
+    # Sync API: no forward-auth (LiveSync can't); CouchDB accepts only JWT.
+    - "traefik.http.routers.${COUCHDB__NAME}.rule=Host(`${COUCHDB__SUBDOMAIN}.${DOMAINNAME}`)"
+    - "traefik.http.routers.${COUCHDB__NAME}.service=${COUCHDB__NAME}"
+    # Fauxton (/_utils) and password login (/_session) go behind Authelia; the
+    # longer rule wins. Regexes, because CouchDB treats /_session/ and //_utils
+    # like /_session and /_utils (an exact Path() was bypassed, 2026-10-10).
+    - "traefik.http.routers.${COUCHDB__NAME}-utils.rule=Host(`${COUCHDB__SUBDOMAIN}.${DOMAINNAME}`) && PathRegexp(`^/+_utils(/.*)?$$`)"
+    - "traefik.http.routers.${COUCHDB__NAME}-utils.middlewares=authelia@docker"
+    - "traefik.http.routers.${COUCHDB__NAME}-utils.service=${COUCHDB__NAME}"
+    - "traefik.http.routers.${COUCHDB__NAME}-session.rule=Host(`${COUCHDB__SUBDOMAIN}.${DOMAINNAME}`) && PathRegexp(`^/+_session(/.*)?$$`)"
+    - "traefik.http.routers.${COUCHDB__NAME}-session.middlewares=authelia@docker"
+    - "traefik.http.routers.${COUCHDB__NAME}-session.service=${COUCHDB__NAME}"
+    - "traefik.http.services.${COUCHDB__NAME}.loadbalancer.server.port=${COUCHDB__PORT}"
+    - "deunhealth.restart.on.unhealthy=true"
+
     volumes:
-      - ${VOLDIR}/couch/dbdata:/opt/couchdb/data
-      - ${VOLDIR}/couch/config:/opt/couchdb/etc
+    - ${COUCHDB__VOLDIR}/dbdata:/opt/couchdb/data
+    - ${COUCHDB__VOLDIR}/config:/opt/couchdb/etc
+
+    healthcheck:
+      test: curl -fsS -o /dev/null http://127.0.0.1:${COUCHDB__PORT}/_up || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+      start_interval: 5s

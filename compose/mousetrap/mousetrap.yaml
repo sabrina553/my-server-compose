@@ -1,0 +1,69 @@
+## MouseTrap  https://github.com/sirjmann92/mousetrap
+## Seedbox/tracker helper, in the VPN's network namespace; UI at
+## <subdomain>.int.<domain> behind Authelia. The UI/API have no login and
+## listen on all addresses (hard-coded), so only vpn's networks reach them.
+## No Docker API access on purpose: port-monitor stacks work with a manual IP.
+services:
+  mousetrap:
+    container_name: ${MOUSETRAP__NAME}
+    image: ${MOUSETRAP__IMAGE}:${MOUSETRAP__VERSION}
+    restart: unless-stopped
+
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    # start.sh remaps appuser to PUID/PGID, chowns /config, then drops to it.
+    # Not read_only: it writes /app/logconfig.yaml and /etc/passwd.
+    cap_add:
+    - CHOWN
+    - DAC_READ_SEARCH
+    - FOWNER
+    - SETGID
+    - SETUID
+    tmpfs:
+    - /tmp:rw,noexec,nosuid
+
+    depends_on:
+      traefik:
+        condition: service_started
+        restart: false
+      vpn:
+        condition: service_healthy
+        restart: true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+
+    environment:
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      # Must be upper case: it goes into a Python logging config verbatim, and
+      # "info" (the shared LOG_LEVEL) crashes uvicorn at start-up.
+      LOGLEVEL: ${MOUSETRAP__LOGLEVEL}
+      # No DOCKER_HOST on purpose (see the header).
+
+    network_mode: "service:vpn"
+
+    labels:
+    - "traefik.enable=true"
+    # Network: set on vpn (traefik.docker.network=vpn_ui), not here.
+    - "traefik.http.routers.${MOUSETRAP__NAME}.rule=Host(`${MOUSETRAP__SUBDOMAIN}.int.${DOMAINNAME}`)"
+    - "traefik.http.routers.${MOUSETRAP__NAME}.middlewares=authelia@docker"
+    - "traefik.http.services.${MOUSETRAP__NAME}.loadbalancer.server.port=${MOUSETRAP__PORT}"
+    - "deunhealth.restart.on.unhealthy=true"
+
+    volumes:
+    - ${VOLDIR}/${MOUSETRAP__NAME}:/config:rw
+
+    # Unhealthy when tun0 is gone (vpn recreated, this one only restarted).
+    # A restart rejoins the dead namespace; use --force-recreate.
+    healthcheck:
+      test: ["CMD-SHELL", "test -e /sys/class/net/tun0"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s

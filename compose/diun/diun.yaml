@@ -1,0 +1,79 @@
+## Diun  https://github.com/crazy-max/diun
+## E-mails when a newer image version exists. It never pulls or changes
+## anything, so it only needs the read-only socket proxy. To update: bump the
+## version in .env.example, run scripts/apply-env-example.sh, then
+## `docker compose up -d <service>`.
+services:
+  diun:
+    container_name: ${DIUN__NAME}
+    image: ${DIUN__IMAGE}:${DIUN__VERSION}
+    restart: unless-stopped
+    # Not root (the image's default): it reads Docker over TCP via the proxy
+    # and writes only its database in /data.
+    user: "${PUID}:${PGID}"
+    command: serve
+
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    read_only: true
+    tmpfs:
+    - /tmp:rw,noexec,nosuid
+
+    depends_on:
+      socket-proxy-ro:
+        condition: service_healthy
+        restart: false
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+
+    secrets:
+    - smtp_password
+    environment:
+      TZ: ${TZ}
+      LOG_LEVEL: ${LOG_LEVEL}
+      LOG_JSON: ${DIUN__LOG_JSON}
+      DIUN_WATCH_WORKERS: ${DIUN__WATCH_WORKERS}
+      DIUN_WATCH_SCHEDULE: ${DIUN__SCHEDULE}
+      DIUN_WATCH_JITTER: ${DIUN__WATCH_JITTER}
+      DIUN_WATCH_FIRSTCHECKNOTIF: ${DIUN__FIRST_CHECK_NOTIF}
+      # Watch every running container, via the read-only proxy.
+      DIUN_PROVIDERS_DOCKER: "true"
+      DIUN_PROVIDERS_DOCKER_ENDPOINT: ${DOCKER_HOST_RO:-tcp://socket-proxy-ro:2375}
+      DIUN_PROVIDERS_DOCKER_WATCHBYDEFAULT: ${DIUN__WATCH_BY_DEFAULT}
+      # Tags are pinned, so watch the repo and report the newest plain x.y.z.
+      # Suffixed schemes override this with a diun.include_tags label.
+      DIUN_DEFAULTS_WATCHREPO: ${DIUN__WATCH_REPO}
+      DIUN_DEFAULTS_SORTTAGS: ${DIUN__SORT_TAGS}
+      DIUN_DEFAULTS_MAXTAGS: ${DIUN__MAX_TAGS}
+      DIUN_DEFAULTS_NOTIFYON: ${DIUN__NOTIFY_ON}
+      DIUN_DEFAULTS_INCLUDETAGS: ${DIUN__INCLUDE_TAGS}
+      # Email, through the same SMTP account as everything else.
+      DIUN_NOTIF_MAIL_HOST: ${SMTP__HOST}
+      DIUN_NOTIF_MAIL_PORT: ${SMTP__PORT}
+      DIUN_NOTIF_MAIL_SSL: ${SMTP__USE_SSL}
+      DIUN_NOTIF_MAIL_USERNAME: ${SMTP__USERNAME}
+      DIUN_NOTIF_MAIL_PASSWORDFILE: /run/secrets/smtp_password
+      DIUN_NOTIF_MAIL_FROM: ${DIUN__MAIL_FROM}
+      DIUN_NOTIF_MAIL_TO: ${EMAIL_ADMIN}
+
+    networks:
+    - external          # registries
+    - socket_proxy_ro
+
+    labels:
+    - "traefik.enable=false"
+    # No deunhealth label: Diun has no health endpoint (restart: covers crashes).
+    # socket-proxy-ro allowlist: exactly the calls Diun was seen making. Image
+    # name segments can't start with a dot (no `..`). Single quotes: `\.` is a
+    # parse error in double-quoted YAML.
+    - 'socket-proxy.allow.head=/_ping'
+    - 'socket-proxy.allow.get=/v1\.[0-9]+/(version|containers/json)(\?.*)?'
+    - 'socket-proxy.allow.get.1=/v1\.[0-9]+/images/([A-Za-z0-9_:@-][A-Za-z0-9._:@-]*/)*[A-Za-z0-9_:@-][A-Za-z0-9._:@-]*/json'
+
+    volumes:
+    - ${VOLDIR}/${DIUN__NAME}:/data

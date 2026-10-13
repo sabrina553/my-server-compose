@@ -1,0 +1,93 @@
+## Linkwarden  https://github.com/linkwarden/linkwarden
+## Bookmarks at <subdomain>.<domain>. No forward-auth (it breaks the mobile app
+## and browser extension): SSO-only login through Authelia (two_factor OIDC
+## client), registration and password login off; the app and extension use
+## API keys. Database in the shared Postgres.
+services:
+  linkwarden:
+    container_name: ${LINKWARDEN__NAME}
+    image: ${LINKWARDEN__IMAGE}:${LINKWARDEN__VERSION}
+    restart: unless-stopped
+    # Not root (the image's default). Its HOME is /root (mode 700), where Prisma
+    # keeps a cache: HOME gets a tmpfs of its own below.
+    user: "${PUID}:${PGID}"
+    # Linkwarden can't read secret files, so load them into its env vars at start.
+    # command is the image's CMD (overriding entrypoint discards it); re-check
+    # after upgrades:
+    #   docker image inspect --format '{{json .Config.Entrypoint}} {{json .Config.Cmd}}' <image>
+    entrypoint:
+    - /bin/sh
+    - -c
+    - >-
+      NEXTAUTH_SECRET=$$(cat /run/secrets/linkwarden_nextauth_secret) &&
+      AUTHELIA_CLIENT_ID=$$(cat /run/secrets/linkwarden_oidc_client_id) &&
+      AUTHELIA_CLIENT_SECRET=$$(cat /run/secrets/linkwarden_oidc_client_secret) &&
+      DATABASE_URL=$$(cat /run/secrets/linkwarden_db_url) &&
+      export AUTHELIA_CLIENT_ID NEXTAUTH_SECRET AUTHELIA_CLIENT_SECRET DATABASE_URL &&
+      exec "$$@"
+    - --
+    - docker-entrypoint.sh
+    command:
+    - sh
+    - -c
+    - 'export PATH=/data/node_modules/.bin:$$PATH && prisma migrate deploy --schema=/data/packages/prisma/schema.prisma && exec concurrently -k -n web,worker "cd /data/apps/web && exec next start" "cd /data/apps/worker && exec tsx worker.ts"'
+
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    tmpfs:
+    - /tmp:rw,noexec,nosuid
+    - /home/linkwarden:rw,nosuid
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+        restart: false
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+
+    secrets:
+    - linkwarden_nextauth_secret
+    - linkwarden_oidc_client_secret
+    - linkwarden_oidc_client_id
+    - linkwarden_db_url
+    environment:
+      HOME: /home/linkwarden    # tmpfs; the image's /root isn't readable as PUID
+      CHECKPOINT_DISABLE: "1"   # Prisma's update/telemetry check
+      NEXTAUTH_URL: ${LINKWARDEN__NEXTAUTH_URL}
+      # SSO only. Set here rather than in .env so they can't silently go missing:
+      # with no Authelia in front of this router, these are what stop strangers
+      # signing up or guessing passwords. The app/extension use API keys instead.
+      NEXT_PUBLIC_DISABLE_REGISTRATION: "true"
+      NEXT_PUBLIC_CREDENTIALS_ENABLED: "false"
+      NEXT_PUBLIC_AUTHELIA_ENABLED: ${LINKWARDEN__NEXT_PUBLIC_AUTHELIA_ENABLED}
+      AUTHELIA_WELLKNOWN_URL: ${LINKWARDEN__AUTHELIA_WELLKNOWN_URL}
+
+    networks:
+    - db_postgres
+    - external
+
+    labels:
+    - "traefik.enable=true"
+    # No authelia@docker: forward-auth breaks the mobile app and browser extension.
+    # Login is SSO-only (Authelia two_factor OIDC client), see environment above.
+    - "traefik.http.routers.${LINKWARDEN__NAME}.rule=Host(`${LINKWARDEN__SUBDOMAIN}.${DOMAINNAME}`)"
+    - "traefik.http.services.${LINKWARDEN__NAME}.loadbalancer.server.port=${LINKWARDEN__PORT}"
+    - "deunhealth.restart.on.unhealthy=true"
+
+    volumes:
+    - ${VOLDIR}/${LINKWARDEN__NAME}:/data/data
+
+    healthcheck:
+      # Public endpoint (lists the login methods); no login needed. Migrations
+      # run before the web app starts, hence the long start period.
+      test: curl -fsS -o /dev/null http://127.0.0.1:${LINKWARDEN__PORT}/api/v1/logins || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+      start_interval: 5s

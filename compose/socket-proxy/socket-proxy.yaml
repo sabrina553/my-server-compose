@@ -1,63 +1,106 @@
+## Docker socket proxies, both https://github.com/wollomatic/socket-proxy with
+## per-client allowlists (labels on each client); unlabelled containers get
+## nothing. Nothing gets general write access: POST + CONTAINERS is root on the host.
+##   socket-proxy-ro  read-only: Traefik, Dozzle, Diun
+##   socket-proxy     deunhealth only: reads + POST containers/<name>/restart
+## Never allow `.*`, `archive` or `export`: "GET only" still reads any
+## container's files, /run/secrets included. Keep anything internet-facing or
+## in the VPN namespace off both networks.
 services:
-  socket-proxy:
-    container_name: socket-proxy
-    image: ${SOCKET_PROXY__IMAGE}:${SOCKET_PROXY__VERSION}
+  socket-proxy-ro:
+    container_name: ${SOCKET_PROXY__RO_NAME}
+    image: ${SOCKET_PROXY__RO_IMAGE}:${SOCKET_PROXY__RO_VERSION}
     restart: unless-stopped
+    # nobody, plus the group that owns docker.sock.
+    user: "65534:${SOCKET_PROXY__DOCKER_GID}"
+    command:
+    # DEBUG logs every request with its path: use it to find what a client
+    # needs (new client, or one broken by an upgrade).
+    - "-loglevel=${SOCKET_PROXY__RO_LOG_LEVEL}"
+    - "-listenip=0.0.0.0"
+    # Allowlists come from socket-proxy.allow.<method> labels on each client.
+    # -allowfrom stays at its default (127.0.0.1/32), so no label = no access.
+    - "-proxycontainername=${SOCKET_PROXY__RO_NAME}"
+    - "-allowhealthcheck"
+    # Exit if the socket goes away (daemon upgrade); restart reconnects.
+    - "-watchdoginterval=600"
+    - "-stoponwatchdog"
+    - "-shutdowngracetime=5"
+
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
     cap_drop:
-      - ALL
+    - ALL
     read_only: true
-    tmpfs:
-      - "/run"
-    #  - /run:rw,noexec,nosuid
+
     logging:
       driver: "json-file"
       options:
         max-size: "1m"
         max-file: "3"
-    environment:
-      TZ: "${TZ}"
-      LOG_LEVEL: "warning" # debug, info, notice, warning, err, crit, alert, emerg
-      DISABLE_IPV6: "0"
-      ALLOW_START: "1"
-      ALLOW_STOP: "1"
-      ALLOW_RESTARTS: "1"
-      AUTH: "0"
-      BUILD: "0"
-      COMMIT: "0"
-      CONFIGS: "0"
-      CONTAINERS: "1"
-      DISTRIBUTION: "0"
-      EVENTS: "1"
-      EXEC: "0"
-      IMAGES: "1"
-      INFO: "1"
-      NETWORKS: "1"
-      NODES: "0"
-      PING: "1"
-      PLUGINS: "0"
-      POST: "1"
-      SECRETS: "0"
-      SERVICES: "1"
-      SESSION: "0"
-      SWARM: "0"
-      SYSTEM: "0"
-      TASKS: "0"
-      VERSION: "1"
-      VOLUMES: "1"    
+
     networks:
-      - socket_proxy
+    - socket_proxy_ro
+
     labels:
-      - "traefik.enable=false"
-      - "deunhealth.restart.on.unhealthy=true"
-      - "com.centurylinklabs.watchtower.monitor-only=true"
+    - "traefik.enable=false"
+    - "deunhealth.restart.on.unhealthy=true"
+
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    # :ro doesn't restrict a socket; the allowlists do.
+    - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
     healthcheck:
-      interval: "30s"
-      timeout: "5s"
+      test: ["CMD", "/healthcheck"]
+      interval: 30s
+      timeout: 5s
       retries: 3
-      start_period: "10s"
-      test: "wget --no-verbose --tries=1 --spider http://localhost:2375/_ping || exit 1"
+      start_period: 10s
+
+  socket-proxy:
+    container_name: ${SOCKET_PROXY__NAME}
+    image: ${SOCKET_PROXY__IMAGE}:${SOCKET_PROXY__VERSION}
+    restart: unless-stopped
+    # nobody, plus the group that owns docker.sock.
+    user: "65534:${SOCKET_PROXY__DOCKER_GID}"
+    command:
+    # DEBUG logs every request with its path (see socket-proxy-ro).
+    - "-loglevel=${SOCKET_PROXY__LOG_LEVEL}"
+    - "-listenip=0.0.0.0"
+    # Allowlists come from socket-proxy.allow.<method> labels on each client
+    # (deunhealth only); no label = no access.
+    - "-proxycontainername=${SOCKET_PROXY__NAME}"
+    - "-allowhealthcheck"
+    - "-watchdoginterval=600"
+    - "-stoponwatchdog"
+    - "-shutdowngracetime=5"
+
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    read_only: true
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+
+    networks:
+    - socket_proxy
+
+    labels:
+    - "traefik.enable=false"
+    - "deunhealth.restart.on.unhealthy=true"
+
+    volumes:
+    # :ro doesn't restrict a socket; the allowlists do.
+    - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+    healthcheck:
+      test: ["CMD", "/healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

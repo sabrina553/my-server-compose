@@ -1,0 +1,67 @@
+## Valkey (Authelia sessions)  https://github.com/valkey-io/valkey
+## Session store for Authelia, so logins survive Authelia restarts.
+## Its own Valkey (not Immich's): password-protected and reachable only by
+## Authelia, on the internal-only authelia_backend network.
+services:
+  authelia-redis:
+    container_name: ${AUTHELIA__REDIS_NAME}
+    image: ${REDIS__IMAGE}:${REDIS__VERSION}
+    restart: unless-stopped
+    # Valkey can't read a password file, so write it into a config on tmpfs
+    # (out of `ps` and `docker inspect`). An empty secret stops the container.
+    # Original ENTRYPOINT ["docker-entrypoint.sh"], CMD ["valkey-server"]; re-check:
+    #   docker image inspect --format '{{json .Config.Entrypoint}} {{json .Config.Cmd}}' <image>
+    entrypoint:
+    - /bin/sh
+    - -c
+    - >-
+      p=$$(cat /run/secrets/authelia_redis_password) && [ -n "$$p" ] &&
+      (umask 077 && printf 'requirepass %s\n' "$$p" > /tmp/valkey.conf) &&
+      unset p && chown valkey:valkey /tmp/valkey.conf &&
+      exec docker-entrypoint.sh "$$@"
+    - --
+    # A .conf first argument makes the entrypoint run valkey-server with it.
+    # AOF in /data, so sessions survive a Valkey restart too.
+    command: ["/tmp/valkey.conf", "--appendonly", "yes"]
+
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    cap_add:
+    - CHOWN    # entrypoint chowns /data and the generated config to valkey
+    - DAC_READ_SEARCH   # its `find /data` must enter appendonlydir (mode 700)
+    - SETGID   # then drops to the valkey user (setpriv)
+    - SETUID
+    read_only: true
+    tmpfs:
+    - /tmp:rw,noexec,nosuid
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+
+    secrets:
+    - authelia_redis_password
+
+    networks:
+    - authelia_backend
+
+    labels:
+    - "traefik.enable=false"
+    - "deunhealth.restart.on.unhealthy=true"
+    # Diun: only report -bookworm 8.x releases
+    - 'diun.include_tags=^8\.\d+\.\d+-bookworm$$'
+
+    volumes:
+    - ${VOLDIR}/${AUTHELIA__REDIS_NAME}:/data
+
+    healthcheck:
+      # REDISCLI_AUTH keeps the password off the command line.
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$(cat /run/secrets/authelia_redis_password)\" valkey-cli ping | grep -q PONG"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

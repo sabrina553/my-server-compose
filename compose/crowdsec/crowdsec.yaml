@@ -1,0 +1,75 @@
+## CrowdSec  https://github.com/crowdsecurity/crowdsec
+## Reads Traefik's access log (and Authelia's) and decides which IPs to ban,
+## plus the community blocklist (CAPI). It blocks nothing itself: Traefik's
+## bouncer plugin asks its local API (LAPI) and refuses banned IPs. The LAPI
+## listens only on its fixed address on crowdsec_lapi (Traefik and CrowdSec);
+## metrics only on 127.0.0.1 inside (config.yaml.local). No console
+## enrollment. Not routed (no web UI): use `docker exec crowdsec cscli …`
+## (decisions list / delete, alerts list).
+services:
+  crowdsec:
+    container_name: ${CROWDSEC__NAME}
+    image: ${CROWDSEC__IMAGE}:${CROWDSEC__VERSION}
+    restart: unless-stopped
+    # Not root (the image's default): its start script only writes the two
+    # volumes below, which are owned by PUID.
+    user: "${PUID}:${PGID}"
+
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    read_only: true
+    tmpfs:
+    - /tmp:rw,noexec,nosuid
+
+    depends_on:
+      traefik:
+        condition: service_started
+        restart: false
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+
+    # Traefik's bouncer key. The start script registers every
+    # /run/secrets/bouncer_key_<name> as bouncer <name> (once; to change the
+    # key: cscli bouncers delete traefik, then restart).
+    secrets:
+    - source: crowdsec_bouncer_key_traefik
+      target: bouncer_key_traefik
+    environment:
+      TZ: ${TZ}
+      COLLECTIONS: ${CROWDSEC__COLLECTIONS}
+      PARSERS: ${CROWDSEC__PARSERS}
+      # The agent in this container reaches the LAPI on its bound address.
+      LOCAL_API_URL: http://172.21.18.10:8080
+
+    networks:
+      external:         # hub updates and the community blocklist (CAPI)
+      crowdsec_lapi:
+        # Fixed: the LAPI listens here only (config.yaml.local), for Traefik.
+        ipv4_address: 172.21.18.10
+
+    labels:
+    - "traefik.enable=false"
+    - "deunhealth.restart.on.unhealthy=true"
+
+    volumes:
+    - ${VOLDIR}/${CROWDSEC__NAME}/config:/etc/crowdsec:rw
+    - ${VOLDIR}/${CROWDSEC__NAME}/data:/var/lib/crowdsec/data:rw
+    # Overrides on top of the generated config.yaml, and what to read.
+    - ./config.yaml.local:/etc/crowdsec/config.yaml.local:ro
+    - ./acquis.yaml:/etc/crowdsec/acquis.d/stack.yaml:ro
+    - ./bouncer-blocked.yaml:/etc/crowdsec/parsers/s02-enrich/stack-bouncer-blocked.yaml:ro
+    - ${TRAEFIK__LOGDIR}:/var/log/traefik:ro
+    - ${AUTHELIA__LOGDIR}:/var/log/authelia:ro
+
+    healthcheck:
+      test: wget -q -O /dev/null http://172.21.18.10:8080/health || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+      start_interval: 5s

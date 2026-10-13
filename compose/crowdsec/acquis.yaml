@@ -1,0 +1,13 @@
+# What CrowdSec reads.
+# Traefik's JSON access log: ClientHost is the real visitor IP
+# (X-Forwarded-For is trusted from cloudflared only).
+filenames:
+  - /var/log/traefik/access.log
+labels:
+  type: traefik
+---
+# Authelia (text format): failed 1FA/2FA logins, with the visitor's remote_ip.
+filenames:
+  - /var/log/authelia/authelia.log
+labels:
+  type: authelia

@@ -1,16 +1,38 @@
+## Home Assistant  https://github.com/home-assistant/core
+## Home automation at <subdomain>.<domain>. No forward-auth (it breaks the
+## Companion app): its own login plus Authelia SSO (hass-openid, two_factor
+## OIDC client); the password form is blocked (block_login). Trusts
+## X-Forwarded-For only from Traefik (trusted_proxies in its configuration.yaml).
 services:
   homeassistant:
-    container_name: homeassistant
+    container_name: ${HOMEASSISTANT__NAME}
     image: ${HOMEASSISTANT__IMAGE}:${HOMEASSISTANT__VERSION}
     restart: unless-stopped
+    # OIDC credentials from the secret files; configuration.yaml reads them with
+    # !env_var (s6's with-contenv passes them on to HA). The image has no CMD;
+    # re-check after upgrades:
+    #   docker image inspect --format '{{json .Config.Entrypoint}} {{json .Config.Cmd}}' <image>
+    entrypoint:
+    - /bin/sh
+    - -c
+    - >-
+      HASS_OIDC_CLIENT_ID=$$(cat /run/secrets/homeassistant_oidc_client_id) &&
+      HASS_OIDC_CLIENT_SECRET=$$(cat /run/secrets/homeassistant_oidc_client_secret) &&
+      export HASS_OIDC_CLIENT_ID HASS_OIDC_CLIENT_SECRET &&
+      exec "$$@"
+    - --
+    - /init
+
+    # Never mount /run/dbus: the host bus treats this root container as host
+    # root. For Bluetooth, use an ESPHome Bluetooth proxy (docs/decisions.md).
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
     cap_drop:
-      - ALL
+    - ALL
     #read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
+
     depends_on:
       traefik:
         condition: service_started
@@ -20,15 +42,28 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
+
+    secrets:
+    - homeassistant_oidc_client_id
+    - homeassistant_oidc_client_secret
     networks:
-      - external
+    - external
+
     labels:
-      - "traefik.enable=true"       
-      - "traefik.http.routers.homeassistant.rule=Host(`ha.$DOMAINNAME`)"     
-      - "traefik.http.routers.homeassistant.middlewares=authelia@docker"   
-      - "traefik.http.services.homeassistant.loadbalancer.server.port=8123"
-      - "deunhealth.restart.on.unhealthy=true"
+    - "traefik.enable=true"
+    # No authelia@docker: forward-auth breaks the Companion app (see the header).
+    - "traefik.http.routers.${HOMEASSISTANT__NAME}.rule=Host(`${HOMEASSISTANT__SUBDOMAIN}.${DOMAINNAME}`)"
+    - "traefik.http.services.${HOMEASSISTANT__NAME}.loadbalancer.server.port=${HOMEASSISTANT__PORT}"
+    - "deunhealth.restart.on.unhealthy=true"
+
     volumes:
-      - ${VOLDIR}/home-assistant:/config:rw
-      - /etc/localtime:/etc/localtime:ro
-      - /run/dbus:/run/dbus:ro
+    - ${HOMEASSISTANT__VOLDIR}:/config:rw
+    - /etc/localtime:/etc/localtime:ro
+
+    healthcheck:
+      test: curl -fsS -o /dev/null http://127.0.0.1:${HOMEASSISTANT__PORT}/manifest.json || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+      start_interval: 5s

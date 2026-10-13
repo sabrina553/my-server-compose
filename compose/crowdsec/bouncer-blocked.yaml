@@ -1,0 +1,15 @@
+# Requests the Traefik bouncer blocked never reached an app: Traefik answered
+# 403 itself (OriginStatus 0) with an empty body. Counting them lets a ban
+# renew itself: a banned client that keeps retrying (a phone app syncing)
+# trips http-generic-403-bf and is banned again. Other origin-0 responses
+# (404 for unknown hosts, Authelia's 403 page) still count.
+name: stack/bouncer-blocked
+description: "Ignore requests blocked by the Traefik bouncer"
+whitelist:
+  reason: "blocked by the bouncer, never reached an app"
+  expression:
+  - >-
+    evt.Meta.service == 'http' && evt.Unmarshaled.traefik != nil &&
+    evt.Unmarshaled.traefik.DownstreamStatus == 403 &&
+    evt.Unmarshaled.traefik.OriginStatus == 0 &&
+    evt.Unmarshaled.traefik.DownstreamContentSize == 0

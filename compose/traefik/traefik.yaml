@@ -1,18 +1,104 @@
-services:  
+## Traefik  https://github.com/traefik/traefik
+## Reverse proxy and TLS (Let's Encrypt, Cloudflare DNS challenge). Public
+## names arrive through cloudflared; *.int names resolve to the LAN address,
+## where 80/443 are published (and nowhere else). The only container with
+## host ports. Reads the Docker API through the read-only socket proxy.
+## Dashboard at <subdomain>.int.<domain>, behind Authelia.
+services:
   traefik:
-    container_name: traefik
+    container_name: ${TRAEFIK__NAME}
     image: ${TRAEFIK__IMAGE}:${TRAEFIK__VERSION}
     restart: unless-stopped
+    # Not root (the image's default). It still binds 80/443 inside: Docker sets
+    # net.ipv4.ip_unprivileged_port_start=0 in containers, so no capability is
+    # needed and cloudflared's https://traefik target stays the same.
+    user: "${PUID}:${PGID}"
+    # The CrowdSec bouncer key goes from its secret file into an env var that
+    # dynamic/crowdsec.yml reads (the plugin can't read a file). Original
+    # ENTRYPOINT ["/entrypoint.sh"], CMD ["traefik"] (it adds `traefik` itself
+    # when the first argument is a flag); re-check after upgrades:
+    #   docker image inspect --format '{{json .Config.Entrypoint}} {{json .Config.Cmd}}' <image>
+    entrypoint:
+    - /bin/sh
+    - -c
+    - >-
+      CROWDSEC_BOUNCER_KEY=$$(cat /run/secrets/crowdsec_bouncer_key_traefik) &&
+      export CROWDSEC_BOUNCER_KEY &&
+      exec /entrypoint.sh "$$@"
+    - --
+    command:
+    # API + dashboard: only via the router below (behind Authelia), not on :8080.
+    - "--api.insecure=false"
+    - "--api.dashboard=true"
+    # Observability
+    - "--log.level=${TRAEFIK__LOG_LEVEL}"
+    - "--ping=true"
+    # Access log for CrowdSec (JSON, own folder: CrowdSec reads it, and must
+    # not see acme.json). Request headers are dropped (the default: no cookies
+    # or Authorization). ClientHost is already the real visitor IP, because
+    # X-Forwarded-For is trusted from cloudflared (checked 2026-10-10: equal to
+    # Cf-Connecting-Ip on every tunnel request).
+    - "--accesslog=true"
+    - "--accesslog.filepath=/var/log/traefik/access.log"
+    - "--accesslog.format=json"
+    # Backends are plain HTTP. Never skip TLS verification globally; a backend
+    # with a self-signed cert gets its own serversTransport.
+    # Entrypoint :80, redirects to https
+    - "--entryPoints.web.address=:80"
+    - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
+    - "--entryPoints.web.http.redirections.entryPoint.to=websecure"
+    - "--entryPoints.web.http.redirections.entryPoint.scheme=https"
+    # Entrypoint :443
+    - "--entryPoints.websecure.address=:443"
+    - "--entryPoints.websecure.http.tls=true"
+    - "--entrypoints.websecure.http.tls.certresolver=letsencrypt"
+    # No HTTP/3: cloudflared uses TCP and no UDP port is published.
+    # Certificates for both domains (the *.int ones are admin-only, see Authelia)
+    - "--entryPoints.websecure.http.tls.domains[0].main=${DOMAINNAME}"
+    - "--entryPoints.websecure.http.tls.domains[0].sans=*.${DOMAINNAME},*.int.${DOMAINNAME}"
+    - "--entryPoints.websecure.http.tls.domains[1].main=${DOMAINNAME2}"
+    - "--entryPoints.websecure.http.tls.domains[1].sans=*.${DOMAINNAME2}"
+    # Trust X-Forwarded-* only from cloudflared's fixed IP, so Authelia sees the
+    # real visitor IP. Anyone else's are discarded.
+    - "--entryPoints.web.forwardedHeaders.trustedIPs=172.20.0.250"
+    - "--entryPoints.websecure.forwardedHeaders.trustedIPs=172.20.0.250"
+    # Drop lookalike headers (Remote_User, Remote.User): PHP backends read them
+    # as Remote-User, so a client could spoof the logged-in user.
+    - "--entryPoints.web.http.aliasHeadersStrategy=delete"
+    - "--entryPoints.websecure.http.aliasHeadersStrategy=delete"
+    # Security headers on every HTTPS response (middleware defined in labels below).
+    # Then CrowdSec's bouncer: banned IPs get a 403 (fails open, see
+    # dynamic/crowdsec.yml).
+    - "--entryPoints.websecure.http.middlewares=secure-headers@docker,crowdsec@file"
+    # CrowdSec bouncer plugin, loaded from local source (pinned, no download at
+    # start): ${VOLDIR}/traefik-plugins mounted at /plugins-local.
+    - "--experimental.localPlugins.crowdsec.moduleName=github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin"
+    # Dynamic config files (the CrowdSec middleware), read-only from the repo.
+    - "--providers.file.directory=/etc/traefik-dynamic"
+    # Docker provider, through the read-only socket proxy
+    - "--providers.docker=true"
+    - "--providers.docker.endpoint=${DOCKER_HOST_RO:-tcp://socket-proxy-ro:2375}"
+    - "--providers.docker.exposedbydefault=false"
+    # Route over `external` unless a service sets traefik.docker.network.
+    - "--providers.docker.network=external"
+    # Let's Encrypt via Cloudflare DNS challenge
+    - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
+    - "--certificatesresolvers.letsencrypt.acme.dnschallenge.propagation.delayBeforeChecks=${TRAEFIK__ACME_DNS_DELAY}"
+    - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare"
+    - "--certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=${TRAEFIK__ACME_DNS_RESOLVERS}"
+    - "--certificatesresolvers.letsencrypt.acme.email=${TRAEFIK__ACME_EMAIL}"
+    - "--certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme.json"
+
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
     cap_drop:
-      - ALL
+    - ALL
     read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
+
     depends_on:
-      socket-proxy:
+      socket-proxy-ro:
         condition: service_healthy
         restart: false
     logging:
@@ -20,70 +106,64 @@ services:
       options:
         max-size: "1m"
         max-file: "3"
+
     secrets:
-      - cf_dns_api_token
+    - traefik_cloudflare_dns_api_token
+    - crowdsec_bouncer_key_traefik
     environment:
-      - TZ=${TZ}
-      - CF_DNS_API_TOKEN_FILE=${TRAEFIK__CF_DNS_API_TOKEN_FILE}
-      - LOG_LEVEL=${LOG_LEVEL}
-    ports:
-      - 80:80
-      - 443:443    
+      TZ: ${TZ}
+      CF_DNS_API_TOKEN_FILE: ${TRAEFIK__CF_DNS_API_TOKEN_FILE}
+      LOG_LEVEL: ${LOG_LEVEL}
+
     networks:
-      - external
-      - internal
-      - socket_proxy
-    command:
-      #API + Dash
-      - "--api.insecure=true"
-      - "--api.dashboard=true"       
-      #Observability 
-      - "--log.level=INFO"
-      - "--ping=true"    
-      - "--serversTransport.insecureSkipVerify=true"
-      #EntryPoints :80
-      - "--entryPoints.web.address=:80"
-      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
-      - "--entryPoints.web.http.redirections.entryPoint.to=websecure"
-      - "--entryPoints.web.http.redirections.entryPoint.scheme=https"  
-      #EntryPoints :443
-      - "--entryPoints.websecure.address=:443"
-      - "--entryPoints.websecure.http.tls=true"
-      - "--entrypoints.websecure.http.tls.certresolver=letsencrypt"
-      - "--entryPoints.websecure.http3=true"
-      #EntryPoints :domain
-      - "--entryPoints.websecure.http.tls.domains[0].main=${DOMAINNAME}"
-      - "--entryPoints.websecure.http.tls.domains[0].sans=*.${DOMAINNAME}"      
-      # - "--entryPoints.web.forwardedHeaders.insecure=false"
-      # - "--entryPoints.web.proxyProtocol.insecure=false"
-      # - "--entryPoints.websecure.forwardedHeaders.insecure=false"
-      # - "--entryPoints.websecure.proxyProtocol.insecure=false"
-      ## Please see the Forwarded Header Trust section of the Authelia Traefik Integration documentation.
-      #- "--entryPoints.web.forwardedHeaders.trustedIPs=172.19.0.0/16,172.20.0.0/16"
-      #- "--entryPoints.web.proxyProtocol.trustedIPs=172.19.0.0/16,172.20.0.0/16"
-      #- "--entryPoints.websecure.forwardedHeaders.trustedIPs=172.19.0.0/16,172.20.0.0/16"
-      #- "--entryPoints.websecure.proxyProtocol.trustedIPs=172.19.0.0/16,172.20.0.0/16"
-      #providers
-      - "--providers.docker=true"
-      - "--providers.docker.endpoint=${DOCKER_HOST}"
-      - "--providers.docker.exposedbydefault=false"   
-      #certs 
-      - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
-      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.propagation.delayBeforeChecks=10"
-      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare"
-      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=8.8.8.8:53"      
-      - "--certificatesresolvers.letsencrypt.acme.email=hosting@${DOMAINNAME}"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme.json"            
+      external:
+        # Fixed so backends can trust X-Forwarded-* from Traefik only
+        # (FreshRSS TRUSTED_PROXY, Home Assistant trusted_proxies).
+        ipv4_address: 172.20.0.249
+      proxy_internal:
+        # Fixed: pgAdmin trusts the Remote-User header only from this address
+        # (WEBSERVER_TRUSTED_PROXIES in compose/pg-admin/config_local.py).
+        ipv4_address: 172.21.7.249
+      vpn_ui:
+        # Fixed: qBittorrent skips its login only for this address (set in its
+        # Web UI under whitelisted subnets).
+        ipv4_address: 172.21.17.249
+      filebrowser_proxy:
+      arr:
+      socket_proxy_ro:
+      crowdsec_lapi:   # bouncer -> CrowdSec's LAPI
+    # LAN address only (*.int names resolve to it); public names come through
+    # cloudflared. Never all interfaces: Docker's rules bypass the host firewall.
+    ports:
+    - ${TRAEFIK__BIND_IP}:80:80
+    - ${TRAEFIK__BIND_IP}:443:443
+
     labels:
-      # Enable self‑routing
-      - traefik.enable=true
-      - traefik.http.routers.api.rule=Host(`traefik.int.${DOMAINNAME}`)
-      - traefik.http.routers.api.middlewares=authelia@docker
-      - traefik.http.routers.api.service=api@internal
-      - traefik.http.services.api.loadbalancer.server.port=8080      
-      - "deunhealth.restart.on.unhealthy=true"
+    - "traefik.enable=true"
+    - "traefik.http.routers.${TRAEFIK__NAME}.rule=Host(`${TRAEFIK__SUBDOMAIN}.int.${DOMAINNAME}`)"
+    - "traefik.http.routers.${TRAEFIK__NAME}.middlewares=authelia@docker"
+    - "traefik.http.routers.${TRAEFIK__NAME}.service=api@internal"
+    # Security headers for every websecure router. HSTS is sticky: browsers
+    # refuse plain HTTP on these domains and subdomains for a year.
+    - "traefik.http.middlewares.secure-headers.headers.stsSeconds=31536000"
+    - "traefik.http.middlewares.secure-headers.headers.stsIncludeSubdomains=true"
+    - "traefik.http.middlewares.secure-headers.headers.contentTypeNosniff=true"
+    - "traefik.http.middlewares.secure-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
+    - "traefik.http.middlewares.secure-headers.headers.customFrameOptionsValue=SAMEORIGIN"
+    - "deunhealth.restart.on.unhealthy=true"
+    # socket-proxy-ro allowlist: exactly the calls Traefik was seen making.
+    # Single quotes: `\.` is a parse error in double-quoted YAML.
+    - 'socket-proxy.allow.head=/_ping'
+    - 'socket-proxy.allow.get=/v1\.[0-9]+/(version|containers/json|containers/[0-9a-f]{12,64}/json|events)(\?.*)?'
+
     volumes:
-      - ${VOLDIR}/traefik:/etc/traefik:rw
+    - ${VOLDIR}/${TRAEFIK__NAME}:/etc/traefik:rw
+    # Created beforehand as dockersvc (750): Docker would create it as root.
+    # Rotated on the host by /etc/logrotate.d/stack-logs.
+    - ${TRAEFIK__LOGDIR}:/var/log/traefik:rw
+    - ./dynamic:/etc/traefik-dynamic:ro
+    - ${VOLDIR}/traefik-plugins:/plugins-local:ro
+
     healthcheck:
       test: wget --quiet --tries=1 --spider http://127.0.0.1:8080/ping || exit 1
       interval: 5s

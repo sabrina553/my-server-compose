@@ -1,18 +1,25 @@
+## Dozzle  https://github.com/amir20/dozzle
+## Live container logs in the browser, at <subdomain>.int.<domain> behind
+## Authelia. Reads the Docker API through the read-only socket proxy; no
+## internet access (proxy_internal).
 services:
   dozzle:
-    container_name: dozzle
+    container_name: ${DOZZLE__NAME}
     image: ${DOZZLE__IMAGE}:${DOZZLE__VERSION}
     restart: unless-stopped
+    # Not root (the image's default): it reads Docker over TCP via the proxy.
+    user: "${PUID}:${PGID}"
+
     security_opt:
-      - no-new-privileges:true
-      - apparmor:unconfined
+    - no-new-privileges:true
     cap_drop:
-      - ALL
+    - ALL
     read_only: true
     tmpfs:
-      - /tmp:rw,noexec,nosuid
+    - /tmp:rw,noexec,nosuid
+
     depends_on:
-      socket-proxy:
+      socket-proxy-ro:
         condition: service_healthy
         restart: false
       traefik:
@@ -22,25 +29,37 @@ services:
       driver: "json-file"
       options:
         max-size: "1m"
-        max-file: "3"    
+        max-file: "3"
+
     environment:
-      DOCKER_HOST: ${DOCKER_HOST}
+      DOCKER_HOST: ${DOCKER_HOST_RO:-tcp://socket-proxy-ro:2375}
       #DOZZLE_HOSTNAME: "${DOMAINNAME}"
       #DOZZLE_AUTH_PROVIDER: forward-proxy
+
     networks:
-      - internal
-      - socket_proxy
+    - proxy_internal
+    - socket_proxy_ro
+
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.dozzle.rule=Host(`dozzle.int.${DOMAINNAME}`)"
-      - "traefik.http.routers.dozzle.middlewares=authelia@docker"  
-      - "traefik.http.services.dozzle.loadbalancer.server.port=8080"
-      
-      - "deunhealth.restart.on.unhealthy=true"
+    - "traefik.enable=true"
+    - "traefik.docker.network=proxy_internal"
+    - "traefik.http.routers.${DOZZLE__NAME}.rule=Host(`${DOZZLE__SUBDOMAIN}.int.${DOMAINNAME}`)"
+    - "traefik.http.routers.${DOZZLE__NAME}.middlewares=authelia@docker"
+    - "traefik.http.services.${DOZZLE__NAME}.loadbalancer.server.port=${DOZZLE__PORT}"
+    - "deunhealth.restart.on.unhealthy=true"
+    # socket-proxy-ro allowlist: exactly the calls Dozzle was seen making.
+    # Single quotes: `\.` is a parse error in double-quoted YAML.
+    - 'socket-proxy.allow.head=/_ping'
+    - 'socket-proxy.allow.get=/v1\.[0-9]+/(version|info|events|containers/json|containers/[0-9a-f]{12,64}/(json|logs|stats))(\?.*)?'
+
+    volumes:
+    # UI preferences ("profile"); the only writable path (read_only above).
+    # Owned by PUID:PGID (a folder Docker creates itself is root's).
+    - ${VOLDIR}/${DOZZLE__NAME}:/data:rw
 
     healthcheck:
-      interval: "30s"
-      timeout: "5s"
-      retries: 3
-      start_period: "10s"
       test: ["CMD", "/dozzle", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
