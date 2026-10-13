@@ -95,6 +95,13 @@ services:
     - "traefik.http.routers.${FRESHRSS__NAME}.rule=Host(`${FRESHRSS__SUBDOMAIN}.${DOMAINNAME}`)"
     - "traefik.http.routers.${FRESHRSS__NAME}.middlewares=authelia@docker"
     - "traefik.http.services.${FRESHRSS__NAME}.loadbalancer.server.port=${FRESHRSS__PORT}"
+    # Reader apps (Reeder…) can't do Authelia's login: /api/ skips it and uses
+    # the FreshRSS API password. Remote-User is emptied so a client can't set it.
+    - "traefik.http.routers.${FRESHRSS__NAME}-api.rule=Host(`${FRESHRSS__SUBDOMAIN}.${DOMAINNAME}`) && PathPrefix(`/api/`)"
+    - "traefik.http.routers.${FRESHRSS__NAME}-api.priority=100"
+    - "traefik.http.routers.${FRESHRSS__NAME}-api.middlewares=${FRESHRSS__NAME}-api-strip"
+    - "traefik.http.routers.${FRESHRSS__NAME}-api.service=${FRESHRSS__NAME}"
+    - "traefik.http.middlewares.${FRESHRSS__NAME}-api-strip.headers.customrequestheaders.Remote-User="
     - "deunhealth.restart.on.unhealthy=true"
 
     volumes:
