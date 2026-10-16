@@ -71,10 +71,13 @@ services:
     labels:
     - "traefik.enable=true"
     # Catch-all: the configure UI, API and dashboard are admin-only. Low
-    # priority, so the two routers below win for their paths.
+    # priority, so the two routers below win for their paths. authelia-cookie,
+    # not authelia: the UI sends the config's UUID and password as an
+    # Authorization header, which plain authelia@docker would treat as a login
+    # (see authelia.yaml).
     - "traefik.http.routers.${AIOSTREAMS__NAME}.rule=Host(`${AIOSTREAMS__SUBDOMAIN}.${DOMAINNAME}`)"
     - "traefik.http.routers.${AIOSTREAMS__NAME}.priority=10"
-    - "traefik.http.routers.${AIOSTREAMS__NAME}.middlewares=authelia@docker"
+    - "traefik.http.routers.${AIOSTREAMS__NAME}.middlewares=authelia-cookie@docker"
     - "traefik.http.routers.${AIOSTREAMS__NAME}.service=${AIOSTREAMS__NAME}"
     # Client endpoints, the one public part. No authelia@docker on purpose.
     - "traefik.http.routers.${AIOSTREAMS__NAME}-addon.rule=Host(`${AIOSTREAMS__SUBDOMAIN}.${DOMAINNAME}`) && PathRegexp(`^/stremio/[^/]+/[^/]+/.+`)"
@@ -84,7 +87,7 @@ services:
     # …except a saved config's own configure page.
     - "traefik.http.routers.${AIOSTREAMS__NAME}-configure.rule=Host(`${AIOSTREAMS__SUBDOMAIN}.${DOMAINNAME}`) && PathRegexp(`^/stremio/[^/]+/[^/]+/configure/*$$`)"
     - "traefik.http.routers.${AIOSTREAMS__NAME}-configure.priority=200"
-    - "traefik.http.routers.${AIOSTREAMS__NAME}-configure.middlewares=authelia@docker"
+    - "traefik.http.routers.${AIOSTREAMS__NAME}-configure.middlewares=authelia-cookie@docker"
     - "traefik.http.routers.${AIOSTREAMS__NAME}-configure.service=${AIOSTREAMS__NAME}"
     - "traefik.http.services.${AIOSTREAMS__NAME}.loadbalancer.server.port=${AIOSTREAMS__PORT}"
     - "deunhealth.restart.on.unhealthy=true"
