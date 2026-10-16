@@ -1,0 +1,102 @@
+## AIOStreams  https://github.com/Viren070/AIOStreams
+## Stremio/Nuvio addon that merges stream sources and a debrid service, at
+## <subdomain>.<domain>. Public, but only the paths clients use:
+## /stremio/<uuid>/<encrypted config>/… has no forward-auth (Nuvio can't follow
+## a login redirect) and is rate-limited. The manifest URL works as a
+## credential, so treat it like one. Everything else (the configure UI, the
+## API, the dashboard) goes through Authelia, admin group only.
+## Video never passes through here: clients stream straight from the debrid
+## service (Cloudflare's terms forbid it through the tunnel).
+services:
+  aiostreams:
+    container_name: ${AIOSTREAMS__NAME}
+    image: ${AIOSTREAMS__IMAGE}:${AIOSTREAMS__VERSION}
+    restart: unless-stopped
+    # No *_FILE support. The image is distroless with a busybox sh and no cat,
+    # so `read` (a builtin) loads the secrets. Original ENTRYPOINT
+    # ["/nodejs/bin/node"], CMD ["/app/packages/server/dist/server.js"]; re-check:
+    #   docker image inspect --format '{{json .Config.Entrypoint}} {{json .Config.Cmd}}' <image>
+    # `read` fails on a file with no final newline (the secrets have none), even
+    # though it fills the variable, hence `|| [ -n … ]`.
+    entrypoint:
+    - /bin/sh
+    - -c
+    - >-
+      read -r SECRET_KEY < /run/secrets/aiostreams_secret_key || [ -n "$$SECRET_KEY" ];
+      read -r DATABASE_URI < /run/secrets/aiostreams_db_url || [ -n "$$DATABASE_URI" ];
+      read -r AIOSTREAMS_AUTH < /run/secrets/aiostreams_auth || [ -n "$$AIOSTREAMS_AUTH" ];
+      [ -n "$$SECRET_KEY" ] && [ -n "$$DATABASE_URI" ] && [ -n "$$AIOSTREAMS_AUTH" ] &&
+      export SECRET_KEY DATABASE_URI AIOSTREAMS_AUTH &&
+      exec "$$@"
+    - --
+    - /nodejs/bin/node
+    command: ["/app/packages/server/dist/server.js"]
+    # Not root (the image's default): it needs no capabilities.
+    user: "${PUID}:${PGID}"
+
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    read_only: true
+    tmpfs:
+    - /tmp:rw,noexec,nosuid
+
+    depends_on:
+      traefik:
+        condition: service_started
+        restart: false
+      postgres:
+        condition: service_healthy
+        restart: false
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+
+    secrets:
+    - aiostreams_secret_key
+    - aiostreams_db_url
+    - aiostreams_auth
+    environment:
+      TZ: ${TZ}
+      BASE_URL: ${AIOSTREAMS__BASE_URL}
+      PORT: ${AIOSTREAMS__PORT}
+
+    networks:
+    - external
+    - db_postgres
+
+    labels:
+    - "traefik.enable=true"
+    # Catch-all: the configure UI, API and dashboard are admin-only. Low
+    # priority, so the two routers below win for their paths.
+    - "traefik.http.routers.${AIOSTREAMS__NAME}.rule=Host(`${AIOSTREAMS__SUBDOMAIN}.${DOMAINNAME}`)"
+    - "traefik.http.routers.${AIOSTREAMS__NAME}.priority=10"
+    - "traefik.http.routers.${AIOSTREAMS__NAME}.middlewares=authelia@docker"
+    - "traefik.http.routers.${AIOSTREAMS__NAME}.service=${AIOSTREAMS__NAME}"
+    # Client endpoints, the one public part. No authelia@docker on purpose.
+    - "traefik.http.routers.${AIOSTREAMS__NAME}-addon.rule=Host(`${AIOSTREAMS__SUBDOMAIN}.${DOMAINNAME}`) && PathRegexp(`^/stremio/[^/]+/[^/]+/.+`)"
+    - "traefik.http.routers.${AIOSTREAMS__NAME}-addon.priority=100"
+    - "traefik.http.routers.${AIOSTREAMS__NAME}-addon.middlewares=ratelimit-addon@file"
+    - "traefik.http.routers.${AIOSTREAMS__NAME}-addon.service=${AIOSTREAMS__NAME}"
+    # …except a saved config's own configure page.
+    - "traefik.http.routers.${AIOSTREAMS__NAME}-configure.rule=Host(`${AIOSTREAMS__SUBDOMAIN}.${DOMAINNAME}`) && PathRegexp(`^/stremio/[^/]+/[^/]+/configure/*$$`)"
+    - "traefik.http.routers.${AIOSTREAMS__NAME}-configure.priority=200"
+    - "traefik.http.routers.${AIOSTREAMS__NAME}-configure.middlewares=authelia@docker"
+    - "traefik.http.routers.${AIOSTREAMS__NAME}-configure.service=${AIOSTREAMS__NAME}"
+    - "traefik.http.services.${AIOSTREAMS__NAME}.loadbalancer.server.port=${AIOSTREAMS__PORT}"
+    - "deunhealth.restart.on.unhealthy=true"
+    # Diun: release tags only (vX.Y.Z), not nightly or branch builds.
+    - 'diun.include_tags=^v\d+\.\d+\.\d+$$'
+
+    volumes:
+    - ${VOLDIR}/${AIOSTREAMS__NAME}:/app/data:rw
+
+    healthcheck:
+      test: ["CMD", "/nodejs/bin/node", "/app/scripts/healthcheck.js"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s

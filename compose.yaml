@@ -174,6 +174,13 @@ secrets:
     file: $DOCKERDIR/secrets/crowdsec/bouncer_key_traefik
   postgres_password:
     file: $DOCKERDIR/secrets/postgres/password
+  # --- AIOStreams
+  aiostreams_secret_key:
+    file: $DOCKERDIR/secrets/aiostreams/secret_key
+  aiostreams_db_url:
+    file: $DOCKERDIR/secrets/aiostreams/db_url
+  aiostreams_auth:
+    file: $DOCKERDIR/secrets/aiostreams/auth
   # --- Authelia
   authelia_jwt_secret:
     file: $DOCKERDIR/secrets/authelia/jwt_secret
@@ -355,6 +362,9 @@ include:
     - compose/immich/immich.yaml
     - compose/vaultwarden/vaultwarden.yaml
     - compose/home-assistant/home-assistant.yaml
+
+    # Streaming addons (Nuvio)
+    - compose/aiostreams/aiostreams.yaml
 
     # Other
     - compose/irc/thelounge.yaml
