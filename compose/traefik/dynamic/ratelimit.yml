@@ -1,0 +1,15 @@
+# Rate limit for public addon endpoints (AIOStreams, AIOMetadata): the
+# Stremio/Nuvio client paths that have no forward-auth. Per visitor IP, which
+# is the last X-Forwarded-For entry (cloudflared is the only hop, and the
+# only source Traefik trusts; see traefik.yaml). A client opening a catalog
+# makes a burst of requests, hence the generous burst.
+http:
+  middlewares:
+    ratelimit-addon:
+      rateLimit:
+        average: 30
+        period: 1s
+        burst: 120
+        sourceCriterion:
+          ipStrategy:
+            depth: 1
