@@ -32,6 +32,26 @@ FreshRSS (`WEBSERVER_TRUSTED_PROXIES`, Traefik's fixed `172.21.7.249` on
 never using `policy: bypass` for these hosts: on a bypass, Traefik passes a
 client-supplied `Remote-User` straight through.
 
+**Stremio/Nuvio addons (AIOStreams, AIOMetadata): public client paths with no
+forward-auth, everything else admin-only.** (2026-10-16) Nuvio fetches
+manifests, catalogs and streams without a browser and can't follow a login
+redirect. Each addon therefore has an allowlisted public router for just the
+client paths (`/stremio/<uuid>/<config>/…`, AIOMetadata's artwork proxies),
+rate-limited by `ratelimit-addon@file`, and a low-priority catch-all behind
+Authelia (group `admin`, two_factor) for the configure UI, API, dashboard and
+OAuth callbacks. New paths are private by default; a path is opened only when
+a client is seen to need it.
+- The manifest URL contains the config's UUID and encrypted blob, so it works
+  as a credential. `redact.sh` masks `/stremio/…` paths in log output.
+- `authelia-cookie@docker` is a second forward-auth middleware that sends
+  Authelia only the cookie and browser headers. AIOStreams' UI sends the
+  config's UUID and password as `Authorization: Basic`; Authelia reads that as
+  a login, finds no such user and answers 401. The app still gets the header.
+- AIOMetadata has its own password-protected Valkey 9 on
+  `aiometadata_backend`: it needs HSETEX/HTTL, which the Valkey 8 used by
+  Immich lacks. Video never passes through the tunnel (Cloudflare's terms):
+  clients stream straight from Real-Debrid.
+
 **CrowdSec instead of fail2ban for web traffic.** (2026-10-10) Public requests
 arrive through cloudflared, so the visitor's IP never reaches the host's
 firewall and fail2ban's bans could never block them (its app jails also
@@ -108,7 +128,8 @@ overrides (`cap_drop: ALL`). Locking the folders keeps host users out.
 **One internal-only network per backend.** (2026-10-09) It holds just the
 backend and the apps that use it. A compromised app reaches only its own
 database: Redis (no password) is reachable by Immich only, each MySQL or
-MariaDB by its one app, and Postgres by its nine users.
+MariaDB by its one app, and Postgres by its eleven users (AIOStreams and
+AIOMetadata added 2026-10-16).
 
 **Authelia's sessions live in their own Valkey.** (2026-10-09) In memory,
 every Authelia restart logged everyone out. `authelia-redis` is password-
