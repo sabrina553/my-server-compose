@@ -66,6 +66,69 @@ documentation. Notes there always use **plural** tags (`self-hosts`,
 - Work step by step. Explain the problem, make the change, validate it, say
   exactly how to deploy and test, then wait for the result before moving on.
 
+## Working with the user
+
+These match the user's global preferences. The hard rules above still win
+where they're stricter.
+
+- **British English** in replies, docs, comments and notes (colour,
+  organise). Code identifiers and APIs stay as they are.
+- **Concise by default.** Act as a senior engineer mentoring a junior:
+  explain the *why* and the trade-offs, suggest better patterns, and don't
+  silently do everything. The user asks for more detail when they want it.
+- **Plan before code.** For anything bigger than a one-line fix, propose a
+  short plan (what, where, why) and wait for an OK. Check in at decision
+  points.
+- **Branches:** `main` (released) <- `dev` (integration) <- `feat/...`,
+  `fix/...`, `chore/...`. Branch from `dev`, merge back into `dev`. Never
+  merge `dev` into `main`; the user does that by hand.
+- **Never commit, merge or push without asking**, each time. Small, focused
+  commits, one logical change each. Git is read-only for Claude here
+  (`safe.directory`), so give the user the exact commands to run as root.
+- **Services:** Claude may `up -d`, `restart`, `stop` or `start` an existing,
+  non-critical service, and says which and why. Show the command and wait
+  for: cloudflared, traefik, authelia, lldap, postgresql, socket-proxy*,
+  crowdsec, vaultwarden; new services; whole-stack commands; editing compose
+  or `.env*`; pruning; firewall or network changes.
+- Code comments are short, give the reasoning, and cite a source (URL or a
+  `docs/decisions.md` entry) where possible.
+
+## Notes (Obsidian)
+
+Keep one note per working session in `docs/obsidian/sessions/`, without
+being asked, and update it as the session goes.
+
+- File name: `YYYY-MM-DD - Title.md` (ASCII ` - `, never an em dash).
+- Tags are plural, lowercase and hyphenated; reuse existing ones. Every
+  session note gets `sessions` plus topic tags.
+- Template (same sections every time, leave out empty ones):
+
+  ```markdown
+  ---
+  date: YYYY-MM-DD
+  updated: YYYY-MM-DD
+  tags: [sessions, <topics>]
+  related: ["[[<earlier note on the same topic>]]"]
+  ---
+  # Title
+  > One or two lines: what this session achieved.
+
+  ## What We Did
+  ## Decisions and Why   (cite inline: [why](https://...))
+  ## Commands            (clean, copy-pasteable blocks)
+  ## Reminders           (- [[<task title>]] (date))
+  ## Next
+  ```
+- Reminders and to-dos go in `docs/obsidian/tasks/<title>.md` with
+  `title`, `status: open`, `priority: normal`, `scheduled: YYYY-MM-DD`,
+  `dateCreated`/`dateModified` (ISO with offset), `contexts` (`feat`, `fix`,
+  `chore` or `docs`), `tags: [tasks, claudes, <topics>]`,
+  `projects: ["[[<session note>]]"]`, and `effort`/`importance` (1-3; leave
+  out if unsure). The body says what "done" looks like. Tell the user about
+  each reminder in chat.
+- Before the user compacts or clears, bring the session note and any touched
+  docs up to date, then say it's safe.
+
 ## Layout
 
 - `compose.yaml`: networks, secrets declarations, and `include:` of
