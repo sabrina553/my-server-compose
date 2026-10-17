@@ -9,7 +9,7 @@ services:
     restart: unless-stopped
     # Valkey can't read a password file, so write it into a config on tmpfs
     # (out of `ps` and `docker inspect`). An empty secret stops the container.
-    # Original ENTRYPOINT ["docker-entrypoint.sh"], CMD ["valkey-server"]; re-check:
+    # Original ENTRYPOINT ["tini","--","docker-entrypoint.sh"], CMD ["valkey-server"]; re-check:
     #   docker image inspect --format '{{json .Config.Entrypoint}} {{json .Config.Cmd}}' <image>
     entrypoint:
     - /bin/sh
@@ -18,7 +18,7 @@ services:
       p=$$(cat /run/secrets/authelia_redis_password) && [ -n "$$p" ] &&
       (umask 077 && printf 'requirepass %s\n' "$$p" > /tmp/valkey.conf) &&
       unset p && chown valkey:valkey /tmp/valkey.conf &&
-      exec docker-entrypoint.sh "$$@"
+      exec tini -- docker-entrypoint.sh "$$@"
     - --
     # A .conf first argument makes the entrypoint run valkey-server with it.
     # AOF in /data, so sessions survive a Valkey restart too.
