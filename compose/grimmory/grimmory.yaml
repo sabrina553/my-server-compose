@@ -74,6 +74,20 @@ services:
     - "traefik.enable=true"
     - "traefik.http.routers.${GRIMMORY__NAME}.rule=Host(`${GRIMMORY__SUBDOMAIN}.${DOMAINNAME}`)"
     - "traefik.http.routers.${GRIMMORY__NAME}.middlewares=authelia@docker"
+    - "traefik.http.routers.${GRIMMORY__NAME}.service=${GRIMMORY__NAME}"
+    # The KOReader plugin can't follow Authelia's login redirect, so the paths
+    # it calls skip forward-auth and Grimmory checks the login itself. An
+    # allowlist of exactly those paths; everything else stays behind Authelia
+    # (docs/decisions.md). Re-check the list after plugin or Grimmory upgrades.
+    - "traefik.http.routers.${GRIMMORY__NAME}-koreader.rule=Host(`${GRIMMORY__SUBDOMAIN}.${DOMAINNAME}`) && PathRegexp(`^/api/(v1/(version|books/page|books/[0-9]+/download|shelves|reading-sessions|koreader-users/me(/sync)?|annotations(/book)?(/[0-9]+)?)|koreader/.*)$$`)"
+    - "traefik.http.routers.${GRIMMORY__NAME}-koreader.priority=100"
+    - "traefik.http.routers.${GRIMMORY__NAME}-koreader.middlewares=ratelimit-kosync@file"
+    - "traefik.http.routers.${GRIMMORY__NAME}-koreader.service=${GRIMMORY__NAME}"
+    # Password login and token refresh get their own, much tighter limit.
+    - "traefik.http.routers.${GRIMMORY__NAME}-koreader-login.rule=Host(`${GRIMMORY__SUBDOMAIN}.${DOMAINNAME}`) && PathRegexp(`^/api/v1/auth/(login|refresh)$$`)"
+    - "traefik.http.routers.${GRIMMORY__NAME}-koreader-login.priority=110"
+    - "traefik.http.routers.${GRIMMORY__NAME}-koreader-login.middlewares=ratelimit-login@file"
+    - "traefik.http.routers.${GRIMMORY__NAME}-koreader-login.service=${GRIMMORY__NAME}"
     - "traefik.http.services.${GRIMMORY__NAME}.loadbalancer.server.port=${GRIMMORY__PORT}"
     - "deunhealth.restart.on.unhealthy=true"
 

@@ -52,6 +52,21 @@ a client is seen to need it.
   Immich lacks. Video never passes through the tunnel (Cloudflare's terms):
   clients stream straight from Real-Debrid.
 
+**Grimmory: the KOReader plugin's paths are public, the rest is behind
+Authelia.** (2026-10-17) Grimmory's own KOReader plugin is a device app and
+can't follow a login redirect. It logs in with a Grimmory username and
+password (`/api/v1/auth/login`, JWT) and also calls book lists, downloads,
+shelves, annotations, `koreader-users/me` and `/api/koreader/syncs/progress`.
+A router with an allowlist of exactly those paths skips forward-auth; the
+admin, metadata-edit and delete endpoints stay private. Weaker than
+two_factor: the login is password-only, so use a dedicated non-admin local
+account with a long random password. `ratelimit-login@file` (about one try
+per 10 s) covers login and refresh, `ratelimit-kosync@file` (10/s, burst 40)
+the rest. CrowdSec has no scenario for Grimmory login failures, so the rate
+limit is the main brake. The plugin's server address is the root URL, with no
+path. Alternative not taken: a LAN-only `*.int` route (tighter, but no sync
+away from home).
+
 **CrowdSec instead of fail2ban for web traffic.** (2026-10-10) Public requests
 arrive through cloudflared, so the visitor's IP never reaches the host's
 firewall and fail2ban's bans could never block them (its app jails also
@@ -212,7 +227,7 @@ back only the capabilities its image is known to need (learned by testing):
 
 | Kind of image | cap_add |
 |---|---|
-| starts as root, chowns, drops to a user (official DBs, Ghost, Grimmory, Chaptarr, CouchDB, Valkey) | `CHOWN DAC_READ_SEARCH FOWNER SETGID SETUID` |
+| starts as root, chowns, drops to a user (official DBs, Ghost, Grimmory, Chaptarr, CouchDB, Valkey) | `CHOWN DAC_READ_SEARCH FOWNER SETGID SETUID`, plus `KILL` when tini is PID 1 (CouchDB, Valkey) |
 | linuxserver (Prowlarr): init chowns `/run/<app>-temp` | `CHOWN FOWNER SETGID SETUID` |
 | linuxserver qBittorrent | `CHOWN SETGID SETUID` |
 | linuxserver MariaDB (Grimmory) | `CHOWN DAC_READ_SEARCH FOWNER SETGID SETUID`, plus a tmpfs on `/run/mysqld` (see below) |
@@ -220,6 +235,16 @@ back only the capabilities its image is known to need (learned by testing):
 | Leantime (its documented set) | `NET_BIND_SERVICE CHOWN SETGID SETUID` |
 | pgAdmin: listens on 8080 with plain python since 9.18 | none extra; `PGADMIN_DISABLE_POSTFIX=true` so no `sudo` |
 | `user: "${PUID}:${PGID}"`, so the image never starts as root: Authelia, Traefik, Vaultwarden, Immich (server and ML), Linkwarden, Ghost, The Lounge, FileBrowser, Dozzle, Diun, deunhealth, LLDAP (`-rootless` image) | none |
+
+**Root-then-drop images that run under tini also get `KILL`.** (2026-10-18)
+The same tini problem as LLDAP's below showed in Immich's Valkey,
+Authelia's Valkey and CouchDB at the reboot: tini logged "Unexpected error
+when forwarding signal", SIGTERM never reached the database, and the stop
+ended in a SIGKILL (both Valkeys reloaded fine, but unclean). `KILL` lets the
+root tini signal the dropped-privilege child, and it only reaches processes
+inside the container. Not taken: running them as `PUID:PGID` like
+aiometadata's Valkey, which needs the data folders re-owned (CouchDB's
+included) for the same result. Revisit if an image offers a rootless variant.
 
 **Grimmory's MariaDB has a tmpfs on `/run/mysqld`.** (2026-10-10) A plain
 `restart` keeps the container's filesystem, so the old `mysqld.pid` (owned by
