@@ -14,6 +14,7 @@ services:
     cap_add:   # entrypoint drops to the valkey user
     - SETGID
     - SETUID
+    - KILL     # tini stays root: without it SIGTERM never reaches valkey (docs/decisions.md)
     #read_only: true
     tmpfs:
     - /tmp:rw,noexec,nosuid

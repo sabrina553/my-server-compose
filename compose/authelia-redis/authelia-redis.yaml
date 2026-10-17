@@ -33,6 +33,7 @@ services:
     - DAC_READ_SEARCH   # its `find /data` must enter appendonlydir (mode 700)
     - SETGID   # then drops to the valkey user (setpriv)
     - SETUID
+    - KILL     # tini stays root: without it SIGTERM never reaches valkey (docs/decisions.md)
     read_only: true
     tmpfs:
     - /tmp:rw,noexec,nosuid
