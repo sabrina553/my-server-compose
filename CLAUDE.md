@@ -226,7 +226,7 @@ being asked, and update it as the session goes.
   config.yaml.local`); its metrics only on 127.0.0.1 inside the container.
 - Fixed IPs on `external`: cloudflared `.250`, Traefik `.249` (backends trust
   only `.249` as their proxy).
-- Host ports: Traefik's 80/443 only, bound to `TRAEFIK__BIND_IP` (the LAN
+- Host ports: Traefik's 80/443 and AdGuard's DNS 53, bound to `TRAEFIK__BIND_IP` (the LAN
   address `*.int` resolves to). Public names arrive through cloudflared.
   Nothing else publishes ports, and nothing binds to all interfaces.
 - Containers in the VPN's network use `network_mode: service:vpn`, never

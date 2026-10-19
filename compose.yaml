@@ -362,6 +362,7 @@ include:
     - compose/redis/redis.yaml
     - compose/socket-proxy/socket-proxy.yaml
     - compose/crowdsec/crowdsec.yaml
+    - compose/adguard/adguard.yaml
 
     # Books and downloads
     # - compose/audiobookshelf/audiobookshelf.yaml

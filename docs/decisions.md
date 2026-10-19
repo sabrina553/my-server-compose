@@ -219,6 +219,15 @@ listens only on LLDAP's fixed address on `lldap_backend`. LLDAP stays on
 With `container:vpn`, Compose doesn't recreate them when Gluetun is
 recreated, and they're left attached to a network that no longer exists.
 
+**AdGuard Home publishes DNS (53) on the LAN address.** (2026-10-19) It's the
+only service besides Traefik with a host port. Bound to `TRAEFIK__BIND_IP`
+(never all interfaces), because Docker's iptables rules bypass the host
+firewall for published ports. Cloudflared doesn't carry 53 and the router
+must not forward it. It runs as `PUID:PGID` with `NET_BIND_SERVICE`: the
+binary has that as a file capability, so with `cap_drop: ALL` alone `exec`
+fails with "operation not permitted". DHCP is not used: it needs host networking or macvlan, extra capabilities,
+and makes this VM a single point of failure for every address on the LAN.
+
 ## Containers and updates
 
 **Hardening baseline on every service:** `no-new-privileges`, `cap_drop: ALL`,
