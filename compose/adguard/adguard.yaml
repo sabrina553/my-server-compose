@@ -2,7 +2,7 @@
 ## LAN DNS server with filtering. DNS (53, TCP and UDP) is published on
 ## TRAEFIK__BIND_IP only; the admin UI is at <subdomain>.int.<domain> behind
 ## Authelia (admin group) and has its own login too. DNS only, no DHCP (see
-## docs/decisions.md). Upstreams (DoH to Cloudflare) are set in the UI.
+## docs/decisions.md). Upstreams (DoH) and IPv4-only bootstrap are set in the UI.
 services:
   adguard:
     container_name: ${ADGUARD__NAME}
