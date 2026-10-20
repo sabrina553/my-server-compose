@@ -76,6 +76,8 @@ services:
       # Read by the template with {{ env "..." }}. Deliberately NOT prefixed
       # AUTHELIA_: Authelia treats those as config keys and rejects unknown ones.
       DOMAINNAME: ${DOMAINNAME}
+      SUBDOMAIN_AIOMETADATA: ${AIOMETADATA__SUBDOMAIN}
+      SUBDOMAIN_AIOSTREAMS: ${AIOSTREAMS__SUBDOMAIN}
       SUBDOMAIN_AUDIOBOOKSHELF: ${AUDIOBOOKSHELF__SUBDOMAIN}
       SUBDOMAIN_AUTHELIA: ${AUTHELIA__SUBDOMAIN}
       SUBDOMAIN_BOOKKEEP: ${BOOKKEEP__SUBDOMAIN}
@@ -143,6 +145,16 @@ services:
     - "traefik.http.middlewares.authelia.forwardAuth.trustForwardHeader=true"
     - "traefik.http.middlewares.authelia.forwardAuth.maxResponseBodySize=8192"
     - "traefik.http.middlewares.authelia.forwardAuth.authResponseHeaders=Remote-User,Remote-Groups,Remote-Email,Remote-Name"
+    # Same, but only these request headers reach Authelia, so it always
+    # authenticates by session cookie. For apps whose own UI sends an
+    # Authorization header (AIOStreams: config UUID and password): Authelia
+    # reads that as a login, finds no such user and answers 401. The app still
+    # receives the header; only the forward-auth sub-request loses it.
+    - "traefik.http.middlewares.authelia-cookie.forwardAuth.address=http://authelia:${AUTHELIA__PORT}/api/authz/forward-auth"
+    - "traefik.http.middlewares.authelia-cookie.forwardAuth.trustForwardHeader=true"
+    - "traefik.http.middlewares.authelia-cookie.forwardAuth.maxResponseBodySize=8192"
+    - "traefik.http.middlewares.authelia-cookie.forwardAuth.authResponseHeaders=Remote-User,Remote-Groups,Remote-Email,Remote-Name"
+    - "traefik.http.middlewares.authelia-cookie.forwardAuth.authRequestHeaders=Cookie,Accept,Accept-Language,User-Agent,X-Requested-With,Sec-Fetch-Dest,Sec-Fetch-Mode,Sec-Fetch-Site"
 
     volumes:
     # Read-only: Authelia stores state in Postgres and never needs to write here.

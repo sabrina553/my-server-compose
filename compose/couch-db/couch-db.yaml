@@ -20,6 +20,7 @@ services:
     - FOWNER
     - SETGID
     - SETUID
+    - KILL     # tini stays root: without it SIGTERM never reaches couchdb (docs/decisions.md)
     tmpfs:
     - /tmp:rw,noexec,nosuid
 

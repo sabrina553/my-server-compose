@@ -1,0 +1,112 @@
+## AIOMetadata  https://github.com/cedya77/aiometadata
+## Stremio/Nuvio metadata and catalog addon at <subdomain>.<domain>, one config
+## per Nuvio profile (each linked to its own Trakt/Simkl). Public, but only the
+## paths clients use: the manifest, catalog/meta/stream endpoints and the signed
+## artwork proxies have no forward-auth (Nuvio can't follow a login redirect)
+## and are rate-limited. A manifest URL works as a credential. Everything else
+## (configure UI, /api/…, dashboard, Trakt/Simkl callbacks) goes through
+## Authelia, admin group only. Cache: its own Valkey (aiometadata-redis).
+services:
+  aiometadata:
+    container_name: ${AIOMETADATA__NAME}
+    image: ${AIOMETADATA__IMAGE}:${AIOMETADATA__VERSION}
+    restart: unless-stopped
+    # No *_FILE support: wrapper entrypoint. The original ENTRYPOINT
+    # ["/usr/local/bin/entrypoint.sh"] has no CMD (it execs node itself);
+    # re-check after upgrades:
+    #   docker image inspect --format '{{json .Config.Entrypoint}} {{json .Config.Cmd}}' <image>
+    # REDIS_URL is built here so the Valkey password stays one secret.
+    entrypoint:
+    - /bin/sh
+    - -c
+    - >-
+      DATABASE_URI=$$(cat /run/secrets/aiometadata_db_url) &&
+      ADMIN_KEY=$$(cat /run/secrets/aiometadata_admin_key) &&
+      BUILT_IN_TMDB_API_KEY=$$(cat /run/secrets/aiometadata_tmdb_api_key) &&
+      TRAKT_CLIENT_ID=$$(cat /run/secrets/aiometadata_trakt_client_id) &&
+      TRAKT_CLIENT_SECRET=$$(cat /run/secrets/aiometadata_trakt_client_secret) &&
+      SIMKL_CLIENT_ID=$$(cat /run/secrets/aiometadata_simkl_client_id) &&
+      REDIS_URL="redis://:$$(cat /run/secrets/aiometadata_redis_password)@aiometadata-redis:6379" &&
+      [ -n "$$DATABASE_URI" ] && [ -n "$$ADMIN_KEY" ] &&
+      export DATABASE_URI ADMIN_KEY BUILT_IN_TMDB_API_KEY TRAKT_CLIENT_ID
+      TRAKT_CLIENT_SECRET SIMKL_CLIENT_ID REDIS_URL &&
+      exec "$$@"
+    - --
+    - /usr/local/bin/entrypoint.sh
+    # Not root (the image's default): it needs no capabilities.
+    user: "${PUID}:${PGID}"
+
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    read_only: true
+    tmpfs:
+    - /tmp:rw,noexec,nosuid
+
+    depends_on:
+      traefik:
+        condition: service_started
+        restart: false
+      postgres:
+        condition: service_healthy
+        restart: false
+      aiometadata-redis:
+        condition: service_healthy
+        restart: false
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+
+    secrets:
+    - aiometadata_db_url
+    - aiometadata_redis_password
+    - aiometadata_admin_key
+    - aiometadata_tmdb_api_key
+    - aiometadata_trakt_client_id
+    - aiometadata_trakt_client_secret
+    - aiometadata_simkl_client_id
+    environment:
+      TZ: ${TZ}
+      NODE_ENV: production
+      PORT: ${AIOMETADATA__PORT}
+      HOST_NAME: ${AIOMETADATA__HOST_NAME}
+      TRAKT_REDIRECT_URI: ${AIOMETADATA__HOST_NAME}/api/auth/trakt/callback
+      # PIN sign-in needs no client secret and no public callback.
+      SIMKL_AUTH_MODE: pin
+
+    networks:
+    - external
+    - db_postgres
+    - aiometadata_backend
+
+    labels:
+    - "traefik.enable=true"
+    # Catch-all: the configure UI, /api/…, dashboard and OAuth callbacks are
+    # admin-only. Low priority, so the router below wins for client paths.
+    - "traefik.http.routers.${AIOMETADATA__NAME}.rule=Host(`${AIOMETADATA__SUBDOMAIN}.${DOMAINNAME}`)"
+    - "traefik.http.routers.${AIOMETADATA__NAME}.priority=10"
+    - "traefik.http.routers.${AIOMETADATA__NAME}.middlewares=authelia@docker"
+    - "traefik.http.routers.${AIOMETADATA__NAME}.service=${AIOMETADATA__NAME}"
+    # Client endpoints, the one public part. No authelia@docker on purpose.
+    # `[.]` instead of `\.` keeps the label free of YAML escapes.
+    - "traefik.http.routers.${AIOMETADATA__NAME}-addon.rule=Host(`${AIOMETADATA__SUBDOMAIN}.${DOMAINNAME}`) && (PathRegexp(`^/stremio/[^/]+(/[^/]+)?/(manifest[.]json|(catalog|meta|stream|subtitles|watch_state)/.+|rating)$$`) || PathRegexp(`^/(poster|background|logo|landscape)/.+`) || PathPrefix(`/poster-cache/`))"
+    - "traefik.http.routers.${AIOMETADATA__NAME}-addon.priority=100"
+    - "traefik.http.routers.${AIOMETADATA__NAME}-addon.middlewares=ratelimit-addon@file"
+    - "traefik.http.routers.${AIOMETADATA__NAME}-addon.service=${AIOMETADATA__NAME}"
+    - "traefik.http.services.${AIOMETADATA__NAME}.loadbalancer.server.port=${AIOMETADATA__PORT}"
+    - "deunhealth.restart.on.unhealthy=true"
+    # Diun: plain X.Y.Z release tags only.
+    - 'diun.include_tags=^\d+\.\d+\.\d+$$'
+
+    volumes:
+    - ${VOLDIR}/${AIOMETADATA__NAME}:/app/addon/data:rw
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:${AIOMETADATA__PORT}/health/live || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

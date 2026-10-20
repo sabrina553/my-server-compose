@@ -1,0 +1,37 @@
+# Rate limit for public addon endpoints (AIOStreams, AIOMetadata): the
+# Stremio/Nuvio client paths that have no forward-auth. Per visitor IP, which
+# is the last X-Forwarded-For entry (cloudflared is the only hop, and the
+# only source Traefik trusts; see traefik.yaml). A client opening a catalog
+# makes a burst of requests, hence the generous burst.
+http:
+  middlewares:
+    ratelimit-addon:
+      rateLimit:
+        average: 30
+        period: 1s
+        burst: 120
+        sourceCriterion:
+          ipStrategy:
+            depth: 1
+
+    # Grimmory's KOReader plugin paths (no forward-auth, own credentials):
+    # book lists, downloads and progress sync. See docs/decisions.md.
+    ratelimit-kosync:
+      rateLimit:
+        average: 10
+        period: 1s
+        burst: 40
+        sourceCriterion:
+          ipStrategy:
+            depth: 1
+
+    # Grimmory's password login and token refresh, reachable without 2FA, so
+    # slow guessing right down: about one try per 10 s, burst 5.
+    ratelimit-login:
+      rateLimit:
+        average: 1
+        period: 10s
+        burst: 5
+        sourceCriterion:
+          ipStrategy:
+            depth: 1

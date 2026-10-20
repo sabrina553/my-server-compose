@@ -13,6 +13,7 @@
 #   - e-mail addresses -> <email>
 #   - IPv4 addresses outside Docker's 172.16.0.0/12 and 127.0.0.0/8 -> <ip>
 #   - password hashes ($argon2.., $pbkdf2.., $2y$.., $apr1$..) -> <hash>
+#   - Stremio addon paths (/stremio/<uuid>/<config>/...) -> /stremio/<addon-secret>/...
 #   - token-like strings of 32+ characters -> <token>
 #     (image digests written as sha256:<64 hex> are kept)
 #
@@ -74,6 +75,12 @@ hash_re = re.compile(r"\$(?:argon2(?:id|i|d)|pbkdf2-sha\d+|2[aby]|apr1|[156])\$[
 digest_re = re.compile(r"sha256:[0-9a-f]{64}")
 token_re = re.compile(r"[A-Za-z0-9_~+/=.-]{32,}")
 
+# Stremio addon URLs (/stremio/<uuid>/<encrypted config>/manifest.json) work as
+# credentials; the token rule above skips slash-separated paths, so mask them here.
+stremio_re = re.compile(
+    r"/stremio/[^/\s\"\x27?]+"
+    r"(?:/(?!(?:manifest\.json|catalog|meta|stream|subtitles|watch_state|rating|configure)\b)[^/\s\"\x27?]+)?")
+
 def ip(m):
     a, b = int(m.group(1)), int(m.group(2))
     if a == 127 or a == 0 or (a == 172 and 16 <= b <= 31):
@@ -93,6 +100,7 @@ def redact(line):
         line = lit_re.sub(lambda m: lower.get(m.group(0).lower(), "<redacted>"), line)
     line = email_re.sub("<email>", line)
     line = hash_re.sub("<hash>", line)
+    line = stremio_re.sub("/stremio/<addon-secret>", line)
     keep = {}
     def stash(m):
         keep[f"\x00{len(keep)}\x00"] = m.group(0)

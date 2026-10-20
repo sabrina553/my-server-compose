@@ -30,6 +30,7 @@ Internet ──► Cloudflare Tunnel (cloudflared)
 | **Books and downloads** | Grimmory (library), Chaptarr (ebook/audiobook manager), Prowlarr + FlareSolverr (indexers), qBittorrent and Mousetrap, all inside a Gluetun WireGuard VPN container |
 | **Personal data** | Immich (photos), Vaultwarden (passwords), FileBrowser (files), CouchDB (Obsidian LiveSync), Home Assistant |
 | **Organisation** | Mealie (recipes), Linkwarden (bookmarks), Leantime (projects) |
+| **Streaming addons** | AIOStreams (stream sources + Real-Debrid) and AIOMetadata (catalogs and metadata) for Nuvio; client paths are public and rate-limited, the configure UIs sit behind Authelia |
 | **Other** | FreshRSS (feeds), The Lounge (IRC), Crosswatch (watch-history sync), Ghost (blog) |
 
 Disabled for now (still in the repo): Audiobookshelf, Bookkeep, Mousehole

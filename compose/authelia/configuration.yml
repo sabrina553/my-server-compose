@@ -105,6 +105,19 @@ access_control:
       subject: 'group:admin'
       policy: 'two_factor'
 
+    ## AIOMetadata: everything except the client endpoints (manifest, catalog,
+    ## meta, stream, artwork), whose router has no authelia@docker (see
+    ## aiometadata.yaml). Admin only.
+    - domain: '{{ env "SUBDOMAIN_AIOMETADATA" }}.{{ env "DOMAINNAME" }}'
+      subject: 'group:admin'
+      policy: 'two_factor'
+
+    ## AIOStreams: everything except the client endpoints /stremio/<uuid>/<config>/…
+    ## (those routers have no authelia@docker, see aiostreams.yaml). Admin only.
+    - domain: '{{ env "SUBDOMAIN_AIOSTREAMS" }}.{{ env "DOMAINNAME" }}'
+      subject: 'group:admin'
+      policy: 'two_factor'
+
     ## CouchDB's Fauxton admin UI and password login (POST /_session). Only these
     ## go through the authelia@docker middleware (see couch-db.yaml); sync clients
     ## use JWT bearer tokens checked by CouchDB itself.

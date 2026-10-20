@@ -1,8 +1,8 @@
 ## Traefik  https://github.com/traefik/traefik
 ## Reverse proxy and TLS (Let's Encrypt, Cloudflare DNS challenge). Public
 ## names arrive through cloudflared; *.int names resolve to the LAN address,
-## where 80/443 are published (and nowhere else). The only container with
-## host ports. Reads the Docker API through the read-only socket proxy.
+## where 80/443 are published (AdGuard adds only DNS 53 there). Reads the
+## Docker API through the read-only socket proxy.
 ## Dashboard at <subdomain>.int.<domain>, behind Authelia.
 services:
   traefik:

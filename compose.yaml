@@ -149,6 +149,13 @@ networks:
     ipam:
       config:
         - subnet: 172.21.18.0/24
+  aiometadata_backend: # aiometadata, aiometadata-redis (cache)
+    name: aiometadata_backend
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.21.19.0/24
   # For Traefik to reach routed services that have no internet access
   # (CouchDB, pgAdmin, Dozzle). Those carry traefik.docker.network=proxy_internal.
   proxy_internal:
@@ -174,6 +181,28 @@ secrets:
     file: $DOCKERDIR/secrets/crowdsec/bouncer_key_traefik
   postgres_password:
     file: $DOCKERDIR/secrets/postgres/password
+  # --- AIOMetadata
+  aiometadata_db_url:
+    file: $DOCKERDIR/secrets/aiometadata/db_url
+  aiometadata_redis_password:
+    file: $DOCKERDIR/secrets/aiometadata/redis_password
+  aiometadata_admin_key:
+    file: $DOCKERDIR/secrets/aiometadata/admin_key
+  aiometadata_tmdb_api_key:
+    file: $DOCKERDIR/secrets/aiometadata/tmdb_api_key
+  aiometadata_trakt_client_id:
+    file: $DOCKERDIR/secrets/aiometadata/trakt_client_id
+  aiometadata_trakt_client_secret:
+    file: $DOCKERDIR/secrets/aiometadata/trakt_client_secret
+  aiometadata_simkl_client_id:
+    file: $DOCKERDIR/secrets/aiometadata/simkl_client_id
+  # --- AIOStreams
+  aiostreams_secret_key:
+    file: $DOCKERDIR/secrets/aiostreams/secret_key
+  aiostreams_db_url:
+    file: $DOCKERDIR/secrets/aiostreams/db_url
+  aiostreams_auth:
+    file: $DOCKERDIR/secrets/aiostreams/auth
   # --- Authelia
   authelia_jwt_secret:
     file: $DOCKERDIR/secrets/authelia/jwt_secret
@@ -333,6 +362,7 @@ include:
     - compose/redis/redis.yaml
     - compose/socket-proxy/socket-proxy.yaml
     - compose/crowdsec/crowdsec.yaml
+    - compose/adguard/adguard.yaml
 
     # Books and downloads
     # - compose/audiobookshelf/audiobookshelf.yaml
@@ -355,6 +385,11 @@ include:
     - compose/immich/immich.yaml
     - compose/vaultwarden/vaultwarden.yaml
     - compose/home-assistant/home-assistant.yaml
+
+    # Streaming addons (Nuvio)
+    - compose/aiostreams/aiostreams.yaml
+    - compose/aiometadata/aiometadata.yaml
+    - compose/aiometadata/aiometadata-redis.yaml
 
     # Other
     - compose/irc/thelounge.yaml

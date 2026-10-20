@@ -1,0 +1,65 @@
+## Valkey (AIOMetadata cache)  https://github.com/valkey-io/valkey
+## AIOMetadata's own Valkey (not Immich's or Authelia's): password-protected and
+## reachable only by AIOMetadata, on the internal-only aiometadata_backend
+## network. 9.x on purpose: the app needs HSETEX/HTTL (hash-field expiry), which
+## the 8.x used elsewhere lacks. Runs as dockersvc, so it needs no capabilities.
+services:
+  aiometadata-redis:
+    container_name: ${AIOMETADATA__REDIS_NAME}
+    image: ${REDIS__IMAGE}:${AIOMETADATA__REDIS_VERSION}
+    restart: unless-stopped
+    user: "${PUID}:${PGID}"
+    # Valkey can't read a password file, so write it into a config on tmpfs
+    # (out of `ps` and `docker inspect`). An empty secret stops the container.
+    # Original ENTRYPOINT ["tini","--","docker-entrypoint.sh"], CMD ["valkey-server"];
+    # re-check:
+    #   docker image inspect --format '{{json .Config.Entrypoint}} {{json .Config.Cmd}}' <image>
+    entrypoint:
+    - /bin/sh
+    - -c
+    - >-
+      p=$$(cat /run/secrets/aiometadata_redis_password) && [ -n "$$p" ] &&
+      (umask 077 && printf 'requirepass %s\n' "$$p" > /tmp/valkey.conf) &&
+      unset p && exec tini -- docker-entrypoint.sh "$$@"
+    - --
+    # A .conf first argument makes the entrypoint run valkey-server with it.
+    # AOF in /data, so the cache survives a restart. maxmemory is the cap the
+    # app's eviction policy (volatile-lfu) works against.
+    command: ["/tmp/valkey.conf", "--appendonly", "yes", "--maxmemory", "${AIOMETADATA__REDIS_MAXMEMORY}"]
+
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
+    read_only: true
+    tmpfs:
+    - /tmp:rw,noexec,nosuid
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
+
+    secrets:
+    - aiometadata_redis_password
+
+    networks:
+    - aiometadata_backend
+
+    labels:
+    - "traefik.enable=false"
+    - "deunhealth.restart.on.unhealthy=true"
+    # Diun: only report 9.x releases
+    - 'diun.include_tags=^9\.\d+\.\d+-trixie$$'
+
+    volumes:
+    - ${VOLDIR}/${AIOMETADATA__REDIS_NAME}:/data
+
+    healthcheck:
+      # REDISCLI_AUTH keeps the password off the command line.
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$(cat /run/secrets/aiometadata_redis_password)\" valkey-cli ping | grep -q PONG"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
