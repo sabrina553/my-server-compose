@@ -362,6 +362,13 @@ being asked, and update it as the session goes.
   unhealthy (no `tun0`). Fix: `docker compose up -d --force-recreate
   qbittorrent mousetrap`. deunhealth can't fix it: a restart rejoins the old
   namespace.
+- When Gluetun restarts its tunnel *internally* (failed health check, no
+  recreate), tun0 is rebuilt in the same namespace and libtorrent can lose its
+  listen socket on it for good: qBittorrent stays healthy but is unreachable
+  (tracker "not connectable", DHT 0 nodes, stale External IP). qBittorrent is
+  bound to `tun0`, `qbittorrent-reannounce` re-applies that binding when
+  `listener-check.sh` finds no listener, and the healthcheck uses the same
+  check as a backstop.
 - At boot, the Docker daemon restarts every `unless-stopped` container itself,
   all at once, and ignores `depends_on` (only Compose reads it). A container
   can fail once or twice until what it needs is up (Dozzle does), then

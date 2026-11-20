@@ -58,11 +58,15 @@ services:
     # Tails qBittorrent's log file to stdout for Dozzle. linuxserver requires
     # these to be root-owned and not world-writable.
     - ./custom-services.d:/custom-services.d:ro
+    - ./listener-check.sh:/scripts/listener-check.sh:ro
 
     # Unhealthy when tun0 is gone (vpn recreated, this one only restarted).
     # A restart rejoins the dead namespace; use --force-recreate.
+    # Also unhealthy when there is no listener on tun0 (Gluetun rebuilt it and
+    # libtorrent never reopened its socket). The reannounce service tries to
+    # repair that first; deunhealth restarts us if it can't.
     healthcheck:
-      test: ["CMD-SHELL", "test -e /sys/class/net/tun0 && curl -fso /dev/null http://localhost:${QBITTORRENT__WEBUI_PORT}/api/v2/app/version"]
+      test: ["CMD-SHELL", "test -e /sys/class/net/tun0 && sh /scripts/listener-check.sh && curl -fso /dev/null http://localhost:${QBITTORRENT__WEBUI_PORT}/api/v2/app/version"]
       interval: 30s
       timeout: 15s
       start_period: 30s

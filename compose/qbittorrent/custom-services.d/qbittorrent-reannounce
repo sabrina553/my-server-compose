@@ -1,17 +1,35 @@
 #!/usr/bin/with-contenv bash
 # shellcheck shell=bash
-# When Gluetun restarts its tunnel it can come back with a new exit IP in the
-# same namespace. Traffic follows, but private trackers keep the IP of the last
-# announce until qBittorrent's next scheduled one, so seeding stops. This
-# watches the public IP (through the tunnel) and reannounces every torrent
-# when it changes. qBittorrent's own "reannounce on address change" only sees
-# the tunnel's local address, which doesn't change.
-# Uses the localhost API without a login (WebUI\LocalHostAuth=false).
+# Two jobs, one 60 s loop, both against the localhost API (no login:
+# WebUI\LocalHostAuth=false).
+# 1. Listener self-heal. Gluetun rebuilds tun0 when it restarts its tunnel, and
+#    libtorrent can lose its listen socket on it for good: still "healthy", but
+#    unreachable (private tracker "not connectable", DHT 0 nodes). The network
+#    interface is kept bound to tun0 (which makes libtorrent reopen the socket
+#    when the interface returns), and if the listener is missing anyway the
+#    binding is cleared and set again to force a re-listen.
+# 2. Reannounce. A new exit IP in the same namespace is followed by traffic,
+#    but private trackers keep the IP of the last announce until qBittorrent's
+#    next scheduled one, so seeding stops. This reannounces every torrent when
+#    the public IP changes. qBittorrent's own "reannounce on address change"
+#    only sees the tunnel's local address, which doesn't change.
+# listener-check.sh is also the healthcheck's backstop (deunhealth restarts).
 exec s6-setuidgid abc bash -c '
 api="http://localhost:${WEBUI_PORT:-8080}/api/v2"
+bind() {
+  curl -fsS --max-time 10 --data-urlencode "json={\"current_network_interface\":\"$1\",\"current_interface_name\":\"$1\"}" "$api/app/setPreferences" >/dev/null
+}
 last=""
 while true; do
   sleep 60
+  if [ -e /sys/class/net/tun0 ]; then
+    if ! curl -fsS --max-time 10 "$api/app/preferences" | grep -q "\"current_network_interface\":\"tun0\""; then
+      bind tun0 && echo "[listener] bound qBittorrent to tun0"
+    elif ! sh /scripts/listener-check.sh; then
+      echo "[listener] no listener on tun0, re-applying the interface binding"
+      bind "" && sleep 2 && bind tun0
+    fi
+  fi
   ip=$(curl -fsS --max-time 10 https://1.1.1.1/cdn-cgi/trace 2>/dev/null | sed -n "s/^ip=//p")
   [ -n "$ip" ] || continue
   if [ -n "$last" ] && [ "$ip" != "$last" ]; then
