@@ -33,8 +33,8 @@ Internet ──► Cloudflare Tunnel (cloudflared)
 | **Streaming addons** | AIOStreams (stream sources + Real-Debrid) and AIOMetadata (catalogs and metadata) for Nuvio; client paths are public and rate-limited, the configure UIs sit behind Authelia |
 | **Other** | FreshRSS (feeds), The Lounge (IRC), Crosswatch (watch-history sync), Ghost (blog) |
 
-Disabled for now (still in the repo): Audiobookshelf, Bookkeep, Mousehole
-(replaced by Mousetrap), Watchtower (replaced by Diun).
+Disabled for now (still in the repo): Audiobookshelf, Bookkeep, Watchtower
+(replaced by Diun). Mousehole was removed (replaced by Mousetrap).
 
 ## How it's secured
 

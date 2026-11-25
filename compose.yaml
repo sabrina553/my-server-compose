@@ -319,9 +319,6 @@ secrets:
     file: $DOCKERDIR/secrets/mealie/oidc_client_secret
   mealie_db_password:
     file: $DOCKERDIR/secrets/mealie/db_password
-  # --- Mousehole (disabled)
-  mousehole_auth_password:
-    file: $DOCKERDIR/secrets/mousehole/auth_password
   # --- Vaultwarden
   vaultwarden_db_url:
     file: $DOCKERDIR/secrets/vaultwarden/db_url
@@ -370,7 +367,6 @@ include:
     - compose/chaptarr/chaptarr.yaml
     - compose/prowlarr/prowlarr.yaml
     - compose/qbittorrent/qbittorrent.yaml
-    # - compose/mousehole/mousehole.yaml
     - compose/mousetrap/mousetrap.yaml
     # - compose/bookkeep/bookkeep.yaml
 
